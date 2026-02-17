@@ -1,0 +1,21 @@
+# Data
+data/raw/
+data/processed/
+data/geo/
+outputs/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+*.egg-info/
+
+# Environment
+.env
+
+# DuckDB
+*.duckdb
+*.duckdb.wal
+
+# Tools
+.ruff_cache/

@@ -1,0 +1,39 @@
+nspl:
+  name: "National Statistics Postcode Lookup (August 2025)"
+  phase: 1
+  url: "https://geoportal.statistics.gov.uk/datasets/ons::national-statistics-postcode-lookup-2021-census-august-2025/about"
+  download_url: "https://www.arcgis.com/sharing/rest/content/items/3648ef4d85c04043a0d9f3089e6e2a6f/data"
+  format: zip
+  inner_path: "Data/NSPL21_AUG_2025_UK.csv"
+  description: "Postcode to LSOA 2021 lookup. Best-fit through Census Output Areas."
+  licence: "OGL v3.0"
+
+lsoa_boundaries:
+  name: "LSOA 2021 Boundaries (BSC, Clipped)"
+  phase: 1
+  url: "https://geoportal.statistics.gov.uk/datasets/ons::lsoa-dec-2021-boundaries-super-generalised-clipped-ew-bsc/about"
+  download_url: "https://open-geography-portalx-ons.hub.arcgis.com/api/download/v1/items/1d5fc63bdf1b4048a24339581d1e79f1/geoPackage?layers=0"
+  format: gpkg
+  dest_dir: "data/geo"
+  description: "LSOA 2021 boundary polygons for England and Wales (super generalised, clipped)."
+  licence: "OGL v3.0"
+
+price_paid:
+  name: "HM Land Registry Price Paid Data (Complete)"
+  phase: 1
+  url: "https://www.gov.uk/government/statistical-data-sets/price-paid-data-downloads"
+  download_url: "https://prod.publicdata.landregistry.gov.uk.s3.eu-west-1.amazonaws.com/pp-complete.csv"
+  format: csv
+  size_hint: "4.3GB"
+  description: "All residential property transactions in England and Wales since 1995."
+  licence: "OGL v3.0 — Contains HM Land Registry data Crown copyright and database right."
+
+imd_2025:
+  name: "English Indices of Deprivation 2019"
+  phase: 1
+  url: "https://www.gov.uk/government/statistics/english-indices-of-deprivation-2019"
+  download_url: "https://assets.publishing.service.gov.uk/media/5d8b387740f0b604d7453cdc/File_1_-_IMD2019_Index_of_Multiple_Deprivation.xlsx"
+  format: xlsx
+  description: "Index of Multiple Deprivation at LSOA level for England."
+  licence: "OGL v3.0 — Crown copyright."
+  notes: "IMD 2025 not yet published; using IMD 2019 as placeholder. Update when available."
