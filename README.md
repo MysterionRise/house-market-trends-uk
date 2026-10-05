@@ -1,9 +1,10 @@
-# UK house market and liveability
+# UK Liveability Index
 
 > **Being restructured.** This repo started in 2020 as a plan to analyse UK house price trends.
-> It is now being rebuilt as a data platform that scores neighbourhoods in England and Wales on
+> It is now being rebuilt as a data platform that scores UK neighbourhoods (England and Wales today; Scotland and
+> Northern Ireland planned) on
 > house prices, deprivation, transport and schools. The data pipeline below works; the scoring
-> model and the dashboard are not built yet. The repo name will change once the scope settles.
+> model and the dashboard are not built yet.
 
 Everything is computed at **LSOA** level (Lower Layer Super Output Area, 1,000 to 3,000 residents each).
 
