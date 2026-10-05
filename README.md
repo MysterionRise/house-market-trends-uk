@@ -1,10 +1,9 @@
 # UK Liveability Index
 
 > **Being restructured.** This repo started in 2020 as a plan to analyse UK house price trends.
-> It is now being rebuilt as a data platform that scores UK neighbourhoods (England and Wales today; Scotland and
-> Northern Ireland planned) on
-> house prices, deprivation, transport and schools. The data pipeline below works; the scoring
-> model and the dashboard are not built yet.
+> It is now being rebuilt as a data platform that scores UK neighbourhoods on house prices,
+> deprivation, transport and schools (England and Wales today; Scotland and Northern Ireland
+> planned). The data pipeline below works; the scoring model and the front end are not built yet.
 
 Everything is computed at **LSOA** level (Lower Layer Super Output Area, 1,000 to 3,000 residents each).
 
@@ -30,7 +29,7 @@ IMD 2019 stands in until IMD 2025 is published (the config slug is already `imd_
 
 - More datasets: transport access and school ratings
 - A composite score per LSOA, with the method and weights written down
-- A Streamlit map dashboard on top of the processed data
+- A generative-UI front end (CopilotKit or similar) that answers questions with maps and tables built from the scores
 
 ## Running it
 
