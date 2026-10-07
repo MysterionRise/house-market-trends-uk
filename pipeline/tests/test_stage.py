@@ -1,4 +1,4 @@
-"""Tests for the clean module."""
+"""Tests for the stagers."""
 
 from datetime import date
 from pathlib import Path
@@ -6,13 +6,15 @@ from pathlib import Path
 import polars as pl
 import pytest
 
-from src.clean import PP_COLUMNS, _iod_rename_map, clean_iod, clean_price_paid, save_processed
-from src.geocode import load_nspl
+from lix_pipeline.geo.nspl import load_nspl
+from lix_pipeline.stage import save_staged
+from lix_pipeline.stage.iod import _iod_rename_map, stage_iod
+from lix_pipeline.stage.price_paid import PP_COLUMNS, stage_price_paid
 
 
-class TestSaveProcessed:
+class TestSaveStaged:
     def test_writes_valid_parquet(self, tmp_path: Path):
-        """save_processed should write a valid Parquet file."""
+        """save_staged should write a valid Parquet file."""
         df = pl.DataFrame(
             {
                 "lsoa21cd": ["E01000001", "E01000002"],
@@ -21,9 +23,9 @@ class TestSaveProcessed:
         )
 
         with pytest.MonkeyPatch.context() as m:
-            m.setattr("src.clean.get_project_root", lambda: tmp_path)
+            m.setenv("LIX_DATA_DIR", str(tmp_path))
 
-            out = save_processed(df, "test_output")
+            out = save_staged(df, "test_output")
 
             assert out.exists()
             assert out.suffix == ".parquet"
@@ -34,7 +36,7 @@ class TestSaveProcessed:
             assert loaded.columns == ["lsoa21cd", "value"]
 
     def test_writes_lazyframe(self, tmp_path: Path):
-        """save_processed should handle LazyFrames by collecting them."""
+        """save_staged should handle LazyFrames by collecting them."""
         lf = pl.DataFrame(
             {
                 "lsoa21cd": ["E01000001"],
@@ -43,9 +45,9 @@ class TestSaveProcessed:
         ).lazy()
 
         with pytest.MonkeyPatch.context() as m:
-            m.setattr("src.clean.get_project_root", lambda: tmp_path)
+            m.setenv("LIX_DATA_DIR", str(tmp_path))
 
-            out = save_processed(lf, "test_lazy")
+            out = save_staged(lf, "test_lazy")
             loaded = pl.read_parquet(out)
             assert len(loaded) == 1
             assert loaded["score"][0] == pytest.approx(42.0)
@@ -118,10 +120,10 @@ def price_paid_csv(tmp_path: Path) -> Path:
     return path
 
 
-class TestCleanPricePaid:
+class TestStagePricePaid:
     def _run(self, price_paid_csv, nspl_csv, as_of=None) -> pl.DataFrame:
         nspl = load_nspl(nspl_csv, live_only=False, nations=None)
-        return clean_price_paid(price_paid_csv, nspl=nspl, as_of=as_of).collect()
+        return stage_price_paid(price_paid_csv, nspl=nspl, as_of=as_of).collect()
 
     def test_england_lsoas_only(self, price_paid_csv, nspl_csv):
         df = self._run(price_paid_csv, nspl_csv)
@@ -165,7 +167,7 @@ class TestCleanPricePaid:
     def test_logs_match_rate(self, price_paid_csv, nspl_csv, caplog):
         import logging
 
-        with caplog.at_level(logging.INFO, logger="clean"):
+        with caplog.at_level(logging.INFO, logger="lix.stage.price_paid"):
             self._run(price_paid_csv, nspl_csv)
         # 7 standard sales in the 24 months to 2026-08-29; only ZZ99 9ZZ fails to match
         assert "6/7 matched" in caplog.text
@@ -252,7 +254,7 @@ def iod_csv(tmp_path: Path) -> Path:
     return path
 
 
-class TestCleanIod:
+class TestStageIod:
     def test_rename_map(self):
         rename = _iod_rename_map(IOD_HEADER)
         assert rename["LSOA code (2021)"] == "lsoa21cd"
@@ -272,8 +274,8 @@ class TestCleanIod:
         assert rename["Total population: mid 2022"] == "pop_total"
         assert len(rename) == len(IOD_HEADER)
 
-    def test_clean_iod(self, iod_csv):
-        df = clean_iod(iod_csv).collect()
+    def test_stage_iod(self, iod_csv):
+        df = stage_iod(iod_csv).collect()
 
         assert df["lsoa21cd"].to_list() == ["E01000001", "E01000002"]
         row = df.row(0, named=True)
@@ -289,4 +291,4 @@ class TestCleanIod:
         pl.DataFrame({"LSOA code (2011)": ["E01000001"]}).write_csv(path)
         # IoD 2019 uses 2011 LSOAs: must fail loudly rather than mis-join
         with pytest.raises(ValueError):
-            clean_iod(path)
+            stage_iod(path)

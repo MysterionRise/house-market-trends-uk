@@ -142,10 +142,16 @@ def _nspl_line(row) -> str:
 
 @pytest.fixture
 def nspl_csv(tmp_path):
-    """Write a minimal NSPL CSV with the real header. Shared across geocode and clean tests."""
+    """Write a minimal NSPL CSV with the real header. Shared across geo and stage tests."""
     csv_path = tmp_path / "NSPL_AUG_2026_UK.csv"
     csv_path.write_text("\n".join([NSPL_HEADER, *map(_nspl_line, NSPL_ROWS)]) + "\n")
     return csv_path
+
+
+@pytest.fixture
+def nspl_parts():
+    """(header, rows, line builder) for tests that need a custom NSPL file."""
+    return NSPL_HEADER, NSPL_ROWS, _nspl_line
 
 
 @pytest.fixture(scope="session")

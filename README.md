@@ -10,13 +10,13 @@ each; 33,755 in England).
 
 ## What works today
 
-The Phase 1 pipeline downloads, cleans and joins the open datasets below:
+The pipeline downloads, stages and joins the open datasets below:
 
-- `src/download.py` downloads and caches each dataset listed in `config/datasets.yaml`
+- `lix fetch` downloads and caches each dataset listed in `config/datasets.yaml`
   (resumable, checksummed, rejects error pages served as data, extracts only the files it needs)
-- `src/clean.py` turns each raw file into Parquet
-- `src/geocode.py` maps postcodes to LSOAs using the ONS postcode lookup (NSPL)
-- `tests/` covers all three steps; CI runs ruff and pytest on every push and PR to `master`
+- `lix stage` turns each raw file into tidy Parquet in `data/staged/`
+- postcodes are mapped to LSOAs with the ONS postcode lookup (NSPL)
+- CI runs ruff and pytest on every push and PR to `master`; tests never touch the network
 
 | Dataset | Granularity | Source |
 |---------|-------------|--------|
@@ -40,8 +40,8 @@ Requires [uv](https://docs.astral.sh/uv/) and Python 3.11+.
 
 ```bash
 make install    # uv sync
-make download   # download all datasets (Price Paid alone is about 5.5 GB)
-make process    # stage every downloaded dataset to data/processed/*.parquet
+make fetch      # download all datasets (about 6 GB; Price Paid alone is 5.5 GB)
+make stage      # stage every downloaded dataset to data/staged/*.parquet
 make test       # pytest (no network access; HTTP is tested against a local server)
 make lint       # ruff check + format check
 ```
@@ -49,24 +49,28 @@ make lint       # ruff check + format check
 Or step by step:
 
 ```bash
-uv run python -m src.download --phase 1
-uv run python -m src.clean --slug nspl        # first: price_paid geocodes against it
-uv run python -m src.clean --slug price_paid
-uv run python -m src.clean --slug iod_2025
+uv run lix fetch --slug nspl
+uv run lix stage --slug nspl          # first: price_paid geocodes against it
+uv run lix fetch --slug price_paid && uv run lix stage --slug price_paid
+uv run lix fetch --slug iod_2025 && uv run lix stage --slug iod_2025
 ```
+
+Set `LIX_DATA_DIR` to keep data somewhere other than `./data`.
 
 ## Layout
 
 ```
 config/datasets.yaml    dataset URLs, formats, licences
-src/
-  download.py           download engine with caching
-  clean.py              dataset-specific cleaners
-  geocode.py            NSPL postcode to LSOA mapping
-  utils.py              shared helpers
-data/                   raw/{slug}/ and processed/ (all gitignored)
-tests/                  pytest suite
+core/                   lix_core: paths, config, logging, shared code patterns
+pipeline/               lix_pipeline and the `lix` CLI
+  fetch/http.py         download engine with caching and resume
+  geo/                  NSPL postcode lookup, LSOA boundaries
+  stage/                one stager per dataset (nspl, price_paid, iod)
+data/                   raw/, staged/, ... (gitignored; rebuilt by the pipeline)
 ```
+
+The repo is a [uv workspace](https://docs.astral.sh/uv/concepts/projects/workspaces/); `api/`
+(FastAPI + AI agent) and `web/` (Next.js front end) will join it.
 
 ## Licence
 

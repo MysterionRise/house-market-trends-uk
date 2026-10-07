@@ -1,22 +1,25 @@
-.PHONY: install download process test lint format
+.PHONY: install fetch stage test lint format
+
+PY_DIRS := core pipeline
 
 install:
 	uv sync
 
-download:
-	uv run python -m src.download
+# Download every dataset in config/datasets.yaml into data/raw/ (Price Paid alone is 5.5 GB)
+fetch:
+	uv run lix fetch --all
 
-# Cleans every dataset that has been downloaded; nspl runs first (price_paid needs it)
-process:
-	uv run python -m src.clean --all
+# Stage every downloaded dataset to data/staged/*.parquet; nspl runs first (price_paid needs it)
+stage:
+	uv run lix stage --all
 
 test:
-	uv run pytest tests/
+	uv run pytest
 
 lint:
-	uv run ruff check src/ tests/
-	uv run ruff format --check src/ tests/
+	uv run ruff check $(PY_DIRS)
+	uv run ruff format --check $(PY_DIRS)
 
 format:
-	uv run ruff format src/ tests/
-	uv run ruff check --fix src/ tests/
+	uv run ruff format $(PY_DIRS)
+	uv run ruff check --fix $(PY_DIRS)

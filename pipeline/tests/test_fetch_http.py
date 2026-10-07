@@ -1,4 +1,4 @@
-"""Tests for the download engine, against a local HTTP server."""
+"""Tests for the HTTP download engine, against a local HTTP server."""
 
 import hashlib
 import io
@@ -11,7 +11,7 @@ import pytest
 from pytest_socket import SocketConnectBlockedError
 from werkzeug import Request, Response
 
-from src.download import _read_meta, _safe_extract, _write_meta, download_dataset
+from lix_pipeline.fetch.http import _read_meta, _safe_extract, _write_meta, download_dataset
 
 
 def _zip_bytes(files: dict[str, str]) -> bytes:
@@ -23,13 +23,11 @@ def _zip_bytes(files: dict[str, str]) -> bytes:
 
 
 @pytest.fixture
-def project(tmp_path: Path):
-    """Point the downloader at tmp_path and let each test supply its own registry."""
+def project(tmp_path: Path, monkeypatch):
+    """Point data at tmp_path and let each test supply its own registry."""
+    monkeypatch.setenv("LIX_DATA_DIR", str(tmp_path))
     registry: dict = {}
-    with (
-        patch("src.download.get_project_root", return_value=tmp_path),
-        patch("src.download.get_config", return_value=registry),
-    ):
+    with patch("lix_pipeline.fetch.http.get_config", return_value=registry):
         yield tmp_path, registry
 
 
@@ -109,7 +107,7 @@ class TestDownloadDataset:
     def test_skips_cached(self, project):
         root, registry = project
         registry["cached"] = {"download_url": "http://127.0.0.1:1/never", "format": "csv"}
-        dest = root / "data" / "raw" / "cached"
+        dest = root / "raw" / "cached"
         _write_meta(dest, {"completed": True})
 
         assert download_dataset("cached") == dest
@@ -169,7 +167,7 @@ class TestDownloadDataset:
         with pytest.raises(ValueError, match="not a valid zip"):
             download_dataset("gone")
 
-        dest = root / "data" / "raw" / "gone"
+        dest = root / "raw" / "gone"
         # Neither the error body nor a .part file is kept; only the (incomplete) metadata
         assert [p.name for p in dest.iterdir()] == [".meta.json"]
         assert not _read_meta(dest).get("completed")
@@ -196,7 +194,7 @@ class TestDownloadDataset:
             "/test.csv", headers={"If-Modified-Since": last_modified}
         ).respond_with_data(b"", status=304)
         registry["test_csv"] = {"download_url": httpserver.url_for("/test.csv"), "format": "csv"}
-        dest = root / "data" / "raw" / "test_csv"
+        dest = root / "raw" / "test_csv"
         _write_meta(dest, {"last_modified": last_modified})
 
         assert download_dataset("test_csv") == dest
@@ -225,7 +223,7 @@ class TestDownloadDataset:
 
     def _interrupted(self, root, slug: str, partial: bytes, meta: dict) -> Path:
         """Simulate an earlier attempt that left ``partial`` bytes behind."""
-        dest = root / "data" / "raw" / slug
+        dest = root / "raw" / slug
         dest.mkdir(parents=True)
         (dest / f"{slug}.csv.part").write_bytes(partial)
         _write_meta(dest, {"completed": False, **meta})
@@ -293,7 +291,7 @@ class TestDownloadDataset:
         with pytest.raises(Exception):
             download_dataset("broken")
 
-        dest = root / "data" / "raw" / "broken"
+        dest = root / "raw" / "broken"
         assert not (dest / "broken.csv").exists()
         meta = _read_meta(dest)
         assert not meta.get("completed")

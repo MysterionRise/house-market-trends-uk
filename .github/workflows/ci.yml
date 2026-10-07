@@ -25,9 +25,7 @@ jobs:
         run: uv sync --locked
 
       - name: Lint
-        run: |
-          uv run ruff check src/ tests/
-          uv run ruff format --check src/ tests/
+        run: make lint
 
       - name: Test
-        run: uv run pytest tests/ -v
+        run: uv run pytest -v

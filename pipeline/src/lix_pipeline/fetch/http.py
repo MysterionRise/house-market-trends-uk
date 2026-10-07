@@ -1,12 +1,8 @@
-"""Download engine for UK Liveability Index datasets.
+"""HTTP download engine: cached, resumable, checksummed downloads into data/raw/{slug}/.
 
-Usage:
-    python -m src.download --phase 1        # download all Phase 1 datasets
-    python -m src.download --slug nspl      # download a single dataset
-    python -m src.download --force          # re-download even if cached
+Run via the CLI: ``lix fetch --slug nspl`` / ``lix fetch --all``.
 """
 
-import argparse
 import fnmatch
 import hashlib
 import json
@@ -20,7 +16,9 @@ from requests.adapters import HTTPAdapter
 from tqdm import tqdm
 from urllib3.util.retry import Retry
 
-from src.utils import ensure_dirs, get_config, get_project_root, setup_logging
+from lix_core.config import get_config
+from lix_core.log import setup_logging
+from lix_core.paths import data_dir
 
 logger = setup_logging("download")
 
@@ -128,7 +126,7 @@ def download_dataset(slug: str, force: bool = False) -> Path:
     ds = datasets[slug]
     url = ds["download_url"]
     fmt = ds.get("format", "csv")
-    dest_dir = get_project_root() / "data" / "raw" / slug
+    dest_dir = data_dir("raw") / slug
 
     # Check cache
     meta = _read_meta(dest_dir)
@@ -265,23 +263,3 @@ def download_all(phase: int | None = None, force: bool = False) -> dict[str, Pat
             logger.exception(f"[{slug}] Download failed")
 
     return results
-
-
-def main() -> None:
-    parser = argparse.ArgumentParser(description="Download UK Liveability Index datasets")
-    parser.add_argument("--slug", type=str, help="Download a single dataset by slug")
-    parser.add_argument("--phase", type=int, help="Download all datasets for a given phase")
-    parser.add_argument("--force", action="store_true", help="Force re-download even if cached")
-    args = parser.parse_args()
-
-    ensure_dirs()
-
-    if args.slug:
-        download_dataset(args.slug, force=args.force)
-    else:
-        phase = args.phase
-        download_all(phase=phase, force=args.force)
-
-
-if __name__ == "__main__":
-    main()

@@ -1,9 +1,9 @@
-"""Tests for the geocode module."""
+"""Tests for NSPL loading and postcode geocoding."""
 
 import polars as pl
 import pytest
 
-from src.geocode import (
+from lix_pipeline.geo.nspl import (
     _resolve_vintaged,
     load_nspl,
     log_match_rate,
@@ -180,7 +180,7 @@ class TestLogMatchRate:
 
         result = postcode_to_lsoa(input_df, nspl=nspl).collect()
 
-        with caplog.at_level(logging.INFO, logger="geocode"):
+        with caplog.at_level(logging.INFO, logger="lix.geocode"):
             log_match_rate(result)
 
         assert "1/2 matched" in caplog.text
@@ -191,13 +191,12 @@ class TestLogMatchRate:
         log_match_rate(df)  # Should not raise
 
 
-def test_codes_that_look_numeric_early_are_not_type_inferred(tmp_path):
+def test_codes_that_look_numeric_early_are_not_type_inferred(tmp_path, nspl_parts):
     """Real NSPL starts with Scottish rows whose ruc21ind is "1"; English "UN1" comes later.
 
     Any type inference over the first 100 rows reads the column as i64 and then fails.
     """
-    from tests.conftest import NSPL_HEADER, NSPL_ROWS, _nspl_line
-
+    NSPL_HEADER, NSPL_ROWS, _nspl_line = nspl_parts
     scottish_like = [_nspl_line(NSPL_ROWS[0]).replace('"UN1"', '"1"')] * 150
     path = tmp_path / "NSPL_AUG_2026_UK.csv"
     path.write_text("\n".join([NSPL_HEADER, *scottish_like, _nspl_line(NSPL_ROWS[1])]) + "\n")
