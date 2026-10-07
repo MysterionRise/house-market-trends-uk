@@ -81,7 +81,11 @@ def _check_payload(path: Path, fmt: str) -> None:
     with open(path, "rb") as f:
         head = f.read(64)
     expected = MAGIC_BYTES.get(fmt)
-    if expected is not None:
+    if fmt == "pbf":
+        # OSM PBF: a 4-byte length, then a BlobHeader whose type is "OSMHeader"
+        if b"OSMHeader" not in head[:20]:
+            raise ValueError(f"Downloaded file is not an OSM PBF (starts with {head[:32]!r})")
+    elif expected is not None:
         if not any(head.startswith(m) for m in expected):
             raise ValueError(f"Downloaded file is not a valid {fmt} (starts with {head[:32]!r})")
     elif head.lstrip().lower().startswith(ERROR_BODY_PREFIXES) and fmt not in (

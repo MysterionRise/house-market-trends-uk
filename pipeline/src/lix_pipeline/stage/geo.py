@@ -20,11 +20,17 @@ from lix_pipeline.geo.nspl import load_nspl
 logger = setup_logging("stage.geo")
 
 _BNG_TO_WGS84 = Transformer.from_crs(27700, 4326, always_xy=True)
+_WGS84_TO_BNG = Transformer.from_crs(4326, 27700, always_xy=True)
 
 
 def bng_to_lonlat(x: pl.Series, y: pl.Series) -> tuple[pl.Series, pl.Series]:
     lon, lat = _BNG_TO_WGS84.transform(x.to_numpy(), y.to_numpy())
     return pl.Series("lon", lon), pl.Series("lat", lat)
+
+
+def lonlat_to_bng(lon: pl.Series, lat: pl.Series) -> tuple[pl.Series, pl.Series]:
+    x, y = _WGS84_TO_BNG.transform(lon.to_numpy(), lat.to_numpy())
+    return pl.Series("x", x), pl.Series("y", y)
 
 
 def _raw(slug: str, suffix: str) -> Path:
@@ -37,6 +43,25 @@ def _nspl_document(pattern: str) -> Path:
     if not matches:
         raise FileNotFoundError(f"No NSPL document matching {pattern!r}")
     return matches[-1]
+
+
+def _lsoa_pfa_from_nspl(nspl: pl.LazyFrame) -> pl.DataFrame:
+    """Police force area per LSOA (majority of its postcodes), with the force's name."""
+    pfa = (
+        nspl.filter(pl.col("lsoa21cd").str.contains(ENGLAND_LSOA21))
+        .group_by("lsoa21cd", "pfa_cd")
+        .agg(pl.len().alias("n"))
+        .sort("n", descending=True)
+        .collect()
+        .unique("lsoa21cd", keep="first")
+        .drop("n")
+    )
+    doc = pl.read_csv(_nspl_document("PFA*names and codes*.csv"), encoding="utf8-lossy")
+    names = doc.select(
+        pl.col(next(c for c in doc.columns if c.upper().endswith("CD"))).alias("pfa_cd"),
+        pl.col(next(c for c in doc.columns if c.upper().endswith("NM"))).alias("pfa_nm"),
+    )
+    return pfa.join(names, on="pfa_cd", how="left")
 
 
 def _lsoa_lad_from_nspl(nspl: pl.LazyFrame) -> pl.DataFrame:
@@ -123,6 +148,7 @@ def stage_geo_lsoa() -> pl.LazyFrame:
         .join(lad, on="lsoa21cd", how="left")
         .join(lad_names, on="lad_cd", how="left")
         .join(rgn_names, on="rgn_cd", how="left")
+        .join(_lsoa_pfa_from_nspl(nspl), on="lsoa21cd", how="left")
         .join(ruc, on="lsoa21cd", how="left")
         .join(centroids, on="lsoa21cd", how="left")
         .join(pop, on="lsoa21cd", how="left")

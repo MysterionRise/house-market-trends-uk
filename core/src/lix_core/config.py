@@ -20,10 +20,17 @@ class _Strict(BaseModel):
 
 
 class HttpAccess(_Strict):
-    """A fixed URL."""
+    """A fixed URL.
+
+    For files published under a dated name, put ``{date}`` in the URL and set
+    ``date_format``; the resolver tries today and then each earlier day, up to
+    ``lookback_days``, until a file exists.
+    """
 
     type: Literal["http"]
     url: str
+    date_format: str | None = None
+    lookback_days: int = 7
 
 
 class ArcgisItemAccess(_Strict):
@@ -52,11 +59,39 @@ class ArcgisItemAccess(_Strict):
 
 
 class GovukAttachmentAccess(_Strict):
-    """An attachment on a GOV.UK publication page, found via the content API."""
+    """An attachment on a GOV.UK publication page, found via the content API.
+
+    ``pick: one`` requires exactly one match. ``pick: latest`` is for pages that keep
+    every past release (e.g. monthly Ofsted files): it takes the match with the latest
+    date in its file name, such as "as_at_31_August_2026".
+    """
 
     type: Literal["govuk_attachment"]
     path: str
     attachment_regex: str
+    pick: Literal["one", "latest"] = "one"
+
+
+class LinkStep(_Strict):
+    """One hop of an ``html_link`` resolver: a regex whose first group is a URL."""
+
+    pattern: str
+    # page: document order · desc: highest match first (e.g. a year in the name) ·
+    # date_desc: newest date in the URL first ("july-2026", "31-august-2026")
+    order: Literal["page", "desc", "date_desc"] = "page"
+
+
+class HtmlLinkAccess(_Strict):
+    """A file found by following links from a landing page.
+
+    Each step searches the current page for links; non-final steps are tried in order
+    until one leads to a page where the next step matches (so an announced release
+    without files yet is skipped).
+    """
+
+    type: Literal["html_link"]
+    page: str
+    steps: list[LinkStep]
 
 
 class ManualAccess(_Strict):
@@ -68,7 +103,7 @@ class ManualAccess(_Strict):
 
 
 Access = Annotated[
-    HttpAccess | ArcgisItemAccess | GovukAttachmentAccess | ManualAccess,
+    HttpAccess | ArcgisItemAccess | GovukAttachmentAccess | HtmlLinkAccess | ManualAccess,
     Field(discriminator="type"),
 ]
 
@@ -92,7 +127,7 @@ class DatasetSpec(_Strict):
     theme: Theme
     priority: Literal["P0", "P1", "P2"] = "P0"
     access: Access
-    format: Literal["csv", "zip", "gpkg", "xlsx", "ods", "parquet", "json", "geojson"]
+    format: Literal["csv", "zip", "gpkg", "xlsx", "ods", "parquet", "json", "geojson", "pbf"]
     # zip only: glob patterns of members to extract (everything if omitted)
     extract: list[str] | None = None
     landing_page: str | None = None

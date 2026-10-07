@@ -7,15 +7,15 @@ fetch(slug)    →  data/raw/{slug}/   (lock["fetched"]: sha256, size, when)
 import fnmatch
 import hashlib
 import json
-from datetime import datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 import requests
 
-from lix_core.config import DatasetSpec, load_registry
+from lix_core.config import DatasetSpec, HttpAccess, load_registry
 from lix_core.log import setup_logging
 from lix_core.paths import data_dir
-from lix_pipeline.fetch import arcgis, govuk
+from lix_pipeline.fetch import arcgis, govuk, html
 from lix_pipeline.fetch.http import _read_meta, _write_meta, download
 from lix_pipeline.fetch.lock import read_lock, update_entry
 from lix_pipeline.fetch.session import make_session
@@ -39,19 +39,57 @@ def _sha256(path: Path) -> str:
     return h.hexdigest()
 
 
+def _probe(url: str, session: requests.Session) -> requests.Response:
+    """HEAD the URL, falling back to a streamed GET for servers that mishandle HEAD.
+
+    No retries here: some servers answer every HEAD with an error (GIAS returns 500,
+    NHS ODS reports 405), and backing off on those just wastes a minute per probe.
+    """
+    try:
+        resp = requests.head(url, headers=session.headers, allow_redirects=True, timeout=(30, 60))
+        if resp.ok:
+            return resp
+    except requests.RequestException:
+        pass
+    resp = session.get(url, stream=True, timeout=(30, 60))
+    resp.close()
+    return resp
+
+
+def _resolve_http(access: HttpAccess, session: requests.Session) -> tuple[str, requests.Response]:
+    """The URL to fetch and its HEAD response; for dated URLs, the newest that exists."""
+    if not access.date_format:
+        head = _probe(access.url, session)
+        head.raise_for_status()
+        return access.url, head
+    today = date.today()
+    for back in range(access.lookback_days + 1):
+        day = today - timedelta(days=back)
+        url = access.url.replace("{date}", day.strftime(access.date_format))
+        head = _probe(url, session)
+        if head.ok:
+            return url, head
+    raise RuntimeError(f"No file for {access.url} in the last {access.lookback_days} days")
+
+
 def resolve(slug: str, spec: DatasetSpec, session: requests.Session) -> dict:
     """Turn a registry entry into a concrete URL plus a version string."""
     access = spec.access
     if access.type == "http":
-        head = session.head(access.url, allow_redirects=True, timeout=(30, 60))
-        head.raise_for_status()
+        url, head = _resolve_http(access, session)
         resolved = {
-            "url": access.url,
-            "version": head.headers.get("Last-Modified") or head.headers.get("ETag"),
+            "url": url,
+            # Dated URLs are their own version; otherwise trust the server's validators
+            "version": url
+            if access.date_format
+            else head.headers.get("Last-Modified") or head.headers.get("ETag"),
         }
     elif access.type == "arcgis_item":
         resolved = arcgis.resolve_item(access, session)
         resolved["version"] = resolved["modified"]
+    elif access.type == "html_link":
+        resolved = html.resolve_link(access, session)
+        resolved["version"] = resolved["url"]
     elif access.type == "govuk_attachment":
         resolved = govuk.resolve_attachment(access, session)
         # Republishing a file gives it a new /media/<id>/ URL, so the URL is the version

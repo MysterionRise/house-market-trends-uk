@@ -1,4 +1,4 @@
-.PHONY: install resolve fetch stage validate test lint format
+.PHONY: install resolve fetch stage validate docs test lint format
 
 PY_DIRS := core pipeline
 
@@ -19,6 +19,10 @@ stage:
 
 validate:
 	uv run lix validate geo
+
+# Regenerate docs/data-sources.md and ATTRIBUTION.md from config/datasets.yaml
+docs:
+	uv run lix docs
 
 test:
 	uv run pytest

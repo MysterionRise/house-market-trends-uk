@@ -315,3 +315,113 @@ def test_fetch_module_exports():
     # The CLI relies on these names
     for name in ("fetch", "resolve_and_lock", "check_link", "select", "ManualDownloadRequired"):
         assert hasattr(fetch_mod, name)
+
+
+class TestHtmlLink:
+    def test_skips_releases_without_the_file(self, httpserver):
+        from lix_core.config import HtmlLinkAccess
+        from lix_pipeline.fetch.html import resolve_link
+
+        base = "/pub/patients"
+        httpserver.expect_request(base).respond_with_data(
+            f'<a href="{base}/october-2026">Oct</a><a href="{base}/july-2026">Jul</a>'
+            f'<a href="{base}/september-2026">Sep</a>',
+            content_type="text/html",
+        )
+        # Newest announced release has no files yet; September has files but no LSOA one
+        httpserver.expect_request(f"{base}/october-2026").respond_with_data("coming soon")
+        httpserver.expect_request(f"{base}/september-2026").respond_with_data(
+            '<a href="https://files.example/gp-reg-pat-prac-all.zip">all</a>'
+        )
+        httpserver.expect_request(f"{base}/july-2026").respond_with_data(
+            '<a href="https://files.example/gp-reg-pat-prac-lsoa-July-26.zip">lsoa</a>'
+        )
+        access = HtmlLinkAccess(
+            type="html_link",
+            page=httpserver.url_for(base),
+            steps=[
+                {"pattern": r'href="(/pub/patients/[a-z]+-\d{4})"', "order": "date_desc"},
+                {"pattern": r'href="(https://files\.example/[^"]*lsoa[^"]*\.zip)"'},
+            ],
+        )
+
+        resolved = resolve_link(access, make_session())
+
+        assert resolved == {
+            "url": "https://files.example/gp-reg-pat-prac-lsoa-July-26.zip",
+            "release": "2026-07-01",
+        }
+
+    def test_relative_links_and_desc_order(self, httpserver):
+        from lix_core.config import HtmlLinkAccess
+        from lix_pipeline.fetch.html import resolve_link
+
+        httpserver.expect_request("/data/pcm-data").respond_with_data(
+            '<a href="../datastore/pcm/mapno22023.csv">a</a>'
+            '<a href="../datastore/pcm/mapno22024.csv">b</a>'
+        )
+        access = HtmlLinkAccess(
+            type="html_link",
+            page=httpserver.url_for("/data/pcm-data"),
+            steps=[{"pattern": r'href="([^"]*/mapno2\d{4}\.csv)"', "order": "desc"}],
+        )
+        assert resolve_link(access, make_session())["url"] == httpserver.url_for(
+            "/datastore/pcm/mapno22024.csv"
+        )
+
+    def test_no_match_raises(self, httpserver):
+        from lix_core.config import HtmlLinkAccess
+        from lix_pipeline.fetch.html import resolve_link
+
+        httpserver.expect_request("/p").respond_with_data("nothing here")
+        access = HtmlLinkAccess(
+            type="html_link", page=httpserver.url_for("/p"), steps=[{"pattern": r'href="(x)"'}]
+        )
+        with pytest.raises(RuntimeError, match="No link matching"):
+            resolve_link(access, make_session())
+
+
+def test_govuk_pick_latest(httpserver, monkeypatch):
+    monkeypatch.setattr(govuk, "CONTENT_API", httpserver.url_for("/api/content"))
+    stem = "https://assets/media/{}/Management_information_-_state-funded_schools_-_latest_inspections_as_at_{}.csv"
+    page = {"details": {"attachments": [
+        {"url": stem.format(1, "30_June_2026")},
+        {"url": stem.format(2, "31_August_2026")},
+        {"url": stem.format(3, "31_July_2026")},
+        {"url": "https://assets/media/4/all_inspections_year_to_date.csv"},
+    ]}}  # fmt: skip
+    httpserver.expect_request("/api/content/ofsted").respond_with_json(page)
+    access = GovukAttachmentAccess(
+        type="govuk_attachment",
+        path="ofsted",
+        attachment_regex=r"latest_inspections_as_at_.*\.csv$",
+        pick="latest",
+    )
+    assert govuk.resolve_attachment(access, make_session())["url"] == stem.format(
+        2, "31_August_2026"
+    )
+
+
+def test_dated_http_url_walks_back_to_latest_file(httpserver, monkeypatch):
+    import datetime as dt
+
+    from lix_core.config import HttpAccess
+    from lix_pipeline.fetch import _resolve_http
+
+    class FixedDate(dt.date):
+        @classmethod
+        def today(cls):
+            return cls(2026, 10, 7)
+
+    monkeypatch.setattr(fetch_mod, "date", FixedDate)
+    # Today's file isn't published yet (and HEAD errors, like GIAS's server); yesterday's is
+    httpserver.expect_request("/edubasealldata20261007.csv").respond_with_data("", status=404)
+    httpserver.expect_request("/edubasealldata20261006.csv", method="HEAD").respond_with_data(
+        "", status=500
+    )
+    httpserver.expect_request("/edubasealldata20261006.csv", method="GET").respond_with_data("x")
+    access = HttpAccess(
+        type="http", url=httpserver.url_for("/edubasealldata{date}.csv"), date_format="%Y%m%d"
+    )
+    url, _ = _resolve_http(access, make_session())
+    assert url.endswith("/edubasealldata20261006.csv")

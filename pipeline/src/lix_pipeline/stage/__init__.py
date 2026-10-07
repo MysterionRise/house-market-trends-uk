@@ -24,6 +24,13 @@ STAGE_INPUTS: dict[str, list[str]] = {
         "lsoa_boundaries",
     ],
     "places": ["os_open_names", "lsoa_boundaries"],
+    "defra_pcm_no2": ["defra_pcm_no2", "nspl"],
+    "defra_pcm_pm25": ["defra_pcm_pm25", "nspl"],
+    "defra_pcm_pm10": ["defra_pcm_pm10", "nspl"],
+    "ods_gp": ["ods_gp", "nspl"],
+    "gias": ["gias", "lsoa_boundaries"],
+    "fsa_fhrs": ["fsa_fhrs", "nspl", "lsoa_boundaries"],
+    "osm_pois": ["osm_england"],
 }
 
 
@@ -42,11 +49,24 @@ def save_staged(df: pl.LazyFrame | pl.DataFrame, slug: str) -> Path:
 
 
 def stagers() -> dict[str, Callable[[], pl.LazyFrame]]:
-    """Slug → stager, in run order (price_paid geocodes against the staged NSPL)."""
-    from lix_pipeline.stage import geo
+    """Slug → stager, in run order (later stagers read earlier staged outputs)."""
+    from functools import partial
+
+    from lix_core.config import load_registry
+    from lix_pipeline.stage import geo, health, schools
+    from lix_pipeline.stage.census import stage_census_table
+    from lix_pipeline.stage.fsa import stage_fsa
     from lix_pipeline.stage.iod import stage_iod
     from lix_pipeline.stage.nspl import stage_nspl
+    from lix_pipeline.stage.osm import stage_osm
+    from lix_pipeline.stage.pcm import stage_pcm
+    from lix_pipeline.stage.police import stage_police
     from lix_pipeline.stage.price_paid import stage_price_paid
+    from lix_pipeline.stage.transport import stage_dft_connectivity
+
+    registry = load_registry()
+    census = {s: partial(stage_census_table, s) for s in registry if s.startswith("census_")}
+    pcm = {s: partial(stage_pcm, s) for s in registry if s.startswith("defra_pcm_")}
 
     return {
         "nspl": stage_nspl,
@@ -56,4 +76,15 @@ def stagers() -> dict[str, Callable[[], pl.LazyFrame]]:
         "geo_lsoa": geo.stage_geo_lsoa,  # needs staged nspl and iod_2025
         "places": geo.stage_places,
         "price_paid": stage_price_paid,
+        **census,
+        "police_crime": stage_police,
+        **pcm,  # needs staged nspl
+        "ods_gp": health.stage_ods_gp,
+        "gp_registrations": health.stage_gp_registrations,
+        "gp_workforce": health.stage_gp_workforce,
+        "gias": schools.stage_gias,
+        "ofsted_schools": schools.stage_ofsted_schools,
+        "dft_connectivity": stage_dft_connectivity,
+        "fsa_fhrs": stage_fsa,
+        "osm_pois": stage_osm,
     }

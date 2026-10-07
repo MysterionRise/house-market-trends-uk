@@ -249,3 +249,272 @@ iod_2025:
   attribution: "Ministry of Housing, Communities and Local Government, English Indices of Deprivation 2025, licensed under the Open Government Licence v3.0."
   cadence: static
   size_hint: 9.4MB
+
+x-census: &census
+  theme: community
+  format: zip
+  extract: ["*-lsoa.csv"]
+  landing_page: https://www.nomisweb.co.uk/sources/census_2021_bulk
+  licence: OGL-3.0
+  attribution: "Source: Office for National Statistics licensed under the Open Government Licence v3.0. Census 2021."
+  cadence: static
+  size_hint: 2-4MB zipped
+
+census_ts001:
+  <<: *census
+  title: Census 2021 TS001 Number of usual residents
+  access: {type: http, url: "https://www.nomisweb.co.uk/output/census/2021/census2021-ts001.zip"}
+  description: Usual residents, in households and communal establishments.
+
+census_ts003:
+  <<: *census
+  title: Census 2021 TS003 Household composition
+  access: {type: http, url: "https://www.nomisweb.co.uk/output/census/2021/census2021-ts003.zip"}
+  description: Households by composition, including those with dependent children.
+
+census_ts006:
+  <<: *census
+  title: Census 2021 TS006 Population density
+  access: {type: http, url: "https://www.nomisweb.co.uk/output/census/2021/census2021-ts006.zip"}
+  description: Usual residents per square kilometre.
+
+census_ts007a:
+  <<: *census
+  title: Census 2021 TS007A Age by five-year age bands
+  access: {type: http, url: "https://www.nomisweb.co.uk/output/census/2021/census2021-ts007a.zip"}
+  description: Usual residents by five-year age band.
+
+census_ts037:
+  <<: *census
+  title: Census 2021 TS037 General health
+  access: {type: http, url: "https://www.nomisweb.co.uk/output/census/2021/census2021-ts037.zip"}
+  description: Self-reported general health of usual residents.
+
+census_ts044:
+  <<: *census
+  title: Census 2021 TS044 Accommodation type
+  access: {type: http, url: "https://www.nomisweb.co.uk/output/census/2021/census2021-ts044.zip"}
+  description: Households by accommodation type (detached, terraced, flat, ...).
+
+census_ts045:
+  <<: *census
+  title: Census 2021 TS045 Car or van availability
+  access: {type: http, url: "https://www.nomisweb.co.uk/output/census/2021/census2021-ts045.zip"}
+  description: Households by number of cars or vans.
+
+census_ts054:
+  <<: *census
+  title: Census 2021 TS054 Tenure
+  access: {type: http, url: "https://www.nomisweb.co.uk/output/census/2021/census2021-ts054.zip"}
+  description: Households by tenure (owned, social rented, private rented).
+
+census_ts058:
+  <<: *census
+  title: Census 2021 TS058 Distance travelled to work
+  access: {type: http, url: "https://www.nomisweb.co.uk/output/census/2021/census2021-ts058.zip"}
+  description: Usual residents in employment by distance to work. Collected during COVID-19 restrictions.
+
+census_ts061:
+  <<: *census
+  title: Census 2021 TS061 Method used to travel to work
+  access: {type: http, url: "https://www.nomisweb.co.uk/output/census/2021/census2021-ts061.zip"}
+  description: Usual residents in employment by travel mode. Collected during COVID-19 restrictions.
+
+census_ts067:
+  <<: *census
+  title: Census 2021 TS067 Highest level of qualification
+  access: {type: http, url: "https://www.nomisweb.co.uk/output/census/2021/census2021-ts067.zip"}
+  description: Usual residents aged 16+ by highest qualification.
+
+# ---------------------------------------------------------------------------------------
+# Safety
+# ---------------------------------------------------------------------------------------
+
+police_crime:
+  title: police.uk street-level crime (latest 36 months)
+  theme: safety
+  access: {type: http, url: "https://data.police.uk/data/archive/latest.zip"}
+  format: zip
+  # Street crime only; outcomes and stop-and-search are not used
+  extract: ["*-street.csv"]
+  landing_page: https://data.police.uk/data/archive/
+  description: Crimes and anti-social behaviour by type and month, located to anonymised points with LSOA codes.
+  licence: OGL-3.0
+  attribution: "Contains public sector information from police.uk licensed under the Open Government Licence v3.0."
+  cadence: monthly
+  size_hint: 1.7GB zipped
+  notes: Greater Manchester Police has supplied no data since mid-2019; its area is imputed.
+
+# ---------------------------------------------------------------------------------------
+# Environment
+# ---------------------------------------------------------------------------------------
+
+x-pcm: &pcm
+  theme: environment
+  format: csv
+  landing_page: https://uk-air.defra.gov.uk/data/pcm-data
+  licence: OGL-3.0
+  attribution: "© Crown copyright. Defra via uk-air.defra.gov.uk, licensed under the Open Government Licence v3.0."
+  cadence: annual
+  size_hint: 8MB
+
+defra_pcm_no2:
+  <<: *pcm
+  title: Defra modelled background NO2 (1km grid, latest year)
+  access:
+    type: html_link
+    page: https://uk-air.defra.gov.uk/data/pcm-data
+    steps: [{pattern: 'href="([^"]*/mapno2\d{4}\.csv)"', order: desc}]
+  description: Annual mean nitrogen dioxide, µg/m³, on a 1km grid.
+
+defra_pcm_pm25:
+  <<: *pcm
+  title: Defra modelled background PM2.5 (1km grid, latest year)
+  access:
+    type: html_link
+    page: https://uk-air.defra.gov.uk/data/pcm-data
+    steps: [{pattern: 'href="([^"]*/mappm25\d{4}g\.csv)"', order: desc}]
+  description: Annual mean fine particulate matter (PM2.5), µg/m³, on a 1km grid.
+
+defra_pcm_pm10:
+  <<: *pcm
+  title: Defra modelled background PM10 (1km grid, latest year)
+  priority: P1
+  access:
+    type: html_link
+    page: https://uk-air.defra.gov.uk/data/pcm-data
+    steps: [{pattern: 'href="([^"]*/mappm10\d{4}g\.csv)"', order: desc}]
+  description: Annual mean particulate matter (PM10, gravimetric), µg/m³, on a 1km grid.
+
+# ---------------------------------------------------------------------------------------
+# Health
+# ---------------------------------------------------------------------------------------
+
+ods_gp:
+  title: NHS ODS GP practices
+  theme: health
+  access: {type: http, url: "https://www.odsdatasearchandexport.nhs.uk/api/getReport?report=epraccur"}
+  format: csv
+  landing_page: https://www.odsdatasearchandexport.nhs.uk/
+  description: Every GP practice with status, role and postcode (headerless CSV).
+  licence: OGL-3.0
+  attribution: "Contains NHS England Organisation Data Service data licensed under the Open Government Licence v3.0."
+  cadence: daily
+  size_hint: 3MB
+
+gp_registrations:
+  title: Patients registered at a GP practice, by LSOA
+  theme: health
+  access:
+    type: html_link
+    page: https://digital.nhs.uk/data-and-information/publications/statistical/patients-registered-at-a-gp-practice
+    steps:
+      - pattern: 'href="(/data-and-information/publications/statistical/patients-registered-at-a-gp-practice/[a-z]+-\d{4})"'
+        order: date_desc
+      # The LSOA breakdown is quarterly, so monthly releases without it are skipped
+      - pattern: 'href="(https://files\.digital\.nhs\.uk/[^"]*gp-reg-pat-prac-lsoa[^"]*\.zip)"'
+  format: zip
+  extract: ["*lsoa-all.csv"]
+  description: Patients of each practice by the LSOA they live in, i.e. each practice's real catchment.
+  licence: OGL-3.0
+  attribution: "NHS England, Patients Registered at a GP Practice, licensed under the Open Government Licence v3.0."
+  cadence: quarterly
+  size_hint: 14MB zipped
+
+gp_workforce:
+  title: General Practice Workforce, practice level
+  theme: health
+  access:
+    type: html_link
+    page: https://digital.nhs.uk/data-and-information/publications/statistical/general-and-personal-medical-services
+    steps:
+      - pattern: 'href="(/data-and-information/publications/statistical/general-and-personal-medical-services/\d{1,2}-[a-z]+-\d{4})"'
+        order: date_desc
+      - pattern: 'href="(https://files\.digital\.nhs\.uk/[^"]*GPWPracticeCSV[^"]*\.zip)"'
+  format: zip
+  description: Full-time-equivalent GPs, nurses and other staff per practice.
+  licence: OGL-3.0
+  attribution: "NHS England, General Practice Workforce, licensed under the Open Government Licence v3.0."
+  cadence: monthly
+  size_hint: 6MB zipped
+
+# ---------------------------------------------------------------------------------------
+# Education & childcare
+# ---------------------------------------------------------------------------------------
+
+gias:
+  title: Get Information About Schools (all establishments)
+  theme: education
+  access:
+    type: http
+    url: "https://ea-edubase-api-prod.azurewebsites.net/edubase/downloads/public/edubasealldata{date}.csv"
+    date_format: "%Y%m%d"
+  format: csv
+  landing_page: https://get-information-schools.service.gov.uk/Downloads
+  description: Every school and college in England with phase, type, capacity, pupils and location (cp1252).
+  licence: OGL-3.0
+  attribution: "Department for Education, Get Information About Schools, licensed under the Open Government Licence v3.0."
+  cadence: daily
+  size_hint: 62MB
+
+ofsted_schools:
+  title: Ofsted state-funded school inspections (latest per school)
+  theme: education
+  access:
+    type: govuk_attachment
+    path: government/statistical-data-sets/monthly-management-information-ofsteds-school-inspections-outcomes
+    attachment_regex: 'state-funded_schools_-_latest_inspections_as_at_.*\.csv$'
+    pick: latest
+  format: csv
+  description: Latest inspection outcome per school, including the report-card grades used since November 2025.
+  licence: OGL-3.0
+  attribution: "Ofsted, Management information: state-funded schools, licensed under the Open Government Licence v3.0."
+  cadence: monthly
+  size_hint: 16MB
+
+# ---------------------------------------------------------------------------------------
+# Transport & connectivity
+# ---------------------------------------------------------------------------------------
+
+dft_connectivity:
+  title: DfT Transport Connectivity Metric
+  theme: transport
+  access:
+    type: govuk_attachment
+    path: government/publications/transport-connectivity-metric
+    attachment_regex: 'connectivity_metrics_\d{4}\.ods$'
+  format: ods
+  description: 0–100 connectivity scores by mode (walk, cycle, public transport, car) and purpose, per LSOA.
+  licence: OGL-3.0
+  attribution: "Department for Transport, Transport Connectivity Metric, licensed under the Open Government Licence v3.0."
+  cadence: annual
+  size_hint: 65MB
+  notes: Relative scores, not travel times; an official statistic in development.
+
+# ---------------------------------------------------------------------------------------
+# Amenities
+# ---------------------------------------------------------------------------------------
+
+osm_england:
+  title: OpenStreetMap England extract (Geofabrik)
+  theme: amenities
+  access: {type: http, url: "https://download.geofabrik.de/europe/united-kingdom/england-latest.osm.pbf"}
+  format: pbf
+  landing_page: https://download.geofabrik.de/europe/united-kingdom/england.html
+  description: Pubs, cafés, restaurants, shops, libraries, leisure and other amenities mapped by OpenStreetMap contributors.
+  licence: ODbL-1.0
+  attribution: "© OpenStreetMap contributors, available under the Open Database Licence (ODbL)."
+  cadence: daily
+  size_hint: 1.6GB
+
+fsa_fhrs:
+  title: Food Standards Agency food hygiene ratings (all establishments)
+  theme: amenities
+  access: {type: http, url: "https://safhrsprodstorage.blob.core.windows.net/opendatafileblobstorage/FHRS_All_en-GB.csv"}
+  format: csv
+  landing_page: https://ratings.food.gov.uk/open-data
+  description: Every food business inspected in England, Wales and Northern Ireland with its 0–5 hygiene rating, type and location.
+  licence: OGL-3.0
+  attribution: "Food Standards Agency food hygiene rating data, licensed under the Open Government Licence v3.0."
+  cadence: daily
+  size_hint: 300MB

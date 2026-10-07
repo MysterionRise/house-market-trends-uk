@@ -44,7 +44,12 @@ def _resolve(args: argparse.Namespace) -> int:
             print(f"{'ok  ' if ok else 'FAIL'} {slug:24} {note}")
             failures += not ok
         else:
-            resolved = resolve_and_lock(slug, registry[slug], session)
+            try:
+                resolved = resolve_and_lock(slug, registry[slug], session)
+            except Exception as e:  # report and keep going; exit status says it failed
+                print(f"FAIL {slug:24} {e}")
+                failures += 1
+                continue
             print(f"{slug:24} {resolved.get('title') or ''} {resolved.get('version') or ''}")
     return 1 if failures else 0
 
@@ -95,6 +100,14 @@ def _validate(args: argparse.Namespace) -> int:
     return 1 if problems else 0
 
 
+def _docs(args: argparse.Namespace) -> int:
+    from lix_pipeline.docs import write_docs
+
+    for path in write_docs():
+        print(f"wrote {path}")
+    return 0
+
+
 def _add_selection(parser: argparse.ArgumentParser) -> None:
     which = parser.add_mutually_exclusive_group(required=True)
     which.add_argument("--slug", help="One dataset")
@@ -131,6 +144,9 @@ def main(argv: list[str] | None = None) -> None:
     validate = sub.add_parser("validate", help="Check staged outputs")
     validate.add_argument("target", choices=["geo"])
     validate.set_defaults(func=_validate)
+
+    docs = sub.add_parser("docs", help="Regenerate docs/data-sources.md and ATTRIBUTION.md")
+    docs.set_defaults(func=_docs)
 
     args = parser.parse_args(argv)
     ensure_dirs()

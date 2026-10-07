@@ -26,21 +26,25 @@ The pipeline downloads, stages and joins the open datasets below:
 - CI runs ruff and pytest on every push and PR to `master` (tests never touch the network);
   a nightly job checks every source is still reachable
 
-| Dataset | Granularity | Source |
-|---------|-------------|--------|
-| HM Land Registry Price Paid | Transaction, aggregated to LSOA medians | [Land Registry](https://www.gov.uk/government/statistical-data-sets/price-paid-data-downloads) |
-| English Indices of Deprivation 2025 | LSOA 2021 | [GOV.UK](https://www.gov.uk/government/statistics/english-indices-of-deprivation-2025) |
-| NSPL postcode lookup (Aug 2026) | Postcode to OA/LSOA/MSOA/LAD | [ONS Geoportal](https://geoportal.statistics.gov.uk) |
-| LSOA, MSOA and local authority boundaries | Polygons | [ONS Geoportal](https://geoportal.statistics.gov.uk) |
-| LSOA population-weighted centroids, OA lookup, LSOA 2011→2021, rural–urban class | LSOA / OA | [ONS Geoportal](https://geoportal.statistics.gov.uk) |
-| MSOA names | MSOA | [House of Commons Library](https://houseofcommonslibrary.github.io/msoanames/) |
-| OS Open Names (settlements) | Place | [Ordnance Survey](https://www.ordnancesurvey.co.uk/products/os-open-names) |
+Datasets ingested so far (full list with licences: [docs/data-sources.md](docs/data-sources.md)):
+
+| Theme | Sources |
+|-------|---------|
+| Geography | NSPL postcode lookup, LSOA/MSOA/local authority boundaries, population-weighted centroids, OA and 2011→2021 lookups, rural–urban class, House of Commons Library MSOA names, OS Open Names |
+| Community | English Indices of Deprivation 2025; Census 2021 (population, density, age, households, health, accommodation, cars, tenure, commuting, qualifications) |
+| Housing | HM Land Registry Price Paid (LSOA medians) |
+| Safety | police.uk street crime, 36 months (Greater Manchester Police publishes none; flagged) |
+| Environment | Defra modelled NO₂, PM2.5 and PM10 (1km, population-weighted to LSOAs) |
+| Health | NHS GP practices, patients registered by LSOA (real catchments), GP workforce |
+| Education | Get Information About Schools; Ofsted inspections blended across the 2024 and 2025 framework changes |
+| Transport | DfT Transport Connectivity Metric |
+| Amenities | OpenStreetMap points of interest; Food Standards Agency hygiene ratings |
 
 ## Planned
 
-- About 30 more open datasets: police.uk crime, Defra air quality, NHS GP access, schools and
-  nurseries (Ofsted), DfT transport connectivity, broadband, flood risk, green space, and
-  "well-run pubs" from OpenStreetMap and Food Standards Agency hygiene ratings
+- More open datasets: broadband, flood risk, green space, nurseries, pharmacies, collisions,
+  council tax, income, life expectancy, public transport stops, supermarkets and more
+- "Well-run pubs": OpenStreetMap pubs matched to Food Standards Agency hygiene ratings
 - A composite score per LSOA, with persona presets and weights users can tune, and the method written down
 - A generative-UI front end where an AI assistant answers questions with maps, area cards and comparisons
   (Pydantic AI + AG-UI + CopilotKit, any LLM provider)
