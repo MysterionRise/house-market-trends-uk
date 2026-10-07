@@ -35,6 +35,13 @@ def compare_areas(
             column = "msoa21cd" if place.kind == "msoa" else "lad_cd"
             rows = scored.filter(pl.col(column) == place.code)
             label, level, code = place.name, place.kind, place.code
+        elif place and place.kind == "place" and place.lsoa21cd:
+            # A named suburb or village means its neighbourhood, not one LSOA of it
+            home = scored.filter(pl.col("lsoa21cd") == place.lsoa21cd).row(0, named=True)
+            code, level = home["msoa21cd"], "msoa"
+            rows = scored.filter(pl.col("msoa21cd") == code)
+            same = home["msoa_name"].lower().startswith(place.name.lower())
+            label = home["msoa_name"] if same else f"{place.name} ({home['msoa_name']})"
         else:
             code = resolve_lsoa(store, ref)
             rows = scored.filter(pl.col("lsoa21cd") == code)

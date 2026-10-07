@@ -119,12 +119,25 @@ def resolve_point(store: Store, ref: str) -> tuple[Point, str]:
 
 
 def resolve_lsoa(store: Store, ref: str) -> str:
-    """An LSOA for a postcode, LSOA code or place name (the LSOA it sits in)."""
-    places = search_place(store, ref, limit=1)
-    if places and places[0].lsoa21cd:
-        return places[0].lsoa21cd
-    if places and places[0].centre:
-        return nearest_lsoa(store, places[0].centre)
+    """An LSOA for a postcode, LSOA code or place name (the LSOA it sits in).
+
+    A local authority or region resolves through its namesake place ("Manchester" the
+    city, whose point is the city centre) rather than the middle of its bounding box,
+    which is often a suburb.
+    """
+    places = search_place(store, ref, limit=6)
+    if not places:
+        raise LookupError(f"Couldn't find an area for {ref!r}")
+    top = places[0]
+    if top.lsoa21cd:
+        return top.lsoa21cd
+    namesake = next(
+        (p for p in places[1:] if p.lsoa21cd and p.name.lower() == top.name.lower()), None
+    )
+    if namesake:
+        return namesake.lsoa21cd
+    if top.centre:
+        return nearest_lsoa(store, top.centre)
     raise LookupError(f"Couldn't find an area for {ref!r}")
 
 

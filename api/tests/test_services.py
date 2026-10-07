@@ -132,3 +132,31 @@ class TestSqlGuard:
     def test_row_cap(self, guard):
         r = guard.run("SELECT * FROM range(100)", max_rows=10)
         assert len(r.rows) == 10 and r.truncated
+
+
+def test_local_authority_resolves_to_its_namesake_place(store):
+    from lix_api.services.search import resolve_lsoa
+
+    # "Leeds" is the local authority first; its LSOA is where Leeds (the city) is, not
+    # the middle of the authority's bounding box
+    assert resolve_lsoa(store, "Leeds") == "E01000002"
+
+
+def test_compare_a_named_suburb_as_its_neighbourhood(store):
+    from lix_api.services.compare import compare_areas
+
+    result = compare_areas(store, ["Headingley", "Brighton and Hove"])
+    headingley = result.areas[0]
+    assert headingley.level == "msoa" and headingley.code == "E02000001"
+
+
+def test_weights_accept_labels_and_everyday_words(store):
+    from lix_api.services.scoring import resolve_weights
+
+    name, themes, _ = resolve_weights(
+        store, "Young Professional", {"Schools & childcare": 3, "crime": 2, "Transport": 0}
+    )
+    assert name.startswith("young_professional")
+    assert themes["education"] == 3 and themes["safety"] == 2 and themes["transport"] == 0
+    with pytest.raises(ValueError, match="Unknown themes"):
+        resolve_weights(store, None, {"vibes": 2})

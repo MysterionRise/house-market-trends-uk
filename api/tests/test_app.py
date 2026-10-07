@@ -170,3 +170,42 @@ def test_model_errors_get_plain_messages():
     assert "out of credit" in friendly_message(ModelHTTPError(402, "m"))
     assert "busy" in friendly_message(ModelHTTPError(429, "m"))
     assert "still work" in friendly_message(RuntimeError("boom"))
+
+
+def test_state_changing_tools_run_before_later_tools():
+    """Models often emit set_weights and rank_areas together; run in parallel, the ranking
+    could read the old weights (seen in the real-model eval). Tools that change the shared
+    state are barriers: tools emitted after them start only once they finish."""
+    from lix_api.agent.agent import agent
+
+    tools = agent._function_toolset.tools
+    for name in ("set_weights", "show_on_map", "add_to_shortlist", "remove_from_shortlist"):
+        assert tools[name].sequential, name
+    assert not tools["rank_areas"].sequential
+
+
+def test_set_weights_stores_theme_ids(client):
+    from pydantic_ai.messages import ModelResponse, TextPart, ToolCallPart, ToolReturnPart
+    from pydantic_ai.models.function import DeltaToolCall, FunctionModel
+
+    from lix_api.agent.agent import agent
+
+    args = {"preset": "Families", "theme_weights": {"crime": 3}}
+
+    def call(messages, info):
+        if any(isinstance(p, ToolReturnPart) for p in messages[-1].parts):
+            return ModelResponse(parts=[TextPart("done")])
+        return ModelResponse(parts=[ToolCallPart("set_weights", args)])
+
+    async def stream(messages, info):
+        response = call(messages, info)
+        part = response.parts[0]
+        if isinstance(part, TextPart):
+            yield part.content
+        else:
+            yield {0: DeltaToolCall(name="set_weights", json_args=json.dumps(args))}
+
+    with agent.override(model=FunctionModel(call, stream_function=stream)):
+        events = _agui(client, "weights for families, safety matters most")
+    snapshot = next(e for e in events if e["type"] == "STATE_SNAPSHOT")["snapshot"]
+    assert snapshot["preset"] == "family" and snapshot["theme_weights"] == {"safety": 3}

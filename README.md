@@ -74,6 +74,9 @@ make eval MODEL=openrouter:anthropic/claude-opus-5.5 CASES=family_leeds_budget,c
 make eval MODEL=openrouter:anthropic/claude-opus-5.5     # all cases; costs real money
 ```
 
+Claude Opus 5.5, Claude Haiku 5.5 and Qwen 3.8 27B (open weights) all pass the 30 cases;
+results, costs and what the evals caught are in [docs/evals.md](docs/evals.md).
+
 ### Running it with Docker
 
 ```bash

@@ -26,7 +26,7 @@ from lix_api.models import (
     RankResult,
 )
 from lix_api.services import areas, catalogue, compare, explain, pois, ranking, search
-from lix_api.services.scoring import resolve_weights
+from lix_api.services.scoring import match_preset, match_themes, resolve_weights
 from lix_api.store import get_store
 
 Deps = StateDeps[LiveabilityState]
@@ -41,8 +41,9 @@ community & wellbeing. Scores are 0–100 (higher is better) with an England per
 How to work:
 - Use the tools for every fact and number. Never estimate scores, prices or distances.
 - The page renders each tool result as a card, table or map, so don't repeat the
-  numbers in prose. Reply in one to three sentences that interpret the result:
-  what stands out, trade-offs, and a sensible next step.
+  numbers in prose. Keep replies short: at most three sentences (about 60 words) that
+  interpret the result (what stands out, the trade-offs, a sensible next step), with
+  no headings or bullet lists. Go longer only when the user asks for detail.
 - Names can be ambiguous ("Clapham" is in London and in North Yorkshire). If a tool
   picks a place the user probably didn't mean, say which one you used.
 - When the user describes priorities ("we have two kids", "I commute to Manchester"),
@@ -213,7 +214,8 @@ def explain_score(ctx: RunContext[Deps], area: str, theme: str | None = None) ->
     return explain.explain_score(get_store(), area, theme=theme, **_weights(ctx))
 
 
-@agent.tool
+# Changes the shared state: tools called after it in the same turn see the change
+@agent.tool(sequential=True)
 @_recoverable
 def set_weights(
     ctx: RunContext[Deps],
@@ -232,10 +234,10 @@ def set_weights(
     store = get_store()
     s = ctx.deps.state
     if preset:
-        s.preset = preset
+        s.preset = match_preset(store, preset)
         s.theme_weights, s.indicator_weights = {}, {}
     if theme_weights:
-        s.theme_weights = {**s.theme_weights, **theme_weights}
+        s.theme_weights = {**s.theme_weights, **match_themes(store, theme_weights)}
     if indicator_weights:
         s.indicator_weights = {**s.indicator_weights, **indicator_weights}
     name, themes, multipliers = resolve_weights(
@@ -246,7 +248,8 @@ def set_weights(
     )
 
 
-@agent.tool
+# Changes the shared state: tools called after it in the same turn see the change
+@agent.tool(sequential=True)
 @_recoverable
 def show_on_map(
     ctx: RunContext[Deps], area: str | None = None, layer: str | None = None
@@ -270,7 +273,8 @@ def show_on_map(
     return _with_state(ctx, {"bbox": s.map.bbox, "layer": s.map.layer})
 
 
-@agent.tool
+# Changes the shared state: tools called after it in the same turn see the change
+@agent.tool(sequential=True)
 @_recoverable
 def add_to_shortlist(ctx: RunContext[Deps], area: str, note: str | None = None) -> ToolReturn:
     """Save an area to the user's shortlist."""
@@ -286,7 +290,8 @@ def add_to_shortlist(ctx: RunContext[Deps], area: str, note: str | None = None) 
     return _with_state(ctx, s.shortlist)
 
 
-@agent.tool
+# Changes the shared state: tools called after it in the same turn see the change
+@agent.tool(sequential=True)
 @_recoverable
 def remove_from_shortlist(ctx: RunContext[Deps], code: str) -> ToolReturn:
     """Remove an area from the shortlist by its code."""
