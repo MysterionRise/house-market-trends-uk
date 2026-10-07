@@ -1,0 +1,590 @@
+# Indicator catalogue, validated by lix_core.config.IndicatorCatalogue.
+#
+# Each indicator is built per England LSOA by `builder` (a function under
+# lix_pipeline.indicators) and normalised to a 0–100 score where higher is better:
+# `rank` (England percentile, the default), `scale` (its own 0–1 or 0–100 scale) or
+# `threshold` (100 at `good` or better, 0 at `bad` or worse; log scale with log1p).
+# role: scored (in the composite) · context (shown, not scored) · diagnostic (QA and
+# imputation only). Within an overlap_group at most one indicator is scored, so the
+# same thing is never counted twice (e.g. IoD's crime domain vs police.uk rates).
+# The method is written up in docs/methodology.md.
+
+themes:
+  safety:
+    label: Safety
+    description: Recorded crime and anti-social behaviour where people live.
+  environment:
+    label: Environment
+    description: Clean air and access to parks and nature.
+  health:
+    label: Health services
+    description: How easily residents can see a GP, pharmacist or dentist.
+  education:
+    label: Schools & childcare
+    description: Good schools and nurseries within reach.
+  transport:
+    label: Transport & connectivity
+    description: How well an area connects to jobs and services by every mode.
+  amenities:
+    label: Amenities & nightlife
+    description: Shops, cafés, well-run pubs, leisure and culture nearby.
+  housing:
+    label: Housing & affordability
+    description: What homes cost and the condition of the housing stock.
+  community:
+    label: Community & wellbeing
+    description: Income, work and health of the people who live there.
+
+indicators:
+
+  # ----------------------------------------------------------------------- safety
+  - id: crime_violence
+    theme: safety
+    label: Violent and sexual offences
+    description: Recorded violence and sexual offences per 1,000 residents a year (36-month average).
+    unit: per 1,000 residents a year
+    direction: lower_better
+    sources: [police_crime, iod_2025]
+    builder: safety:crime_rate
+    params: {types: ["Violence and sexual offences"]}
+    log1p: true
+    weight: 1.5
+    caveats: Rates use residents as the denominator, so town centres with few residents and many visitors score badly. Greater Manchester Police publishes no data; its area is estimated from IoD 2025's crime domain.
+    overlap_group: violence_disorder
+
+  - id: crime_burglary
+    theme: safety
+    label: Burglary
+    description: Recorded burglaries per 1,000 residents a year.
+    unit: per 1,000 residents a year
+    direction: lower_better
+    sources: [police_crime, iod_2025]
+    builder: safety:crime_rate
+    params: {types: ["Burglary"]}
+    log1p: true
+
+  - id: crime_asb
+    theme: safety
+    label: Anti-social behaviour
+    description: Reported anti-social behaviour incidents per 1,000 residents a year.
+    unit: per 1,000 residents a year
+    direction: lower_better
+    sources: [police_crime, iod_2025]
+    builder: safety:crime_rate
+    params: {types: ["Anti-social behaviour"]}
+    log1p: true
+
+  - id: crime_theft
+    theme: safety
+    label: Robbery, theft and vehicle crime
+    description: Robbery, theft from the person, vehicle crime and bicycle theft per 1,000 residents a year.
+    unit: per 1,000 residents a year
+    direction: lower_better
+    sources: [police_crime, iod_2025]
+    builder: safety:crime_rate
+    params: {types: ["Robbery", "Theft from the person", "Vehicle crime", "Bicycle theft"]}
+    log1p: true
+
+  - id: crime_damage_disorder
+    theme: safety
+    label: Criminal damage and public order
+    description: Criminal damage, arson and public order offences per 1,000 residents a year.
+    unit: per 1,000 residents a year
+    direction: lower_better
+    sources: [police_crime, iod_2025]
+    builder: safety:crime_rate
+    params: {types: ["Criminal damage and arson", "Public order"]}
+    log1p: true
+    role: context
+    overlap_group: violence_disorder
+
+  - id: iod_crime
+    theme: safety
+    label: IoD 2025 crime domain score
+    description: Modelled risk of personal and material victimisation (2021–2023 data).
+    unit: score
+    direction: lower_better
+    sources: [iod_2025]
+    builder: common:iod
+    params: {column: crime_score}
+    role: diagnostic
+    overlap_group: crime
+
+  # ------------------------------------------------------------------ environment
+  - id: no2
+    theme: environment
+    label: Nitrogen dioxide (NO₂)
+    description: Annual mean background NO₂ where residents live (Defra 1km model).
+    unit: µg/m³
+    direction: lower_better
+    sources: [defra_pcm_no2, nspl]
+    builder: environment:pcm
+    params: {slug: defra_pcm_no2}
+    normalise: threshold
+    good: 10   # WHO annual guideline
+    bad: 30
+    overlap_group: air_quality_no2
+    caveats: Background concentrations; roadside levels on busy streets are higher. WHO guideline is 10 µg/m³.
+
+  - id: pm25
+    theme: environment
+    label: Fine particles (PM2.5)
+    description: Annual mean background PM2.5 where residents live (Defra 1km model).
+    unit: µg/m³
+    direction: lower_better
+    sources: [defra_pcm_pm25, nspl]
+    builder: environment:pcm
+    params: {slug: defra_pcm_pm25}
+    normalise: threshold
+    good: 5    # WHO annual guideline
+    bad: 12
+    caveats: WHO guideline is 5 µg/m³.
+
+  - id: green_space_access
+    theme: environment
+    label: Parks and nature nearby
+    description: Parks, nature reserves and dog parks within a 1km walk, weighted by distance.
+    unit: index 0–1
+    direction: higher_better
+    sources: [osm_england, nspl]
+    builder: amenities:osm_access
+    params: {values: [park, nature_reserve, dog_park], radius_m: 1000, cap: 5}
+    normalise: scale
+    weight: 0.5
+    caveats: From OpenStreetMap parks, which misses open countryside and so understates rural areas; to be replaced with vegetation and greenspace data.
+
+  - id: iod_outdoors
+    theme: environment
+    label: IoD 2025 outdoor living environment
+    description: Air quality and road traffic accidents (IoD 2025 sub-domain).
+    unit: score
+    direction: lower_better
+    sources: [iod_2025]
+    builder: common:iod
+    params: {column: sub_outdoors_score}
+    role: diagnostic
+
+  # ----------------------------------------------------------------------- health
+  - id: gp_distance
+    theme: health
+    label: Distance to nearest GP practice
+    description: Average straight-line distance from homes to the nearest GP practice.
+    unit: metres
+    direction: lower_better
+    sources: [ods_gp, nspl]
+    builder: health:nearest_gp
+    normalise: threshold
+    good: 1000
+    bad: 8000
+    log1p: true
+
+  - id: patients_per_gp
+    theme: health
+    label: Patients per GP
+    description: Registered patients per full-time-equivalent qualified GP at the practices residents actually use.
+    unit: patients per FTE GP
+    direction: lower_better
+    sources: [gp_registrations, gp_workforce]
+    builder: health:patients_per_gp
+    normalise: threshold
+    good: 1500
+    bad: 3500
+    caveats: Excludes GPs in training; practices reporting under one full-time GP are left out of the average.
+
+  - id: pharmacy_distance
+    theme: health
+    label: Distance to nearest pharmacy
+    description: Average straight-line distance from homes to the nearest pharmacy.
+    unit: metres
+    direction: lower_better
+    sources: [osm_england, nspl]
+    builder: amenities:osm_nearest
+    params: {values: [pharmacy]}
+    normalise: threshold
+    good: 1000
+    bad: 8000
+    log1p: true
+    weight: 0.75
+
+  - id: dentist_distance
+    theme: health
+    label: Distance to nearest dentist
+    description: Average straight-line distance from homes to the nearest dental practice.
+    unit: metres
+    direction: lower_better
+    sources: [osm_england, nspl]
+    builder: amenities:osm_nearest
+    params: {values: [dentist]}
+    normalise: threshold
+    good: 1500
+    bad: 10000
+    log1p: true
+    weight: 0.5
+    caveats: Whether a practice takes new NHS patients isn't published as open data.
+
+  # -------------------------------------------------------------------- education
+  - id: primary_school_access
+    theme: education
+    label: Good primary schools nearby
+    description: State primary schools within 2km, each weighted by its inspection quality and distance.
+    unit: index 0–1
+    direction: higher_better
+    sources: [gias, ofsted_schools, nspl]
+    builder: education:school_access
+    params: {phases: [Primary, All-through, Middle deemed primary], radius_m: 2000, cap: 4}
+    normalise: scale
+    weight: 1.5
+    caveats: Distance isn't admission; oversubscribed schools admit by catchment or faith criteria.
+
+  - id: secondary_school_access
+    theme: education
+    label: Good secondary schools nearby
+    description: State secondary schools within 5km, each weighted by its inspection quality and distance.
+    unit: index 0–1
+    direction: higher_better
+    sources: [gias, ofsted_schools, nspl]
+    builder: education:school_access
+    params: {phases: [Secondary, All-through, Middle deemed secondary], radius_m: 5000, cap: 4}
+    normalise: scale
+    weight: 1.5
+
+  - id: nursery_access
+    theme: education
+    label: Nurseries nearby
+    description: Nursery schools, nursery classes and childcare settings within 1km.
+    unit: index 0–1
+    direction: higher_better
+    sources: [gias, osm_england, nspl]
+    builder: education:nursery_access
+    params: {radius_m: 1000, cap: 5}
+    normalise: scale
+    caveats: Childminders aren't located (Ofsted publishes them by local authority only).
+
+  # -------------------------------------------------------------------- transport
+  - id: connectivity_overall
+    theme: transport
+    label: Overall connectivity
+    description: DfT connectivity score across all modes and destinations.
+    unit: score 0–100
+    direction: higher_better
+    sources: [dft_connectivity]
+    builder: common:column
+    params: {slug: dft_connectivity, column: tcm_overall}
+    normalise: scale
+    scale_max: 100
+    weight: 1.5
+    overlap_group: connectivity
+
+  - id: connectivity_public_transport
+    theme: transport
+    label: Public transport connectivity
+    description: DfT connectivity score for public transport to all destinations.
+    unit: score 0–100
+    direction: higher_better
+    sources: [dft_connectivity]
+    builder: common:column
+    params: {slug: dft_connectivity, column: tcm_overall_public_transport}
+    normalise: scale
+    scale_max: 100
+    role: context
+    overlap_group: connectivity
+
+  - id: connectivity_walking
+    theme: transport
+    label: Walkability
+    description: DfT connectivity score for walking to all destinations.
+    unit: score 0–100
+    direction: higher_better
+    sources: [dft_connectivity]
+    builder: common:column
+    params: {slug: dft_connectivity, column: tcm_overall_walking}
+    normalise: scale
+    scale_max: 100
+    role: context
+    overlap_group: connectivity
+
+  - id: connectivity_cycling
+    theme: transport
+    label: Cycling connectivity
+    description: DfT connectivity score for cycling to all destinations.
+    unit: score 0–100
+    direction: higher_better
+    sources: [dft_connectivity]
+    builder: common:column
+    params: {slug: dft_connectivity, column: tcm_overall_cycling}
+    normalise: scale
+    scale_max: 100
+    weight: 0.5
+    role: context
+    overlap_group: connectivity
+
+  # -------------------------------------------------------------------- amenities
+  - id: well_run_pubs
+    theme: amenities
+    label: Well-run pubs nearby
+    description: Pubs within a 15-minute walk that hold a food hygiene rating of 4 or 5 from the last three years, weighted by distance, with a small bonus for real ale, food or outdoor seating.
+    unit: index 0–1
+    direction: higher_better
+    sources: [osm_england, fsa_fhrs, nspl]
+    builder: pubs:well_run_pub_access
+    params: {radius_m: 1200, cap: 6}
+    normalise: scale
+    caveats: Hygiene ratings measure how well a pub is run, not the beer or the atmosphere.
+
+  - id: food_and_drink
+    theme: amenities
+    label: Cafés and restaurants
+    description: Cafés and restaurants within 800m, weighted by distance.
+    unit: index 0–1
+    direction: higher_better
+    sources: [osm_england, nspl]
+    builder: amenities:osm_access
+    params: {values: [cafe, restaurant], radius_m: 800, cap: 15}
+    normalise: scale
+    overlap_group: high_street
+
+  - id: supermarket_distance
+    theme: amenities
+    label: Distance to nearest supermarket
+    description: Average straight-line distance from homes to the nearest supermarket.
+    unit: metres
+    direction: lower_better
+    sources: [osm_england, nspl]
+    builder: amenities:osm_nearest
+    params: {values: [supermarket]}
+    normalise: threshold
+    good: 1000
+    bad: 10000
+    log1p: true
+
+  - id: shops
+    theme: amenities
+    label: Shops nearby
+    description: Shops of every kind within 800m, weighted by distance.
+    unit: index 0–1
+    direction: higher_better
+    sources: [osm_england, nspl]
+    builder: amenities:osm_access
+    params: {key: shop, radius_m: 800, cap: 30}
+    normalise: scale
+    weight: 0.75
+    role: context
+    overlap_group: high_street
+
+  - id: leisure
+    theme: amenities
+    label: Gyms, sports centres and pools
+    description: Fitness centres, sports centres and swimming pools within 2km.
+    unit: index 0–1
+    direction: higher_better
+    sources: [osm_england, nspl]
+    builder: amenities:osm_access
+    params: {values: [fitness_centre, sports_centre, swimming_pool], radius_m: 2000, cap: 6}
+    normalise: scale
+    weight: 0.75
+
+  - id: culture
+    theme: amenities
+    label: Libraries, cinemas, theatres and museums
+    description: Libraries, cinemas, theatres, arts centres, museums and galleries within 2km.
+    unit: index 0–1
+    direction: higher_better
+    sources: [osm_england, nspl]
+    builder: amenities:osm_access
+    params: {values: [library, cinema, theatre, arts_centre, museum, gallery], radius_m: 2000, cap: 6}
+    normalise: scale
+    weight: 0.75
+
+  - id: fast_food
+    theme: amenities
+    label: Fast-food outlets nearby
+    description: Fast-food outlets within 800m.
+    unit: index 0–1
+    direction: lower_better
+    sources: [osm_england, nspl]
+    builder: amenities:osm_access
+    params: {values: [fast_food], radius_m: 800, cap: 15}
+    normalise: scale
+    role: context
+
+  - id: gambling
+    theme: amenities
+    label: Betting shops and casinos nearby
+    description: Betting shops, gambling venues and casinos within 800m.
+    unit: index 0–1
+    direction: lower_better
+    sources: [osm_england, nspl]
+    builder: amenities:osm_access
+    params: {values: [gambling, casino, bookmaker, lottery], radius_m: 800, cap: 5}
+    normalise: scale
+    role: context
+
+  # ---------------------------------------------------------------------- housing
+  - id: house_price
+    theme: housing
+    label: Typical house price
+    description: Median sale price over the last 12 months, steadied towards the surrounding area where sales are few.
+    unit: £
+    direction: lower_better
+    sources: [price_paid, nspl]
+    builder: housing:median_price
+    weight: 2.0
+    caveats: Lower prices score as more affordable; the scale reflects price, not value.
+
+  - id: housing_condition
+    theme: housing
+    label: Housing condition
+    description: IoD 2025 indoors sub-domain (homes in poor condition or without central heating).
+    unit: score
+    direction: lower_better
+    sources: [iod_2025]
+    builder: common:iod
+    params: {column: sub_indoors_score}
+
+  - id: price_change
+    theme: housing
+    label: House price change
+    description: Change in the median sale price, last 12 months against the 12 months before.
+    unit: "%"
+    direction: higher_better
+    sources: [price_paid]
+    builder: common:column
+    params: {slug: price_paid, column: yoy_change_pct}
+    role: context
+    caveats: Noisy where sales are few.
+
+  # -------------------------------------------------------------------- community
+  - id: income_deprivation
+    theme: community
+    label: Income deprivation
+    description: Share of residents on low incomes (IoD 2025 income domain).
+    unit: rate
+    direction: lower_better
+    sources: [iod_2025]
+    builder: common:iod
+    params: {column: income_score}
+    overlap_group: income_work
+
+  - id: employment_deprivation
+    theme: community
+    label: Employment deprivation
+    description: Share of working-age residents involuntarily out of work (IoD 2025 employment domain).
+    unit: rate
+    direction: lower_better
+    sources: [iod_2025]
+    builder: common:iod
+    params: {column: employment_score}
+    role: context
+    overlap_group: income_work
+
+  - id: health_deprivation
+    theme: community
+    label: Health and disability
+    description: Premature death, illness and disability (IoD 2025 health deprivation and disability domain).
+    unit: score
+    direction: lower_better
+    sources: [iod_2025]
+    builder: common:iod
+    params: {column: health_score}
+    overlap_group: population_health
+    caveats: Built to account for age, unlike self-reported health, which flatters areas of young adults.
+
+  - id: good_health
+    theme: community
+    label: Good health (self-reported)
+    description: Residents describing their health as good or very good (Census 2021).
+    unit: "%"
+    direction: higher_better
+    sources: [census_ts037]
+    builder: community:census_share
+    params: {table: census_ts037, numerator: [very_good_health, good_health]}
+    role: context
+    overlap_group: population_health
+    caveats: Not adjusted for age, so student areas look healthiest.
+
+  - id: imd
+    theme: community
+    label: Index of Multiple Deprivation 2025
+    description: Overall deprivation score; not scored because its domains overlap other indicators.
+    unit: score
+    direction: lower_better
+    sources: [iod_2025]
+    builder: common:iod
+    params: {column: imd_score}
+    role: context
+
+  - id: population_density
+    theme: community
+    label: Population density
+    description: Residents per square kilometre (Census 2021).
+    unit: people per km²
+    direction: lower_better
+    sources: [census_ts006]
+    builder: common:column
+    params: {slug: census_ts006, column: persons_per_square_kilometre}
+    role: context
+
+  - id: households_with_children
+    theme: community
+    label: Households with dependent children
+    description: Share of households with dependent children (Census 2021).
+    unit: "%"
+    direction: higher_better
+    sources: [census_ts003]
+    builder: community:census_share
+    params:
+      table: census_ts003
+      numerator:
+        - single_family_household_married_or_civil_partnership_couple_dependent_children
+        - single_family_household_cohabiting_couple_family_with_dependent_children
+        - single_family_household_lone_parent_family_with_dependent_children
+        - other_household_types_with_dependent_children
+    role: context
+
+  - id: aged_65_plus
+    theme: community
+    label: Residents aged 65 and over
+    description: Share of residents aged 65 or over (Census 2021).
+    unit: "%"
+    direction: higher_better
+    sources: [census_ts007a]
+    builder: community:census_share
+    params:
+      table: census_ts007a
+      numerator: [aged_65_to_69_years, aged_70_to_74_years, aged_75_to_79_years, aged_80_to_84_years, aged_85_years_and_over]
+    role: context
+
+  - id: owner_occupied
+    theme: community
+    label: Owner-occupied homes
+    description: Share of households that own their home outright or with a mortgage (Census 2021).
+    unit: "%"
+    direction: higher_better
+    sources: [census_ts054]
+    builder: community:census_share
+    params: {table: census_ts054, numerator: [owned]}
+    role: context
+
+  - id: no_car
+    theme: community
+    label: Households without a car
+    description: Share of households with no car or van (Census 2021).
+    unit: "%"
+    direction: higher_better
+    sources: [census_ts045]
+    builder: community:census_share
+    params: {table: census_ts045, numerator: [no_cars_or_vans_in_household]}
+    role: context
+
+  - id: sustainable_commute
+    theme: community
+    label: Walk, cycle or public transport to work
+    description: Share of workers commuting on foot, by bike or by public transport (Census 2021, during COVID-19 restrictions).
+    unit: "%"
+    direction: higher_better
+    sources: [census_ts061]
+    builder: community:census_share
+    params:
+      table: census_ts061
+      numerator: [underground_metro_light_rail_tram, train, bus_minibus_or_coach, bicycle, on_foot]
+    role: context

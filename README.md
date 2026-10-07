@@ -3,7 +3,7 @@
 > **Being restructured.** This repo started in 2020 as a plan to analyse UK house price trends.
 > It is now being rebuilt as a data platform that scores **English** neighbourhoods on safety,
 > environment, health access, schools, transport, amenities, affordability and community, using
-> open data only. The data pipeline below works; the scoring model and the front end are not built yet.
+> open data only. The data pipeline and scoring model work; the API and front end are next.
 
 Everything is computed at **LSOA** level (Lower Layer Super Output Area, 1,000 to 3,000 residents
 each; 33,755 in England).
@@ -23,6 +23,11 @@ The pipeline downloads, stages and joins the open datasets below:
   population, area and map bounding box; `lix validate geo` checks it
 - helpers bring other geographies onto LSOAs: points, output areas, MSOA/local-authority values,
   1km grids (sampled at postcodes, so population-weighted) and distance-based access to places
+- `lix indicators` builds 43 indicators (24 scored across 8 themes) from
+  [`config/indicators.yaml`](config/indicators.yaml); `lix score` turns them into theme and
+  overall scores per LSOA for five persona presets ([`config/weights.yaml`](config/weights.yaml)),
+  plus a QA report. The method, including how Greater Manchester's missing crime data and
+  Ofsted's framework changes are handled, is in [docs/methodology.md](docs/methodology.md)
 - CI runs ruff and pytest on every push and PR to `master` (tests never touch the network);
   a nightly job checks every source is still reachable
 
@@ -44,8 +49,7 @@ Datasets ingested so far (full list with licences: [docs/data-sources.md](docs/d
 
 - More open datasets: broadband, flood risk, green space, nurseries, pharmacies, collisions,
   council tax, income, life expectancy, public transport stops, supermarkets and more
-- "Well-run pubs": OpenStreetMap pubs matched to Food Standards Agency hygiene ratings
-- A composite score per LSOA, with persona presets and weights users can tune, and the method written down
+- Map tiles, an API and an AI assistant that can rank, compare and explain areas
 - A generative-UI front end where an AI assistant answers questions with maps, area cards and comparisons
   (Pydantic AI + AG-UI + CopilotKit, any LLM provider)
 
@@ -57,6 +61,8 @@ Requires [uv](https://docs.astral.sh/uv/) and Python 3.11+.
 make install    # uv sync
 make fetch      # download every dataset pinned in the lockfile (about 7 GB; Price Paid is 5.5 GB)
 make stage      # stage every downloaded dataset to data/staged/*.parquet
+make indicators # build the indicator table
+make score      # theme/overall scores, browser files and QA report in data/serve/
 make validate   # check the staged geography backbone
 make test       # pytest (no network access; HTTP is tested against a local server)
 make lint       # ruff check + format check

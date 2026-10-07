@@ -100,6 +100,25 @@ def _validate(args: argparse.Namespace) -> int:
     return 1 if problems else 0
 
 
+def _indicators(args: argparse.Namespace) -> int:
+    from lix_pipeline.indicators import build_all
+
+    build_all(only=args.only.split(",") if args.only else None)
+    return 0
+
+
+def _score(args: argparse.Namespace) -> int:
+    from lix_pipeline.qa.report import write_report
+    from lix_pipeline.serve.scores import build_serve
+
+    build_serve()
+    problems = write_report()
+    for p in problems:
+        logger.warning(f"QA: {p}")
+    logger.info(f"QA report: {data_dir('serve') / 'qa.md'} ({len(problems)} warning(s))")
+    return 0
+
+
 def _docs(args: argparse.Namespace) -> int:
     from lix_pipeline.docs import write_docs
 
@@ -144,6 +163,13 @@ def main(argv: list[str] | None = None) -> None:
     validate = sub.add_parser("validate", help="Check staged outputs")
     validate.add_argument("target", choices=["geo"])
     validate.set_defaults(func=_validate)
+
+    indicators = sub.add_parser("indicators", help="Build data/indicators/long.parquet")
+    indicators.add_argument("--only", help="Comma-separated indicator ids to rebuild")
+    indicators.set_defaults(func=_indicators)
+
+    score = sub.add_parser("score", help="Write data/serve/ (features, scores, manifest)")
+    score.set_defaults(func=_score)
 
     docs = sub.add_parser("docs", help="Regenerate docs/data-sources.md and ATTRIBUTION.md")
     docs.set_defaults(func=_docs)

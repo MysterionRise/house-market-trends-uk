@@ -1,4 +1,4 @@
-.PHONY: install resolve fetch stage validate docs test lint format
+.PHONY: install resolve fetch stage indicators score build-data validate docs test lint format
 
 PY_DIRS := core pipeline
 
@@ -16,6 +16,17 @@ fetch:
 # Stage every downloaded dataset to data/staged/*.parquet; nspl runs first (price_paid needs it)
 stage:
 	uv run lix stage --all
+
+# Build data/indicators/long.parquet from the staged tables
+indicators:
+	uv run lix indicators
+
+# Write data/serve/ (features, browser scores, manifest) and the QA report
+score:
+	uv run lix score
+
+# Everything from download to scores
+build-data: fetch stage indicators score validate
 
 validate:
 	uv run lix validate geo

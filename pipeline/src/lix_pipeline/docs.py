@@ -28,8 +28,8 @@ def _cell(text: str | None) -> str:
 
 
 def _link(spec: DatasetSpec) -> str:
-    url = spec.landing_page or getattr(spec.access, "url", None) or getattr(
-        spec.access, "page", None
+    url = (
+        spec.landing_page or getattr(spec.access, "url", None) or getattr(spec.access, "page", None)
     )
     return f"[{_cell(spec.title)}]({url})" if url else _cell(spec.title)
 

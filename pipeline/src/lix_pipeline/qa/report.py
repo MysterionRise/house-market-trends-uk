@@ -1,0 +1,91 @@
+"""Quality report on a full build: coverage, flags, overlaps and face validity.
+
+Writes data/serve/qa.md. Scored indicators correlating above ``MAX_CORRELATION``
+(Spearman) are listed: they may be measuring the same thing twice.
+"""
+
+import polars as pl
+
+from lix_core.config import load_indicators
+from lix_core.paths import data_dir
+
+MAX_CORRELATION = 0.8
+
+
+def _table(df: pl.DataFrame) -> str:
+    cols = df.columns
+    lines = ["| " + " | ".join(cols) + " |", "|" + "---|" * len(cols)]
+    for row in df.iter_rows():
+        cells = [f"{v:.1f}" if isinstance(v, float) else str(v) for v in row]
+        lines.append("| " + " | ".join(cells) + " |")
+    return "\n".join(lines)
+
+
+def build_report() -> tuple[str, list[str]]:
+    """Return (markdown, problems)."""
+    catalogue = load_indicators()
+    features = pl.read_parquet(data_dir("serve") / "lsoa_features.parquet")
+    problems: list[str] = []
+    out = ["# Build quality report\n"]
+
+    rows = []
+    for ind in catalogue.indicators:
+        raw = features[f"raw__{ind.id}"]
+        flags = features[f"q__{ind.id}"].value_counts()
+        flagged = {
+            r[f"q__{ind.id}"]: r["count"] for r in flags.to_dicts() if r[f"q__{ind.id}"] != "ok"
+        }
+        coverage = raw.is_not_null().mean() * 100
+        if ind.role == "scored" and coverage < 99:
+            problems.append(f"{ind.id} covers only {coverage:.1f}% of LSOAs")
+        rows.append({
+            "indicator": ind.id, "role": ind.role, "theme": ind.theme,
+            "coverage %": coverage, "median": raw.median(), "flags": str(flagged or ""),
+        })  # fmt: skip
+    out += ["## Indicators\n", _table(pl.DataFrame(rows)), ""]
+
+    scored = catalogue.scored()
+    ids = [i.id for i in scored]
+    ranks = features.select([pl.col(f"n__{i}").rank() for i in ids]).fill_null(strategy="mean")
+    corr = ranks.corr()
+    pairs = []
+    for a in range(len(ids)):
+        for b in range(a + 1, len(ids)):
+            rho = corr[a, b]
+            if abs(rho) > MAX_CORRELATION:
+                same = scored[a].theme == scored[b].theme
+                pairs.append({"a": ids[a], "b": ids[b], "rho": rho, "same theme": same})
+    out.append(f"## Scored indicators correlating above |ρ| = {MAX_CORRELATION}\n")
+    out.append(
+        "Within a theme this double-counts one thing; across themes it mostly reflects "
+        "population density, which drives every access measure.\n"
+    )
+    out.append(_table(pl.DataFrame(pairs)) if pairs else "None.")
+    for p in pairs:
+        if p["same theme"]:
+            problems.append(f"{p['a']} and {p['b']} (same theme) correlate at ρ={p['rho']:.2f}")
+
+    themes = sorted(c for c in features.columns if c.startswith("theme__"))
+    view = ["lsoa21nm", "msoa_name", "overall", "overall_pct", *themes]
+    short = {t: t.removeprefix("theme__") for t in themes}
+    for title, df in [
+        ("Top 15 (default preset)", features.sort("overall", descending=True).head(15)),
+        ("Bottom 15", features.sort("overall").head(15)),
+    ]:
+        out += [f"\n## {title}\n", _table(df.select(view).rename(short))]
+    for col, title in [("rgn_nm", "region"), ("ruc21nm", "urban/rural class")]:
+        summary = (
+            features.group_by(col)
+            .agg(
+                pl.len().alias("LSOAs"), pl.col("overall").median(), pl.col("overall_pct").median()
+            )
+            .sort("overall", descending=True)
+        )
+        out += [f"\n## Median scores by {title}\n", _table(summary)]
+    return "\n".join(out) + "\n", problems
+
+
+def write_report() -> list[str]:
+    text, problems = build_report()
+    (data_dir("serve") / "qa.md").write_text(text)
+    return problems

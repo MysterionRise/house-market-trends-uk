@@ -151,3 +151,113 @@ def load_registry() -> dict[str, DatasetSpec]:
         for slug, raw in get_config("datasets").items()
         if not slug.startswith("x-")
     }
+
+
+# ---------------------------------------------------------------------------------------
+# Indicators, themes and weights (config/indicators.yaml, config/weights.yaml)
+# ---------------------------------------------------------------------------------------
+
+ScoredTheme = Literal[
+    "safety",
+    "environment",
+    "health",
+    "education",
+    "transport",
+    "amenities",
+    "housing",
+    "community",
+]
+
+
+class ThemeSpec(_Strict):
+    label: str
+    description: str
+
+
+class IndicatorSpec(_Strict):
+    """One indicator: how to build it per LSOA and how it enters the score.
+
+    ``role``: scored (in the composite), context (shown, not scored) or diagnostic
+    (kept for QA and imputation). Within one ``overlap_group`` at most one indicator
+    may be scored, so the same thing isn't counted twice.
+    """
+
+    id: str
+    theme: ScoredTheme
+    label: str
+    description: str
+    unit: str
+    direction: Literal["higher_better", "lower_better"]
+    sources: list[str]
+    builder: str  # "module:function" under lix_pipeline.indicators
+    params: dict = Field(default_factory=dict)
+    # How raw values become 0–100 (see lix_core.scoring.normalise)
+    normalise: Literal["rank", "scale", "threshold"] = "rank"
+    log1p: bool = False
+    good: float | None = None
+    bad: float | None = None
+    scale_max: float = 1.0
+    weight: float = 1.0
+    role: Literal["scored", "context", "diagnostic"] = "scored"
+    overlap_group: str | None = None
+    caveats: str | None = None
+
+
+class IndicatorCatalogue(_Strict):
+    themes: dict[ScoredTheme, ThemeSpec]
+    indicators: list[IndicatorSpec]
+
+    def scored(self) -> list[IndicatorSpec]:
+        return [i for i in self.indicators if i.role == "scored"]
+
+    def by_id(self) -> dict[str, IndicatorSpec]:
+        return {i.id: i for i in self.indicators}
+
+
+class Preset(_Strict):
+    label: str
+    description: str
+    themes: dict[ScoredTheme, float]
+    # Multipliers on individual indicators' weights within their theme
+    indicators: dict[str, float] = Field(default_factory=dict)
+
+
+class WeightsConfig(_Strict):
+    default_preset: str
+    presets: dict[str, Preset]
+
+
+def load_indicators() -> IndicatorCatalogue:
+    """Load and cross-check config/indicators.yaml against the registry."""
+    catalogue = IndicatorCatalogue.model_validate(get_config("indicators"))
+    registry = load_registry()
+    problems = []
+    ids = [i.id for i in catalogue.indicators]
+    if len(ids) != len(set(ids)):
+        problems.append("duplicate indicator ids")
+    groups: dict[str, list[str]] = {}
+    for ind in catalogue.indicators:
+        unknown = [s for s in ind.sources if s not in registry]
+        if unknown:
+            problems.append(f"{ind.id}: unknown sources {unknown}")
+        if ind.theme not in catalogue.themes:
+            problems.append(f"{ind.id}: unknown theme {ind.theme}")
+        if ind.role == "scored" and ind.overlap_group:
+            groups.setdefault(ind.overlap_group, []).append(ind.id)
+    problems += [f"overlap group {g} scores {v}" for g, v in groups.items() if len(v) > 1]
+    if problems:
+        raise ValueError("Invalid config/indicators.yaml: " + "; ".join(problems))
+    return catalogue
+
+
+def load_weights() -> WeightsConfig:
+    """Load config/weights.yaml; every preset must weight every theme."""
+    weights = WeightsConfig.model_validate(get_config("weights"))
+    themes = set(load_indicators().themes)
+    for name, preset in weights.presets.items():
+        missing = themes - set(preset.themes)
+        if missing:
+            raise ValueError(f"Preset {name!r} has no weight for themes {sorted(missing)}")
+    if weights.default_preset not in weights.presets:
+        raise ValueError(f"default_preset {weights.default_preset!r} is not a preset")
+    return weights

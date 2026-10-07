@@ -12,6 +12,7 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+    "hypothesis>=6.100",
     "pytest>=8.0",
     "pytest-httpserver>=1.1",
     "pytest-socket>=0.7",
