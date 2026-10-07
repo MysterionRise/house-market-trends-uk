@@ -2,6 +2,8 @@
 
 import polars as pl
 
+from lix_pipeline.geo.joins import broadcast
+
 # Sales-equivalent weight of the MSOA median in the blend (empirical-Bayes style)
 PRIOR_SALES = 5
 
@@ -30,3 +32,32 @@ def median_price(ctx) -> pl.DataFrame:
         blended.alias("value"),
         pl.when(n < PRIOR_SALES).then(pl.lit("low_n")).otherwise(pl.lit("ok")).alias("quality"),
     )
+
+
+def price_to_income(ctx) -> pl.DataFrame:
+    """Typical house price over the MSOA's mean net household income (years of income)."""
+    price = median_price(ctx).select("lsoa21cd", pl.col("value").alias("price"))
+    income = ctx.staged("msoa_income").select("msoa21cd", "income_net")
+    df = (
+        ctx.geo.select("lsoa21cd", "msoa21cd")
+        .join(price, on="lsoa21cd")
+        .join(income, on="msoa21cd", how="left")
+    )
+    return df.select(
+        "lsoa21cd",
+        (pl.col("price") / pl.col("income_net")).alias("value"),
+        pl.lit("broadcast_msoa").alias("quality"),
+    )
+
+
+def msoa_income(ctx, column: str) -> pl.DataFrame:
+    """An MSOA income estimate copied to its LSOAs."""
+    df = broadcast(ctx.staged("msoa_income"), [column], "msoa", "msoa21cd", geo=ctx.geo)
+    return df.rename({column: "value"})
+
+
+def council_tax(ctx, band: str = "d") -> pl.DataFrame:
+    """Annual council tax for a band in the billing authority (all precepts)."""
+    col = f"band_{band}"
+    df = broadcast(ctx.staged("council_tax"), [col], "lad", "lad_cd", geo=ctx.geo)
+    return df.rename({col: "value"})

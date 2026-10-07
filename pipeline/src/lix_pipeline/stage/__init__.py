@@ -31,6 +31,11 @@ STAGE_INPUTS: dict[str, list[str]] = {
     "gias": ["gias", "lsoa_boundaries"],
     "fsa_fhrs": ["fsa_fhrs", "nspl", "lsoa_boundaries"],
     "osm_pois": ["osm_england"],
+    "ods_dentists": ["ods_dentists", "nspl"],
+    "nhsbsa_pharmacies": ["nhsbsa_pharmacies", "nspl"],
+    "ofsted_childcare": ["ofsted_childcare", "nspl"],
+    "ea_flood_postcodes": ["ea_flood_postcodes", "nspl"],
+    "ofcom_broadband": ["ofcom_broadband", "oa_lookup"],
 }
 
 
@@ -53,7 +58,17 @@ def stagers() -> dict[str, Callable[[], pl.LazyFrame]]:
     from functools import partial
 
     from lix_core.config import load_registry
-    from lix_pipeline.stage import geo, health, schools
+    from lix_pipeline.stage import (
+        childcare,
+        community,
+        environment,
+        geo,
+        health,
+        housing,
+        safety,
+        schools,
+        transport,
+    )
     from lix_pipeline.stage.census import stage_census_table
     from lix_pipeline.stage.fsa import stage_fsa
     from lix_pipeline.stage.iod import stage_iod
@@ -62,7 +77,6 @@ def stagers() -> dict[str, Callable[[], pl.LazyFrame]]:
     from lix_pipeline.stage.pcm import stage_pcm
     from lix_pipeline.stage.police import stage_police
     from lix_pipeline.stage.price_paid import stage_price_paid
-    from lix_pipeline.stage.transport import stage_dft_connectivity
 
     registry = load_registry()
     census = {s: partial(stage_census_table, s) for s in registry if s.startswith("census_")}
@@ -84,7 +98,19 @@ def stagers() -> dict[str, Callable[[], pl.LazyFrame]]:
         "gp_workforce": health.stage_gp_workforce,
         "gias": schools.stage_gias,
         "ofsted_schools": schools.stage_ofsted_schools,
-        "dft_connectivity": stage_dft_connectivity,
+        "dft_connectivity": transport.stage_dft_connectivity,
         "fsa_fhrs": stage_fsa,
         "osm_pois": stage_osm,
+        "stats19": safety.stage_stats19,
+        "ods_dentists": health.stage_ods_dentists,
+        "nhsbsa_pharmacies": health.stage_nhsbsa_pharmacies,
+        "ofsted_childcare": childcare.stage_ofsted_childcare,
+        "os_greenspace": environment.stage_os_greenspace,
+        "ea_flood_postcodes": environment.stage_ea_flood_postcodes,
+        "naptan": transport.stage_naptan,
+        "ofcom_broadband": transport.stage_ofcom_broadband,  # needs staged oa_lookup
+        "msoa_income": housing.stage_msoa_income,
+        "council_tax": housing.stage_council_tax,
+        "voa_ctsop": housing.stage_voa_ctsop,
+        "claimant_count": community.stage_claimant_count,
     }

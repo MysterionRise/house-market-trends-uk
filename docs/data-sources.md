@@ -2,7 +2,7 @@
 
 # Data sources
 
-36 datasets, all under open licences. Each is pinned to a concrete file in `config/datasets.lock.json` by `lix resolve`.
+48 datasets, all under open licences. Each is pinned to a concrete file in `config/datasets.lock.json` by `lix resolve`.
 
 
 ## Geography
@@ -26,6 +26,7 @@
 | Slug | Dataset | What it gives us | Updated | Licence |
 |---|---|---|---|---|
 | `police_crime` | [police.uk street-level crime (latest 36 months)](https://data.police.uk/data/archive/) | Crimes and anti-social behaviour by type and month, located to anonymised points with LSOA codes. | monthly | OGL-3.0 |
+| `stats19` | [DfT road collisions (STATS19, last 5 years)](https://www.data.gov.uk/dataset/cb7ae6f0-4be6-4935-9277-47e5ce24a11f/road-safety-data) | Every reported personal-injury road collision with its severity and location. | annual | OGL-3.0 |
 
 ## Environment
 
@@ -34,12 +35,16 @@
 | `defra_pcm_no2` | [Defra modelled background NO2 (1km grid, latest year)](https://uk-air.defra.gov.uk/data/pcm-data) | Annual mean nitrogen dioxide, µg/m³, on a 1km grid. | annual | OGL-3.0 |
 | `defra_pcm_pm25` | [Defra modelled background PM2.5 (1km grid, latest year)](https://uk-air.defra.gov.uk/data/pcm-data) | Annual mean fine particulate matter (PM2.5), µg/m³, on a 1km grid. | annual | OGL-3.0 |
 | `defra_pcm_pm10` (P1) | [Defra modelled background PM10 (1km grid, latest year)](https://uk-air.defra.gov.uk/data/pcm-data) | Annual mean particulate matter (PM10, gravimetric), µg/m³, on a 1km grid. | annual | OGL-3.0 |
+| `os_greenspace` | [OS Open Greenspace (GB)](https://www.ordnancesurvey.co.uk/products/os-open-greenspace) | Public parks, playing fields, play spaces, allotments and other green spaces, with their access points. | adhoc | OGL-3.0 |
+| `ea_flood_postcodes` | [Environment Agency flood risk from rivers and the sea, by postcode](https://www.data.gov.uk/dataset/risk-of-flooding-from-rivers-and-sea-postcodes-in-areas-at-risk2) | Residential and non-residential properties per postcode in each flood likelihood band (high, medium, low, very low). | adhoc | OGL-3.0 |
 
 ## Health access
 
 | Slug | Dataset | What it gives us | Updated | Licence |
 |---|---|---|---|---|
 | `ods_gp` | [NHS ODS GP practices](https://www.odsdatasearchandexport.nhs.uk/) | Every GP practice with status, role and postcode (headerless CSV). | daily | OGL-3.0 |
+| `ods_dentists` | [NHS ODS dental practices](https://www.odsdatasearchandexport.nhs.uk/) | Every dental practice with an NHS contract, with status and postcode (headerless CSV). | daily | OGL-3.0 |
+| `nhsbsa_pharmacies` | [NHSBSA consolidated pharmaceutical list](https://opendata.nhsbsa.net/dataset/consolidated-pharmaceutical-list) | Every community pharmacy and appliance contractor in England with its address and opening hours. | quarterly | OGL-3.0 |
 | `gp_registrations` | [Patients registered at a GP practice, by LSOA](https://digital.nhs.uk/data-and-information/publications/statistical/patients-registered-at-a-gp-practice) | Patients of each practice by the LSOA they live in, i.e. each practice's real catchment. | quarterly | OGL-3.0 |
 | `gp_workforce` | [General Practice Workforce, practice level](https://digital.nhs.uk/data-and-information/publications/statistical/general-and-personal-medical-services) | Full-time-equivalent GPs, nurses and other staff per practice. | monthly | OGL-3.0 |
 
@@ -49,12 +54,15 @@
 |---|---|---|---|---|
 | `gias` | [Get Information About Schools (all establishments)](https://get-information-schools.service.gov.uk/Downloads) | Every school and college in England with phase, type, capacity, pupils and location (cp1252). | daily | OGL-3.0 |
 | `ofsted_schools` | Ofsted state-funded school inspections (latest per school) | Latest inspection outcome per school, including the report-card grades used since November 2025. | monthly | OGL-3.0 |
+| `ofsted_childcare` | Ofsted childcare providers and inspections | Every registered childcare provider with its type, places and latest inspection grade; nurseries and other non-domestic settings have a postcode. | quarterly | OGL-3.0 |
 
 ## Transport & connectivity
 
 | Slug | Dataset | What it gives us | Updated | Licence |
 |---|---|---|---|---|
 | `dft_connectivity` | DfT Transport Connectivity Metric | 0–100 connectivity scores by mode (walk, cycle, public transport, car) and purpose, per LSOA. | annual | OGL-3.0 |
+| `naptan` | [NaPTAN public transport stops](https://www.data.gov.uk/dataset/ff93ffc1-6656-47d8-9155-85ea0b8f2251/national-public-transport-access-nodes-naptan) | Every bus stop, railway station, tram and metro stop, ferry terminal and coach station in Great Britain. | daily | OGL-3.0 |
+| `ofcom_broadband` | [Ofcom Connected Nations fixed broadband coverage (output areas)](https://www.ofcom.org.uk/phones-and-broadband/coverage-and-speeds/connected-nations-update-spring-2026) | Share of premises in each output area that can get gigabit, superfast or decent broadband, and those below the universal service obligation. | quarterly | OGL-3.0 |
 
 ## Amenities & nightlife
 
@@ -68,6 +76,9 @@
 | Slug | Dataset | What it gives us | Updated | Licence |
 |---|---|---|---|---|
 | `price_paid` | [HM Land Registry Price Paid Data (complete)](https://www.gov.uk/government/statistical-data-sets/price-paid-data-downloads) | All residential property sales in England and Wales since 1995. | monthly | OGL-3.0 |
+| `msoa_income` | [ONS income estimates for small areas (MSOA)](https://www.ons.gov.uk/employmentandlabourmarket/peopleinwork/earningsandworkinghours/datasets/smallareaincomeestimatesformiddlelayersuperoutputareasenglandandwales) | Model-based mean household income per MSOA, total and net, before and after housing costs. | adhoc | OGL-3.0 |
+| `council_tax` | Council Tax levels set by local authorities in England | Average Band D council tax per billing authority, including adult social care and parish precepts. | annual | OGL-3.0 |
+| `voa_ctsop` | VOA Council Tax stock of properties by band and build period (LSOA) | Dwellings per LSOA by Council Tax band and the period they were built. | annual | OGL-3.0 |
 
 ## Community & socio-economic
 
@@ -85,3 +96,4 @@
 | `census_ts058` | [Census 2021 TS058 Distance travelled to work](https://www.nomisweb.co.uk/sources/census_2021_bulk) | Usual residents in employment by distance to work. Collected during COVID-19 restrictions. | static | OGL-3.0 |
 | `census_ts061` | [Census 2021 TS061 Method used to travel to work](https://www.nomisweb.co.uk/sources/census_2021_bulk) | Usual residents in employment by travel mode. Collected during COVID-19 restrictions. | static | OGL-3.0 |
 | `census_ts067` | [Census 2021 TS067 Highest level of qualification](https://www.nomisweb.co.uk/sources/census_2021_bulk) | Usual residents aged 16+ by highest qualification. | static | OGL-3.0 |
+| `claimant_count` | [Claimant count by LSOA (Nomis)](https://www.nomisweb.co.uk/datasets/ucjsa) | People claiming unemployment-related benefits (Universal Credit searching for work, or JSA), latest month. | monthly | OGL-3.0 |

@@ -94,6 +94,33 @@ class HtmlLinkAccess(_Strict):
     steps: list[LinkStep]
 
 
+class CkanAccess(_Strict):
+    """A resource in a CKAN data portal package (e.g. NHSBSA open data).
+
+    Packages that gain a file each period keep the old ones, so of the resources whose
+    name or URL matches ``resource_regex`` the one whose name sorts last is taken
+    (names like ``CONSOL_PHARMACY_LIST_202606Q1`` sort by date).
+    """
+
+    type: Literal["ckan"]
+    api: str
+    package: str
+    resource_regex: str
+
+
+class NomisAccess(_Strict):
+    """A query against the Nomis API, paged into one CSV.
+
+    Nomis returns at most 25,000 rows per request, and England has 33,755 LSOAs.
+    ``params`` are the API's query parameters (geography, date, measures, select...).
+    """
+
+    type: Literal["nomis"]
+    dataset: str
+    params: dict[str, str]
+    page_size: int = 25_000
+
+
 class ManualAccess(_Strict):
     """A file the user downloads by hand (e.g. behind a free login) into data/manual/{slug}/."""
 
@@ -103,7 +130,13 @@ class ManualAccess(_Strict):
 
 
 Access = Annotated[
-    HttpAccess | ArcgisItemAccess | GovukAttachmentAccess | HtmlLinkAccess | ManualAccess,
+    HttpAccess
+    | ArcgisItemAccess
+    | GovukAttachmentAccess
+    | HtmlLinkAccess
+    | CkanAccess
+    | NomisAccess
+    | ManualAccess,
     Field(discriminator="type"),
 ]
 

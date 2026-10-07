@@ -1,4 +1,4 @@
-"""Tests for resolvers (ArcGIS, GOV.UK), the FeatureServer fetcher and the fetch orchestrator."""
+"""Tests for resolvers (ArcGIS, GOV.UK, CKAN, Nomis), paged fetchers and the fetch orchestrator."""
 
 import json
 from pathlib import Path
@@ -10,11 +10,13 @@ from werkzeug import Request, Response
 
 from lix_core.config import (
     ArcgisItemAccess,
+    CkanAccess,
     DatasetSpec,
     GovukAttachmentAccess,
+    NomisAccess,
 )
 from lix_pipeline import fetch as fetch_mod
-from lix_pipeline.fetch import ManualDownloadRequired, arcgis, fetch, govuk, select
+from lix_pipeline.fetch import ManualDownloadRequired, arcgis, ckan, fetch, govuk, nomis, select
 from lix_pipeline.fetch.lock import read_lock
 from lix_pipeline.fetch.session import make_session
 
@@ -425,3 +427,79 @@ def test_dated_http_url_walks_back_to_latest_file(httpserver, monkeypatch):
     )
     url, _ = _resolve_http(access, make_session())
     assert url.endswith("/edubasealldata20261006.csv")
+
+
+class TestCkan:
+    def test_takes_the_latest_matching_resource(self, httpserver):
+        httpserver.expect_request(
+            "/api/3/action/package_show", query_string={"id": "pharmacies"}
+        ).respond_with_json(
+            {
+                "result": {
+                    "resources": [
+                        {"name": "CONSOL_PHARMACY_LIST_202526Q4", "url": "https://x/q4.csv"},
+                        {"name": "CONSOL_PHARMACY_LIST_202606Q1", "url": "https://x/q1.csv"},
+                        {"name": "Data dictionary", "url": "https://x/dict.xlsx"},
+                    ]
+                }
+            }  # fmt: skip
+        )
+        access = CkanAccess(
+            type="ckan",
+            api=httpserver.url_for("/api/3/action"),
+            package="pharmacies",
+            resource_regex="^CONSOL_PHARMACY_LIST_",
+        )
+        resolved = ckan.resolve_resource(access, make_session())
+        assert resolved["url"] == "https://x/q1.csv"
+
+    def test_no_match_is_an_error(self, httpserver):
+        httpserver.expect_request("/api/3/action/package_show").respond_with_json(
+            {"result": {"resources": [{"name": "other", "url": "u"}]}}
+        )
+        access = CkanAccess(
+            type="ckan", api=httpserver.url_for("/api/3/action"), package="p", resource_regex="x"
+        )
+        with pytest.raises(RuntimeError, match="No resource"):
+            ckan.resolve_resource(access, make_session())
+
+
+class TestNomis:
+    @pytest.fixture
+    def nomis_server(self, httpserver, monkeypatch):
+        monkeypatch.setattr(nomis, "API", httpserver.url_for("/api"))
+        rows = [f'"August 2026","E0100{i:04d}",{i}' for i in range(7)]
+
+        def handler(request: Request) -> Response:
+            if request.args.get("select") == "date_name":
+                return Response('"DATE_NAME"\n"August 2026"\n', content_type="text/csv")
+            offset = int(request.args["recordoffset"])
+            limit = int(request.args["recordlimit"])
+            page = rows[offset : offset + limit]
+            body = '"DATE_NAME","GEOGRAPHY_CODE","OBS_VALUE"\n' + "".join(r + "\n" for r in page)
+            return Response(body, content_type="text/csv")
+
+        httpserver.expect_request("/api/NM_1.data.csv").respond_with_handler(handler)
+        return NomisAccess(
+            type="nomis", dataset="NM_1", params={"geography": "TYPE151"}, page_size=3
+        )
+
+    def test_resolves_to_the_period_returned(self, nomis_server):
+        resolved = nomis.resolve_query(nomis_server, make_session())
+        assert resolved["version"] == "August 2026"
+        assert "geography=TYPE151" in resolved["url"]
+
+    def test_pages_into_one_csv(self, nomis_server, tmp_path):
+        out = tmp_path / "claimants.csv"
+        assert nomis.fetch_query(nomis_server, out, make_session()) == 7
+        df = pl.read_csv(out)
+        assert df.height == 7
+        assert df["OBS_VALUE"].to_list() == list(range(7))
+
+    def test_fetch_orchestrator_locks_the_period(self, repo, nomis_server):
+        registry = {"cc": _spec(nomis_server.model_dump(), theme="community")}
+        fetched = fetch("cc", registry=registry)
+        assert fetched["rows"] == 7
+        assert read_lock()["cc"]["resolved"]["version"] == "August 2026"
+        # Same period again: nothing is re-downloaded
+        assert fetch("cc", registry=registry)["rows"] == 7

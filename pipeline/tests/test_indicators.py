@@ -6,10 +6,13 @@ import polars as pl
 import pytest
 
 from lix_core.config import IndicatorSpec
+from lix_pipeline.geo.access import poi_access
 from lix_pipeline.indicators import build_indicator
-from lix_pipeline.indicators.common import impute_by_proxy
+from lix_pipeline.indicators.common import count_within, impute_by_proxy, nearest, share
+from lix_pipeline.indicators.community import claimant_rate
+from lix_pipeline.indicators.environment import flood_risk
 from lix_pipeline.indicators.health import patients_per_gp
-from lix_pipeline.indicators.housing import PRIOR_SALES, median_price
+from lix_pipeline.indicators.housing import PRIOR_SALES, council_tax, median_price
 from lix_pipeline.indicators.pubs import match_pubs, normalise_name
 from lix_pipeline.indicators.safety import GREATER_MANCHESTER, crime_rate
 
@@ -17,8 +20,9 @@ from lix_pipeline.indicators.safety import GREATER_MANCHESTER, crime_rate
 class FakeContext:
     """Stands in for indicators.Context with in-memory staged tables."""
 
-    def __init__(self, **tables: pl.DataFrame):
+    def __init__(self, origins: pl.DataFrame | None = None, **tables: pl.DataFrame):
         self.tables = tables
+        self.origins = origins
 
     @property
     def geo(self) -> pl.DataFrame:
@@ -26,6 +30,9 @@ class FakeContext:
 
     def staged(self, slug: str) -> pl.DataFrame:
         return self.tables[slug]
+
+    def access(self, pois: pl.DataFrame, radius_m: float, **kwargs) -> pl.DataFrame:
+        return poi_access(self.origins, pois, radius_m=radius_m, **kwargs)
 
 
 GEO = pl.DataFrame({
@@ -163,3 +170,78 @@ def test_build_indicator_fills_every_lsoa_and_flags_missing():
     assert out.height == GEO.height
     assert out["value"].to_list() == [1.0, None, None, None]
     assert out["quality"].to_list() == ["ok", "missing", "missing", "missing"]
+
+
+# Two homes in E01000001 and one in E01000002, 10km apart
+ORIGINS = pl.DataFrame({
+    "postcode": ["A", "B", "C"],
+    "lsoa21cd": ["E01000001", "E01000001", "E01000002"],
+    "east1m": [500_000, 500_200, 510_000],
+    "north1m": [200_000, 200_000, 200_000],
+})  # fmt: skip
+
+
+class TestPointBuilders:
+    def _ctx(self):
+        collisions = pl.DataFrame({
+            "severity": ["fatal", "serious", "slight", "serious"],
+            "x": [500_100.0, 500_100.0, 500_100.0, 510_000.0],
+            "y": [200_000.0, 200_000.0, 200_000.0, 205_000.0],
+        })  # fmt: skip
+        return FakeContext(origins=ORIGINS, stats19=collisions)
+
+    def test_count_within_filters_and_annualises(self):
+        df = count_within(
+            self._ctx(), "stats19", radius_m=500, column="severity",
+            values=["fatal", "serious"], per_years=5,
+        ).sort("lsoa21cd")  # fmt: skip
+        # Both homes in E01000001 have 2 serious-or-fatal collisions within 500m over 5 years
+        assert df["value"].to_list() == pytest.approx([0.4, 0.0])
+
+    def test_nearest_of_filtered_points(self):
+        df = nearest(self._ctx(), "stats19", column="severity", values=["serious"]).sort("lsoa21cd")
+        assert df["value"].to_list() == pytest.approx([100.0, 5000.0])
+
+
+def test_share_of_staged_columns():
+    stock = pl.DataFrame(
+        {"lsoa21cd": ["E01000001"], "band_a": [30], "band_b": [20], "dwellings": [200]}
+    )
+    ctx = FakeContext(voa_ctsop=stock)
+    df = share(ctx, "voa_ctsop", numerator=["band_a", "band_b"], denominator="dwellings")
+    assert df["value"].to_list() == [25.0]
+
+
+def test_flood_risk_share_of_homes():
+    stock = pl.DataFrame(
+        {"lsoa21cd": ["E01000001", "E01000002", "E01000003"], "dwellings": [100, 50, 10]}
+    )
+    at_risk = pl.DataFrame({
+        "lsoa21cd": ["E01000001", "E01000003"],
+        "res_high": [5, 20], "res_medium": [15, 0], "res_low": [30, 0],
+    })  # fmt: skip
+    ctx = FakeContext(voa_ctsop=stock, ea_flood_postcodes=at_risk)
+    df = flood_risk(ctx, bands=["high", "medium"]).sort("lsoa21cd")
+    # 20 of 100; none listed → 0; more at risk than dwellings counted → capped at 100
+    assert df["value"].to_list() == [20.0, 0.0, 100.0]
+
+
+def test_claimant_rate_per_working_age_resident():
+    ages = pl.DataFrame({
+        "lsoa21cd": ["E01000001"], "aged_15_to_19_years": [100], "aged_20_to_24_years": [400],
+        "aged_60_to_64_years": [420], "aged_65_to_69_years": [500],
+    })  # fmt: skip
+    claims = pl.DataFrame({"lsoa21cd": ["E01000001"], "claimants": [45]})
+    ctx = FakeContext(census_ts007a=ages, claimant_count=claims)
+    # 16–64 ≈ 0.8 × 100 + 400 + 420 = 900
+    assert claimant_rate(ctx)["value"].to_list() == pytest.approx([5.0])
+
+
+def test_council_tax_broadcast_from_billing_authority():
+    geo = pl.DataFrame(
+        {"lsoa21cd": ["E01000001", "E01000002"], "lad_cd": ["E06000001", "E06000002"]}
+    )
+    tax = pl.DataFrame({"lad_cd": ["E06000001"], "band_d": [2100.0]})
+    df = council_tax(FakeContext(geo_lsoa=geo, council_tax=tax)).sort("lsoa21cd")
+    assert df["value"].to_list() == [2100.0, None]
+    assert set(df["quality"]) == {"broadcast_lad"}

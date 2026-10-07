@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import { Card, Muted, formatValue } from "@/components/ui";
+import { Card, Muted, formatValue, qualityNote } from "@/components/ui";
 import type { Explanation } from "@/lib/contracts.gen";
 
 export function MethodExplainer({ explanation }: { explanation: Explanation }) {
@@ -39,7 +39,7 @@ export function MethodExplainer({ explanation }: { explanation: Explanation }) {
                       <td className="py-0.5 pr-2">{i.label}{i.role === "context" && " (not scored)"}</td>
                       <td className="py-0.5 pr-2 text-right">{formatValue(i.value, i.unit)}</td>
                       <td className="py-0.5 text-right">{i.score?.toFixed(0) ?? "–"}</td>
-                      <td className="py-0.5 pl-1 text-[var(--text-muted)]">{i.quality !== "ok" ? i.quality : ""}</td>
+                      <td className="py-0.5 pl-1 text-[var(--text-muted)]">{qualityNote(i.quality) ?? ""}</td>
                     </tr>
                   ))}
                 </tbody>

@@ -95,3 +95,52 @@ def stage_gp_workforce() -> pl.LazyFrame:
     )
     logger.info(f"{out.height:,} practices, {out['qualified_gp_fte'].sum():,.0f} qualified GP FTE")
     return out.lazy()
+
+
+# Positions in the headerless ODS DSE "egdpprac" report (same layout as epraccur)
+EGDPPRAC_COLUMNS = {
+    1: "practice_code",
+    2: "name",
+    10: "postcode",
+    11: "open_date",
+    12: "close_date",
+    13: "status",
+}
+
+
+def stage_ods_dentists() -> pl.LazyFrame:
+    """Active dental practices with an NHS contract in England, with their location."""
+    raw = pl.read_csv(
+        data_dir("raw") / "ods_dentists" / "ods_dentists.csv", has_header=False, infer_schema=False
+    )
+    df = raw.select(
+        pl.col(f"column_{i}").alias(name) for i, name in EGDPPRAC_COLUMNS.items()
+    ).filter(pl.col("status") == "ACTIVE")
+    df = geocode_postcodes(df).filter(pl.col("lsoa21cd").str.contains(ENGLAND_LSOA21))
+    logger.info(f"{df.height:,} active dental practices in England")
+    return df.drop("status").lazy()
+
+
+# Contract types that dispense to the public; DAC (appliance contractors) supply
+# stoma and incontinence products by delivery
+PHARMACY_CONTRACTS = ("Community", "LPS")
+
+
+def stage_nhsbsa_pharmacies() -> pl.LazyFrame:
+    """Community pharmacies in England with their weekly and Sunday opening hours."""
+    raw = pl.read_csv(
+        data_dir("raw") / "nhsbsa_pharmacies" / "nhsbsa_pharmacies.csv",
+        infer_schema=False,
+        encoding="utf8-lossy",
+    )
+    df = raw.select(
+        pl.col("PHARMACY_ODS_CODE_F_CODE").alias("pharmacy_code"),
+        pl.col("PHARMACY_TRADING_NAME").str.strip_chars().alias("name"),
+        pl.col("POST_CODE").alias("postcode"),
+        pl.col("WEEKLY_TOTAL").cast(pl.Float64, strict=False).alias("weekly_hours"),
+        pl.col("SUN_TOTAL").cast(pl.Float64, strict=False).alias("sunday_hours"),
+        pl.col("CONTRACT_TYPE").alias("contract_type"),
+    ).filter(pl.col("contract_type").is_in(PHARMACY_CONTRACTS))
+    df = geocode_postcodes(df).filter(pl.col("lsoa21cd").str.contains(ENGLAND_LSOA21))
+    logger.info(f"{df.height:,} community pharmacies in England")
+    return df.lazy()

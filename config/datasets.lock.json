@@ -164,6 +164,35 @@
       "version": null
     }
   },
+  "claimant_count": {
+    "fetched": {
+      "bytes": 1036404,
+      "fetched_at": "2026-10-07T17:05:35+00:00",
+      "rows": 35672,
+      "sha256": "6781ae111528759da972521881d0165aafe1f83d9e955fdbdf9f3948c8f2f5d8"
+    },
+    "resolved": {
+      "resolved_at": "2026-10-07T17:05:13+00:00",
+      "url": "https://www.nomisweb.co.uk/api/v01/dataset/NM_162_1.data.csv?geography=TYPE151&date=latest&gender=0&age=0&measure=1&measures=20100&select=date_name%2Cgeography_code%2Cobs_value",
+      "version": "August 2026"
+    }
+  },
+  "council_tax": {
+    "fetched": {
+      "bytes": 99083,
+      "etag": "\"69de1fa6-1830b\"",
+      "fetched_at": "2026-10-07T17:05:37.057556+00:00",
+      "last_modified": "Tue, 14 Apr 2026 11:06:14 GMT",
+      "sha256": "66b7c20f70c804038c0a392ff2b7249fd09e83f4e88ac87d0278ce7e19da5537"
+    },
+    "resolved": {
+      "modified": "2026-03-25T09:30:00+00:00",
+      "resolved_at": "2026-10-07T17:05:11+00:00",
+      "title": "Council Tax levels set by local authorities in England 2026 to 2027: Tables 1 to 9",
+      "url": "https://assets.publishing.service.gov.uk/media/69de1fa63e81003ae0422508/Tables_1-9_2026-27.ods",
+      "version": "https://assets.publishing.service.gov.uk/media/69de1fa63e81003ae0422508/Tables_1-9_2026-27.ods"
+    }
+  },
   "defra_pcm_no2": {
     "fetched": {
       "bytes": 7900343,
@@ -223,6 +252,22 @@
       "title": "Connectivity metrics 2025",
       "url": "https://assets.publishing.service.gov.uk/media/68c966fc07d9e92bc5517b80/connectivity_metrics_2025.ods",
       "version": "https://assets.publishing.service.gov.uk/media/68c966fc07d9e92bc5517b80/connectivity_metrics_2025.ods"
+    }
+  },
+  "ea_flood_postcodes": {
+    "fetched": {
+      "bytes": 5060727,
+      "extracted": [
+        "RoFRS_Postcodes_in_Areas_at_Risk/DATA/NaFRA2client.RoFRS_Postcodes_AtRisk.csv",
+        "RoFRS_Postcodes_in_Areas_at_Risk/SUPPORTING_DOCUMENTS/RoFRS Product Description.pdf"
+      ],
+      "fetched_at": "2026-10-07T17:05:49.038772+00:00",
+      "sha256": "2d0cd93e82b337b1b5accf60b6d0a9f91e7f1d1964ec49767a2990dabe030fab"
+    },
+    "resolved": {
+      "resolved_at": "2026-10-07T17:05:00+00:00",
+      "url": "https://environment.data.gov.uk/api/file/download?fileDataSetId=97781741-2982-4802-af2e-313fe3fd8f7e&fileName=RoFRS_Postcodes_in_Areas_at_Risk.zip",
+      "version": null
     }
   },
   "fsa_fhrs": {
@@ -404,6 +449,20 @@
       "version": "2025-08-11T08:22:21+00:00"
     }
   },
+  "msoa_income": {
+    "fetched": {
+      "bytes": 1863497,
+      "etag": "\"28eac8d2a11605e91273358416fd0572025005ec--gzip\"",
+      "fetched_at": "2026-10-07T17:05:43.122832+00:00",
+      "sha256": "9f17da5c218d2edd336106e1f219e0f7f25e82373afa8be5d0dc7622e18c7ab7"
+    },
+    "resolved": {
+      "release": null,
+      "resolved_at": "2026-10-07T17:05:10+00:00",
+      "url": "https://www.ons.gov.uk/file?uri=/employmentandlabourmarket/peopleinwork/earningsandworkinghours/datasets/smallareaincomeestimatesformiddlelayersuperoutputareasenglandandwales/financialyearending2023/datasetfinal.xlsx",
+      "version": "https://www.ons.gov.uk/file?uri=/employmentandlabourmarket/peopleinwork/earningsandworkinghours/datasets/smallareaincomeestimatesformiddlelayersuperoutputareasenglandandwales/financialyearending2023/datasetfinal.xlsx"
+    }
+  },
   "msoa_names": {
     "fetched": {
       "bytes": 663408,
@@ -416,6 +475,34 @@
       "resolved_at": "2026-10-07T15:31:02+00:00",
       "url": "https://houseofcommonslibrary.github.io/msoanames/MSOA-Names-Latest2.csv",
       "version": "Fri, 13 Feb 2026 12:43:35 GMT"
+    }
+  },
+  "naptan": {
+    "fetched": {
+      "bytes": 101601122,
+      "fetched_at": "2026-10-07T17:06:00.508191+00:00",
+      "sha256": "9f2674ccfcfd155c3f1e7e345802d808b2eef8c0017868bcc395f73604d32cf7"
+    },
+    "resolved": {
+      "resolved_at": "2026-10-07T17:05:08+00:00",
+      "url": "https://naptan.api.dft.gov.uk/v1/access-nodes?dataFormat=csv",
+      "version": null
+    }
+  },
+  "nhsbsa_pharmacies": {
+    "fetched": {
+      "bytes": 2574037,
+      "etag": "\"0c9a629acce11e1355cb086286ef0353\"",
+      "fetched_at": "2026-10-07T17:05:22.822882+00:00",
+      "last_modified": "Wed, 29 Jul 2026 10:15:53 GMT",
+      "sha256": "ffed833c19132ada207b7adef9c9f73fae24d0561bbfc25d52c6e6623a757a88"
+    },
+    "resolved": {
+      "modified": "2026-07-29T10:16:19.170930",
+      "resolved_at": "2026-10-07T17:05:03+00:00",
+      "title": "CONSOL_PHARMACY_LIST_202606Q1",
+      "url": "https://opendata.nhsbsa.net/dataset/240d142d-df82-4e97-b051-12371519e4e1/resource/ce6c7ad3-a3b5-442f-bb0a-a45d7c962944/download/consol_pharmacy_list_202606q1.csv",
+      "version": "https://opendata.nhsbsa.net/dataset/240d142d-df82-4e97-b051-12371519e4e1/resource/ce6c7ad3-a3b5-442f-bb0a-a45d7c962944/download/consol_pharmacy_list_202606q1.csv"
     }
   },
   "nspl": {
@@ -479,6 +566,19 @@
       "version": "2025-08-11T08:16:10+00:00"
     }
   },
+  "ods_dentists": {
+    "fetched": {
+      "bytes": 2245133,
+      "etag": "\"zd4l3yx0ym1c4ct\"",
+      "fetched_at": "2026-10-07T17:05:20.440436+00:00",
+      "sha256": "94b8cdb5379110a299b02dc47c3e19b67f2e3823e06a82b781fea844a9118e30"
+    },
+    "resolved": {
+      "resolved_at": "2026-10-07T17:05:02+00:00",
+      "url": "https://www.odsdatasearchandexport.nhs.uk/api/getReport?report=egdpprac",
+      "version": "\"zd4l3yx0ym1c4ct\""
+    }
+  },
   "ods_gp": {
     "fetched": {
       "bytes": 3318962,
@@ -490,6 +590,41 @@
       "resolved_at": "2026-10-07T15:46:57+00:00",
       "url": "https://www.odsdatasearchandexport.nhs.uk/api/getReport?report=epraccur",
       "version": "\"f6aax5nol81z4xe\""
+    }
+  },
+  "ofcom_broadband": {
+    "fetched": {
+      "bytes": 33797696,
+      "etag": "\"1dd181c999d1e40\"",
+      "extracted": [
+        "202601_fixed_broadband_coverage_and_full_fibre_take-up (v2)/202601_fixed_oa_coverage_r1/202601_fixed_oa_coverage_r1.csv",
+        "202601_fixed_broadband_coverage_and_full_fibre_take-up (v2)/202601_fixed_oa_coverage_r1/202601_fixed_oa_res_coverage_r1.csv"
+      ],
+      "fetched_at": "2026-10-07T17:10:01.496090+00:00",
+      "last_modified": "Mon, 20 Jul 2026 07:51:44 GMT",
+      "sha256": "0ddc33723e345d86ba25d7528d272f6fe12aef5d21d2e3adefdcaa53711c76f3"
+    },
+    "resolved": {
+      "release": null,
+      "resolved_at": "2026-10-07T17:05:09+00:00",
+      "url": "https://www.ofcom.org.uk/siteassets/resources/documents/research-and-data/multi-sector/infrastructure-research/connected-nations-spring-2026/202601_fixed_broadband_coverage_and_full_fibre_take-up-r1.zip?v=422620",
+      "version": "https://www.ofcom.org.uk/siteassets/resources/documents/research-and-data/multi-sector/infrastructure-research/connected-nations-spring-2026/202601_fixed_broadband_coverage_and_full_fibre_take-up-r1.zip?v=422620"
+    }
+  },
+  "ofsted_childcare": {
+    "fetched": {
+      "bytes": 19074959,
+      "etag": "\"6a6ca4eb-1230f8f\"",
+      "fetched_at": "2026-10-07T17:05:25.515176+00:00",
+      "last_modified": "Fri, 31 Jul 2026 13:36:43 GMT",
+      "sha256": "38065d8c506b1e4118a0577da4eefc0dd37f22b6a2daf6a25c54454f7452ffae"
+    },
+    "resolved": {
+      "modified": "2026-08-06T09:45:54+01:00",
+      "resolved_at": "2026-10-07T17:05:05+00:00",
+      "title": "Management information - childcare providers and inspections - childcare provider data as at 30 June 2026 ",
+      "url": "https://assets.publishing.service.gov.uk/media/6a6ca4eb0c36759b5ccaa2e0/Management_information_-_childcare_providers_and_inspections_-_childcare_providers_data_as_at_30_June_2026.csv",
+      "version": "https://assets.publishing.service.gov.uk/media/6a6ca4eb0c36759b5ccaa2e0/Management_information_-_childcare_providers_and_inspections_-_childcare_providers_data_as_at_30_June_2026.csv"
     }
   },
   "ofsted_schools": {
@@ -506,6 +641,23 @@
       "title": "Management information - state-funded schools - latest inspections as at 31 August 2026",
       "url": "https://assets.publishing.service.gov.uk/media/6aa0175392e72b8ac437ef37/Management_information_-_state-funded_schools_-_latest_inspections_as_at_31_August_2026.csv",
       "version": "https://assets.publishing.service.gov.uk/media/6aa0175392e72b8ac437ef37/Management_information_-_state-funded_schools_-_latest_inspections_as_at_31_August_2026.csv"
+    }
+  },
+  "os_greenspace": {
+    "fetched": {
+      "bytes": 59489052,
+      "etag": "\"0x8DEA1E36C42A8E3\"",
+      "extracted": [
+        "Data/opgrsp_gb.gpkg"
+      ],
+      "fetched_at": "2026-10-07T17:05:53.934114+00:00",
+      "last_modified": "Fri, 24 Apr 2026 09:25:27 GMT",
+      "sha256": "f152217482fe7a0f2f950e47b83d4ccbe3d53c673ab05e4862160d1e5ac6862d"
+    },
+    "resolved": {
+      "resolved_at": "2026-10-07T17:04:58+00:00",
+      "url": "https://api.os.uk/downloads/v1/products/OpenGreenspace/downloads?area=GB&format=GeoPackage&redirect",
+      "version": null
     }
   },
   "os_open_names": {
@@ -2960,6 +3112,38 @@
       "title": "Rural Urban Classification (2021) of LSOAs in EW",
       "url": "https://services1.arcgis.com/ESMARspQHYMw9BZ9/arcgis/rest/services/LSOA21_RUC21_EW_LU/FeatureServer/0",
       "version": "2025-08-11T08:24:30+00:00"
+    }
+  },
+  "stats19": {
+    "fetched": {
+      "bytes": 97669586,
+      "fetched_at": "2026-10-07T17:06:04.703530+00:00",
+      "sha256": "06a03c0e5504175e23ed98e3e0b4767ac61d396c073405a1bddab9339c18f948"
+    },
+    "resolved": {
+      "resolved_at": "2026-10-07T17:04:56+00:00",
+      "url": "https://data.dft.gov.uk/road-accidents-safety-data/dft-road-casualty-statistics-collision-last-5-years.csv",
+      "version": null
+    }
+  },
+  "voa_ctsop": {
+    "fetched": {
+      "bytes": 73430283,
+      "etag": "\"6aa93b43-460750b\"",
+      "extracted": [
+        "CTSOP_4_1/CTSOP4_1_2026_03_31.csv",
+        "CTSOP_4_1/CTSOP4_1_CSV_table_notes.xlsx"
+      ],
+      "fetched_at": "2026-10-07T17:05:41.807820+00:00",
+      "last_modified": "Tue, 15 Sep 2026 12:34:11 GMT",
+      "sha256": "5cd6580757035e36d66f76ea9fe7456e064af6f97e558df7393a427f2ba35d05"
+    },
+    "resolved": {
+      "modified": "2026-09-24T09:30:08+01:00",
+      "resolved_at": "2026-10-07T17:05:11+00:00",
+      "title": "CTSOP4.1: number of properties by Council Tax band, property build period, local authority district and lower and middle layer super output area at 31 March 2026",
+      "url": "https://assets.publishing.service.gov.uk/media/6aa93b422f29b388848184b8/CTSOP_4_1.zip",
+      "version": "https://assets.publishing.service.gov.uk/media/6aa93b422f29b388848184b8/CTSOP_4_1.zip"
     }
   }
 }

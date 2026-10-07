@@ -22,11 +22,19 @@ def school_access(ctx, phases: list[str], radius_m: float, cap: float) -> pl.Dat
 
 
 def nursery_access(ctx, radius_m: float, cap: float) -> pl.DataFrame:
-    """Nursery schools, schools with nursery classes, and OSM nurseries/childcare."""
-    gias = ctx.staged("gias").filter(
-        (pl.col("phase") == "Nursery") | (pl.col("nursery_provision") == "Has Nursery Classes")
+    """Nurseries and pre-schools (Ofsted) plus school nursery classes (GIAS), by quality.
+
+    Ofsted settings carry their inspection quality; nursery schools and classes count
+    as average, since their grade is the whole school's.
+    """
+    ofsted = ctx.staged("ofsted_childcare").select("x", "y", "quality")
+    gias = (
+        ctx.staged("gias")
+        .filter(
+            (pl.col("phase") == "Nursery") | (pl.col("nursery_provision") == "Has Nursery Classes")
+        )
+        .select("x", "y", pl.lit(NEUTRAL).alias("quality"))
     )
-    osm = ctx.staged("osm_pois").filter(pl.col("value").is_in(["kindergarten", "childcare"]))
-    pois = pl.concat([gias.select("x", "y"), osm.select("x", "y")])
-    access = ctx.access(pois, radius_m=radius_m, cap=cap)
+    pois = pl.concat([ofsted, gias], how="vertical_relaxed")
+    access = ctx.access(pois, radius_m=radius_m, cap=cap, weight="quality")
     return access.select("lsoa21cd", pl.col("score").alias("value"))

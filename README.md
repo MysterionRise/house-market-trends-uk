@@ -23,7 +23,7 @@ The pipeline downloads, stages and joins the open datasets below:
   population, area and map bounding box; `lix validate geo` checks it
 - helpers bring other geographies onto LSOAs: points, output areas, MSOA/local-authority values,
   1km grids (sampled at postcodes, so population-weighted) and distance-based access to places
-- `lix indicators` builds 43 indicators (24 scored across 8 themes) from
+- `lix indicators` builds 57 indicators (29 scored across 8 themes) from
   [`config/indicators.yaml`](config/indicators.yaml); `lix score` turns them into theme and
   overall scores per LSOA for five persona presets ([`config/weights.yaml`](config/weights.yaml)),
   plus a QA report. The method, including how Greater Manchester's missing crime data and
@@ -36,13 +36,13 @@ Datasets ingested so far (full list with licences: [docs/data-sources.md](docs/d
 | Theme | Sources |
 |-------|---------|
 | Geography | NSPL postcode lookup, LSOA/MSOA/local authority boundaries, population-weighted centroids, OA and 2011→2021 lookups, rural–urban class, House of Commons Library MSOA names, OS Open Names |
-| Community | English Indices of Deprivation 2025; Census 2021 (population, density, age, households, health, accommodation, cars, tenure, commuting, qualifications) |
-| Housing | HM Land Registry Price Paid (LSOA medians) |
-| Safety | police.uk street crime, 36 months (Greater Manchester Police publishes none; flagged) |
-| Environment | Defra modelled NO₂, PM2.5 and PM10 (1km, population-weighted to LSOAs) |
-| Health | NHS GP practices, patients registered by LSOA (real catchments), GP workforce |
-| Education | Get Information About Schools; Ofsted inspections blended across the 2024 and 2025 framework changes |
-| Transport | DfT Transport Connectivity Metric |
+| Community | English Indices of Deprivation 2025; Census 2021 (population, density, age, households, health, accommodation, cars, tenure, commuting, qualifications); Nomis claimant count (monthly) |
+| Housing | HM Land Registry Price Paid (LSOA medians); ONS small-area income; council tax by billing authority; VOA housing stock by council tax band and build period |
+| Safety | police.uk street crime, 36 months (Greater Manchester Police publishes none; flagged); DfT road collisions (STATS19, 5 years) |
+| Environment | Defra modelled NO₂, PM2.5 and PM10 (1km, population-weighted to LSOAs); OS Open Greenspace; Environment Agency flood risk from rivers and the sea, by postcode |
+| Health | NHS GP practices, patients registered by LSOA (real catchments), GP workforce; NHS dental practices; NHSBSA community pharmacies |
+| Education | Get Information About Schools; Ofsted inspections blended across the 2024 and 2025 framework changes; Ofsted nurseries and pre-schools |
+| Transport | DfT Transport Connectivity Metric; NaPTAN stations and stops; Ofcom broadband coverage |
 | Amenities | OpenStreetMap points of interest; Food Standards Agency hygiene ratings |
 
 ### API and assistant
@@ -89,9 +89,9 @@ With a model key in `.env`, `LIX_MODEL=anthropic:claude-opus-5-5 make dev` uses 
 
 ## Planned
 
-- More open datasets: broadband, flood risk, green space and tree cover, nurseries (Ofsted),
-  pharmacies, road collisions, council tax, income, life expectancy, public transport stops,
-  supermarkets, noise and more
+- More open datasets: bus and rail service frequency, surface water flooding, road and rail
+  noise, tree cover, life expectancy, CQC ratings, school results, Overture Places (to
+  corroborate pubs) and the CDRC's Access to Healthy Assets & Hazards
 - Walking-network travel times instead of straight-line distances
 
 ## Running it

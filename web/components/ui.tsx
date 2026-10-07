@@ -54,12 +54,24 @@ export function Band({ band, percentile }: { band?: number | null; percentile?: 
 
 export function formatValue(value: number | null | undefined, unit: string): string {
   if (value == null || Number.isNaN(value)) return "–";
-  if (unit === "£") return `£${Math.round(value).toLocaleString("en-GB")}`;
+  if (unit.startsWith("£")) return `£${Math.round(value).toLocaleString("en-GB")}`;
   if (unit === "metres") return value >= 1000 ? `${(value / 1000).toFixed(1)} km` : `${Math.round(value)} m`;
-  if (unit === "%") return `${value.toFixed(0)}%`;
+  if (unit.startsWith("%")) return `${value.toFixed(value > 0 && value < 10 ? 1 : 0)}%`;
   if (unit.startsWith("index")) return value.toFixed(2);
   if (Math.abs(value) >= 100) return Math.round(value).toLocaleString("en-GB");
   return value.toFixed(1);
+}
+
+const QUALITY_NOTE: Record<string, string> = {
+  imputed: "estimated",
+  low_n: "few sales",
+  broadcast_msoa: "wider area",
+  broadcast_lad: "council-wide",
+};
+
+/** Plain-English note for a value that isn't measured directly for the LSOA. */
+export function qualityNote(quality: string | null | undefined): string | undefined {
+  return quality ? QUALITY_NOTE[quality] : undefined;
 }
 
 export function Muted({ children }: { children: ReactNode }) {

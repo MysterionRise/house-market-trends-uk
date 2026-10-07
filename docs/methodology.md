@@ -37,7 +37,16 @@ may be scored. The build's QA report lists scored indicators that correlate abov
 - **Gridded data** (Defra's 1km air-quality model) takes the value of the grid cell
   each residential postcode falls in, averaged per LSOA — close to a population-weighted
   mean.
-- **Rates** use mid-2022 resident population as the denominator.
+- **Rates** use mid-2022 resident population as the denominator; the claimant rate uses
+  residents aged 16–64, and flood risk uses the VOA's count of dwellings.
+- **Green space** is measured to the entrances of public parks, gardens and playing
+  fields (OS Open Greenspace access points), not their centres: a park is only as close
+  as its nearest gate, and a large park with many gates counts for more.
+- **Road danger** counts collisions in which someone was killed or seriously injured
+  within 500m of homes, averaged over five years.
+- **Area-level values** are copied to each LSOA where a source isn't published for
+  smaller areas: council tax per billing authority (`broadcast_lad`) and household
+  income per MSOA (`broadcast_msoa`).
 
 ## 3. From raw value to a 0–100 score
 
@@ -83,6 +92,9 @@ with the same maths as the pipeline; both are tested against the same golden cas
 | Few house sales | The LSOA median is blended with its MSOA's median, weighted as if the MSOA were 5 extra sales | `low_n` (fewer than 5 sales) |
 | GP practices reporting under 1 FTE qualified GP | Left out of the patients-per-GP average; LSOAs with under half their patients at usable practices have no value | `missing` |
 | Schools never inspected | Count as average (0.6 on the quality scale) | — |
+| Nurseries never inspected | Count as average (0.6), as do school nursery classes, which share their school's grade | — |
+| Childminders' addresses are withheld by Ofsted | Only nurseries and pre-schools on non-domestic premises are located | — |
+| Flood-risk file includes pseudo-postcodes that aren't in NSPL | Dropped; they hold under 0.1% of the homes at high or medium risk | — |
 
 ### School quality across Ofsted's framework changes
 
@@ -113,14 +125,19 @@ how well a pub is run, not how good the beer is, hence the name.
 
 - **Urban bias in access measures.** Every access indicator rises with density, so
   rural areas score lower on health services, schools, transport and amenities. That
-  reflects real travel distances, but rural strengths (open countryside, quiet) are
-  under-measured until vegetation and greenspace data are added. Compare within the
-  same urban/rural class (an option in analyst mode) for like-for-like rankings, as the
-  DfT advises for its connectivity scores.
+  reflects real travel distances, but rural strengths are under-measured: green space
+  counts public parks and playing fields, not open countryside or footpaths, and quiet
+  isn't measured yet. Compare within the same urban/rural class (an option in analyst
+  mode) for like-for-like rankings, as the DfT advises for its connectivity scores.
+- **Flood risk** covers rivers and the sea only; surface water flooding, which affects
+  more homes, isn't included yet.
 - **Crime rates per resident** overstate risk in town centres, where visitors
   outnumber residents.
-- **Correlated deprivation measures.** Income and health deprivation correlate at
-  ρ ≈ 0.81; both are scored because they describe different things.
+- **Correlated measures.** Three scored pairs within a theme correlate above ρ = 0.8
+  and are kept because they describe different things: income and health deprivation
+  (ρ ≈ 0.81), primary and secondary school access (ρ ≈ 0.84), and primary school and
+  nursery access (ρ ≈ 0.83), all of which rise with density. The claimant rate tracks
+  income deprivation at ρ ≈ 0.89, so it is shown as context rather than scored.
 - **Mixed vintages.** Sources range from Census 2021 to data published this month; the
   manifest records each source's version.
 - **Ecological fallacy.** An LSOA's score describes the area, not every home in it.

@@ -15,7 +15,7 @@ themes:
     description: Recorded crime and anti-social behaviour where people live.
   environment:
     label: Environment
-    description: Clean air and access to parks and nature.
+    description: Clean air, parks and green space nearby, and flood risk.
   health:
     label: Health services
     description: How easily residents can see a GP, pharmacist or dentist.
@@ -24,7 +24,7 @@ themes:
     description: Good schools and nurseries within reach.
   transport:
     label: Transport & connectivity
-    description: How well an area connects to jobs and services by every mode.
+    description: How well an area connects to jobs and services by every mode, and its broadband.
   amenities:
     label: Amenities & nightlife
     description: Shops, cafés, well-run pubs, leisure and culture nearby.
@@ -98,6 +98,19 @@ indicators:
     role: context
     overlap_group: violence_disorder
 
+  - id: road_danger
+    theme: safety
+    label: Serious road collisions nearby
+    description: Road collisions in which someone was killed or seriously injured within 500m of homes, per year (5-year average).
+    unit: collisions a year within 500m
+    direction: lower_better
+    sources: [stats19, nspl]
+    builder: common:count_within
+    params: {slug: stats19, column: severity, values: [fatal, serious], radius_m: 500, per_years: 5}
+    log1p: true
+    weight: 0.75
+    caveats: Busy roads near homes raise the count whoever was involved. Police forces moved to a new injury-reporting system at different times, which records more injuries as serious.
+
   - id: iod_crime
     theme: safety
     label: IoD 2025 crime domain score
@@ -142,16 +155,42 @@ indicators:
 
   - id: green_space_access
     theme: environment
-    label: Parks and nature nearby
-    description: Parks, nature reserves and dog parks within a 1km walk, weighted by distance.
+    label: Parks and green spaces nearby
+    description: Entrances to public parks, gardens and playing fields within a 1km walk, weighted by distance.
     unit: index 0–1
     direction: higher_better
-    sources: [osm_england, nspl]
-    builder: amenities:osm_access
-    params: {values: [park, nature_reserve, dog_park], radius_m: 1000, cap: 5}
+    sources: [os_greenspace, nspl]
+    builder: common:access
+    params: {slug: os_greenspace, column: function, values: [Public Park Or Garden, Playing Field], radius_m: 1000, cap: 10}
     normalise: scale
-    weight: 0.5
-    caveats: From OpenStreetMap parks, which misses open countryside and so understates rural areas; to be replaced with vegetation and greenspace data.
+    weight: 0.75
+    caveats: Counts public parks and playing fields, not open countryside, so villages surrounded by fields and footpaths score lower than they feel.
+
+  - id: play_spaces
+    theme: environment
+    label: Play areas nearby
+    description: Entrances to public play spaces within 800m of homes, weighted by distance.
+    unit: index 0–1
+    direction: higher_better
+    sources: [os_greenspace, nspl]
+    builder: common:access
+    params: {slug: os_greenspace, column: function, values: [Play Space], radius_m: 800, cap: 5}
+    normalise: scale
+    role: context
+
+  - id: flood_risk
+    theme: environment
+    label: Homes at risk of flooding
+    description: Share of homes at high or medium risk of flooding from rivers or the sea (at least a 1% chance a year).
+    unit: "% of homes"
+    direction: lower_better
+    sources: [ea_flood_postcodes, voa_ctsop, nspl]
+    builder: environment:flood_risk
+    params: {bands: [high, medium]}
+    normalise: threshold
+    good: 0
+    bad: 25
+    caveats: Rivers and the sea only, not surface water or groundwater; the Environment Agency's model takes flood defences into account.
 
   - id: iod_outdoors
     theme: environment
@@ -194,27 +233,28 @@ indicators:
   - id: pharmacy_distance
     theme: health
     label: Distance to nearest pharmacy
-    description: Average straight-line distance from homes to the nearest pharmacy.
+    description: Average straight-line distance from homes to the nearest NHS community pharmacy.
     unit: metres
     direction: lower_better
-    sources: [osm_england, nspl]
-    builder: amenities:osm_nearest
-    params: {values: [pharmacy]}
+    sources: [nhsbsa_pharmacies, nspl]
+    builder: common:nearest
+    params: {slug: nhsbsa_pharmacies}
     normalise: threshold
     good: 1000
     bad: 8000
     log1p: true
     weight: 0.75
+    caveats: Rural GP practices that dispense medicines themselves aren't counted.
 
   - id: dentist_distance
     theme: health
-    label: Distance to nearest dentist
-    description: Average straight-line distance from homes to the nearest dental practice.
+    label: Distance to nearest NHS dentist
+    description: Average straight-line distance from homes to the nearest dental practice with an NHS contract.
     unit: metres
     direction: lower_better
-    sources: [osm_england, nspl]
-    builder: amenities:osm_nearest
-    params: {values: [dentist]}
+    sources: [ods_dentists, nspl]
+    builder: common:nearest
+    params: {slug: ods_dentists}
     normalise: threshold
     good: 1500
     bad: 10000
@@ -250,15 +290,15 @@ indicators:
 
   - id: nursery_access
     theme: education
-    label: Nurseries nearby
-    description: Nursery schools, nursery classes and childcare settings within 1km.
+    label: Good nurseries nearby
+    description: Nurseries, pre-schools and school nursery classes within 1km, each weighted by its Ofsted grade and distance.
     unit: index 0–1
     direction: higher_better
-    sources: [gias, osm_england, nspl]
+    sources: [ofsted_childcare, gias, nspl]
     builder: education:nursery_access
     params: {radius_m: 1000, cap: 5}
     normalise: scale
-    caveats: Childminders aren't located (Ofsted publishes them by local authority only).
+    caveats: Childminders aren't located (Ofsted withholds their addresses).
 
   # -------------------------------------------------------------------- transport
   - id: connectivity_overall
@@ -317,6 +357,57 @@ indicators:
     weight: 0.5
     role: context
     overlap_group: connectivity
+
+  - id: station_distance
+    theme: transport
+    label: Distance to nearest station
+    description: Average straight-line distance from homes to the nearest railway, metro or tram stop.
+    unit: metres
+    direction: lower_better
+    sources: [naptan, nspl]
+    builder: common:nearest
+    params: {slug: naptan, column: mode, values: [rail, metro_tram]}
+    normalise: threshold
+    good: 800
+    bad: 10000
+    log1p: true
+    weight: 0.75
+
+  - id: bus_stops
+    theme: transport
+    label: Bus stops nearby
+    description: Bus stops within 400m of homes, on average.
+    unit: stops within 400m
+    direction: higher_better
+    sources: [naptan, nspl]
+    builder: common:count_within
+    params: {slug: naptan, column: mode, values: [bus], radius_m: 400}
+    role: context
+    caveats: Stops, not services; how often buses run isn't counted yet.
+
+  - id: gigabit_broadband
+    theme: transport
+    label: Gigabit broadband
+    description: Share of homes that can get gigabit-capable broadband (full fibre or cable).
+    unit: "% of homes"
+    direction: higher_better
+    sources: [ofcom_broadband]
+    builder: common:column
+    params: {slug: ofcom_broadband, column: gigabit_pct}
+    normalise: scale
+    scale_max: 100
+    weight: 0.75
+
+  - id: slow_broadband
+    theme: transport
+    label: Homes without decent broadband
+    description: Share of homes that can't get 10 Mbit/s broadband from a fixed line or fixed wireless.
+    unit: "% of homes"
+    direction: lower_better
+    sources: [ofcom_broadband]
+    builder: common:column
+    params: {slug: ofcom_broadband, column: below_uso_pct}
+    role: context
 
   # -------------------------------------------------------------------- amenities
   - id: well_run_pubs
@@ -454,6 +545,62 @@ indicators:
     role: context
     caveats: Noisy where sales are few.
 
+  - id: council_tax
+    theme: housing
+    label: Council tax (Band D)
+    description: Annual council tax on a Band D home, including county, police, fire and average parish charges.
+    unit: £ a year
+    direction: lower_better
+    sources: [council_tax]
+    builder: housing:council_tax
+    params: {band: d}
+    weight: 0.5
+    caveats: The same for every neighbourhood in a council area; a home's bill depends on its band.
+
+  - id: price_to_income
+    theme: housing
+    label: Price to local income
+    description: Typical house price divided by the area's mean net household income.
+    unit: years of income
+    direction: lower_better
+    sources: [price_paid, msoa_income]
+    builder: housing:price_to_income
+    role: context
+    caveats: Income is a model-based estimate for the wider area (MSOA), for 2022–23.
+
+  - id: new_builds
+    theme: housing
+    label: Homes built since 2000
+    description: Share of homes built in 2000 or later.
+    unit: "% of homes"
+    direction: higher_better
+    sources: [voa_ctsop]
+    builder: common:share
+    params: {slug: voa_ctsop, numerator: [built_2000_on], denominator: dwellings}
+    role: context
+
+  - id: period_homes
+    theme: housing
+    label: Homes built before 1919
+    description: Share of homes built before 1919.
+    unit: "% of homes"
+    direction: higher_better
+    sources: [voa_ctsop]
+    builder: common:share
+    params: {slug: voa_ctsop, numerator: [built_pre_1919], denominator: dwellings}
+    role: context
+
+  - id: lower_band_homes
+    theme: housing
+    label: Homes in council tax bands A–B
+    description: Share of homes in the two lowest council tax bands (the cheapest homes in 1991 values).
+    unit: "% of homes"
+    direction: higher_better
+    sources: [voa_ctsop]
+    builder: common:share
+    params: {slug: voa_ctsop, numerator: [band_a, band_b], denominator: dwellings}
+    role: context
+
   # -------------------------------------------------------------------- community
   - id: income_deprivation
     theme: community
@@ -475,6 +622,31 @@ indicators:
     sources: [iod_2025]
     builder: common:iod
     params: {column: employment_score}
+    role: context
+    overlap_group: income_work
+
+  - id: claimant_rate
+    theme: community
+    label: Claimant rate
+    description: Residents claiming unemployment-related benefits, as a share of those aged 16–64 (latest month).
+    unit: "% of 16–64s"
+    direction: lower_better
+    sources: [claimant_count, census_ts007a]
+    builder: community:claimant_rate
+    log1p: true
+    role: context
+    overlap_group: income_work
+    caveats: Not scored because it tracks IoD income deprivation closely (ρ≈0.9), but it is far more recent (monthly). Includes Universal Credit claimants in low-paid work who must look for more.
+
+  - id: household_income
+    theme: community
+    label: Household income
+    description: Mean net household income in the wider area (MSOA), before housing costs.
+    unit: £ a year
+    direction: higher_better
+    sources: [msoa_income]
+    builder: housing:msoa_income
+    params: {column: income_net}
     role: context
     overlap_group: income_work
 

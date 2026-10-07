@@ -1,7 +1,7 @@
 "use client";
 
 import { useLiveability } from "@/components/AppData";
-import { Band, Card, Muted, ScoreBar, formatValue } from "@/components/ui";
+import { Band, Card, Muted, ScoreBar, formatValue, qualityNote } from "@/components/ui";
 import type { AreaProfile, IndicatorValue } from "@/lib/contracts.gen";
 import { bboxOf } from "@/lib/state";
 
@@ -13,7 +13,9 @@ function Facts({ items }: { items: IndicatorValue[] }) {
           <dt className="truncate text-xs text-[var(--text-muted)]">{f.label}</dt>
           <dd className="text-sm tabular-nums">
             {formatValue(f.value, f.unit)}
-            {f.quality !== "ok" && <span className="ml-1 text-xs text-[var(--text-muted)]">({f.quality})</span>}
+            {qualityNote(f.quality) && (
+              <span className="ml-1 text-xs text-[var(--text-muted)]">({qualityNote(f.quality)})</span>
+            )}
           </dd>
         </div>
       ))}

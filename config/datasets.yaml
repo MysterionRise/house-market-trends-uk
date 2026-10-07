@@ -345,6 +345,20 @@ police_crime:
   size_hint: 1.7GB zipped
   notes: Greater Manchester Police has supplied no data since mid-2019; its area is imputed.
 
+stats19:
+  title: DfT road collisions (STATS19, last 5 years)
+  theme: safety
+  access:
+    type: http
+    url: "https://data.dft.gov.uk/road-accidents-safety-data/dft-road-casualty-statistics-collision-last-5-years.csv"
+  format: csv
+  landing_page: https://www.data.gov.uk/dataset/cb7ae6f0-4be6-4935-9277-47e5ce24a11f/road-safety-data
+  description: Every reported personal-injury road collision with its severity and location.
+  licence: OGL-3.0
+  attribution: "Department for Transport, Road Safety Data (STATS19), licensed under the Open Government Licence v3.0."
+  cadence: annual
+  size_hint: 120MB
+
 # ---------------------------------------------------------------------------------------
 # Environment
 # ---------------------------------------------------------------------------------------
@@ -386,6 +400,36 @@ defra_pcm_pm10:
     steps: [{pattern: 'href="([^"]*/mappm10\d{4}g\.csv)"', order: desc}]
   description: Annual mean particulate matter (PM10, gravimetric), µg/m³, on a 1km grid.
 
+os_greenspace:
+  title: OS Open Greenspace (GB)
+  theme: environment
+  access:
+    type: http
+    url: "https://api.os.uk/downloads/v1/products/OpenGreenspace/downloads?area=GB&format=GeoPackage&redirect"
+  format: zip
+  extract: ["*.gpkg"]
+  landing_page: https://www.ordnancesurvey.co.uk/products/os-open-greenspace
+  description: Public parks, playing fields, play spaces, allotments and other green spaces, with their access points.
+  licence: OGL-3.0
+  attribution: "Contains OS data © Crown copyright and database right 2026."
+  cadence: adhoc
+  size_hint: 60MB zipped
+
+ea_flood_postcodes:
+  title: Environment Agency flood risk from rivers and the sea, by postcode
+  theme: environment
+  access:
+    type: http
+    url: "https://environment.data.gov.uk/api/file/download?fileDataSetId=97781741-2982-4802-af2e-313fe3fd8f7e&fileName=RoFRS_Postcodes_in_Areas_at_Risk.zip"
+  format: zip
+  landing_page: https://www.data.gov.uk/dataset/risk-of-flooding-from-rivers-and-sea-postcodes-in-areas-at-risk2
+  description: Residential and non-residential properties per postcode in each flood likelihood band (high, medium, low, very low).
+  licence: OGL-3.0
+  attribution: "Contains Environment Agency information © Environment Agency and/or database right, licensed under the Open Government Licence v3.0."
+  cadence: adhoc
+  size_hint: 20MB zipped
+  notes: Rivers and the sea only; surface water flooding is a separate dataset.
+
 # ---------------------------------------------------------------------------------------
 # Health
 # ---------------------------------------------------------------------------------------
@@ -401,6 +445,35 @@ ods_gp:
   attribution: "Contains NHS England Organisation Data Service data licensed under the Open Government Licence v3.0."
   cadence: daily
   size_hint: 3MB
+
+ods_dentists:
+  title: NHS ODS dental practices
+  theme: health
+  access: {type: http, url: "https://www.odsdatasearchandexport.nhs.uk/api/getReport?report=egdpprac"}
+  format: csv
+  landing_page: https://www.odsdatasearchandexport.nhs.uk/
+  description: Every dental practice with an NHS contract, with status and postcode (headerless CSV).
+  licence: OGL-3.0
+  attribution: "Contains NHS England Organisation Data Service data licensed under the Open Government Licence v3.0."
+  cadence: daily
+  size_hint: 2MB
+  notes: Practices with an NHS contract; whether one takes new NHS patients isn't published.
+
+nhsbsa_pharmacies:
+  title: NHSBSA consolidated pharmaceutical list
+  theme: health
+  access:
+    type: ckan
+    api: https://opendata.nhsbsa.net/api/3/action
+    package: consolidated-pharmaceutical-list
+    resource_regex: '^CONSOL_PHARMACY_LIST_\d{6}Q\d$'
+  format: csv
+  landing_page: https://opendata.nhsbsa.net/dataset/consolidated-pharmaceutical-list
+  description: Every community pharmacy and appliance contractor in England with its address and opening hours.
+  licence: OGL-3.0
+  attribution: "NHS Business Services Authority, Consolidated Pharmaceutical List, licensed under the Open Government Licence v3.0."
+  cadence: quarterly
+  size_hint: 6MB
 
 gp_registrations:
   title: Patients registered at a GP practice, by LSOA
@@ -472,6 +545,22 @@ ofsted_schools:
   cadence: monthly
   size_hint: 16MB
 
+ofsted_childcare:
+  title: Ofsted childcare providers and inspections
+  theme: education
+  access:
+    type: govuk_attachment
+    path: government/statistical-data-sets/childcare-providers-and-inspections-management-information
+    attachment_regex: 'childcare_providers_data_as_at_.*\.csv$'
+    pick: latest
+  format: csv
+  description: Every registered childcare provider with its type, places and latest inspection grade; nurseries and other non-domestic settings have a postcode.
+  licence: OGL-3.0
+  attribution: "Ofsted, Management information: childcare providers and inspections, licensed under the Open Government Licence v3.0."
+  cadence: quarterly
+  size_hint: 25MB
+  notes: Childminders' locations are withheld, so only non-domestic settings are located.
+
 # ---------------------------------------------------------------------------------------
 # Transport & connectivity
 # ---------------------------------------------------------------------------------------
@@ -490,6 +579,35 @@ dft_connectivity:
   cadence: annual
   size_hint: 65MB
   notes: Relative scores, not travel times; an official statistic in development.
+
+naptan:
+  title: NaPTAN public transport stops
+  theme: transport
+  access: {type: http, url: "https://naptan.api.dft.gov.uk/v1/access-nodes?dataFormat=csv"}
+  format: csv
+  landing_page: https://www.data.gov.uk/dataset/ff93ffc1-6656-47d8-9155-85ea0b8f2251/national-public-transport-access-nodes-naptan
+  description: Every bus stop, railway station, tram and metro stop, ferry terminal and coach station in Great Britain.
+  licence: OGL-3.0
+  attribution: "Department for Transport, National Public Transport Access Nodes (NaPTAN), licensed under the Open Government Licence v3.0."
+  cadence: daily
+  size_hint: 100MB
+
+ofcom_broadband:
+  title: Ofcom Connected Nations fixed broadband coverage (output areas)
+  theme: transport
+  access:
+    type: html_link
+    page: https://www.ofcom.org.uk/phones-and-broadband/coverage-and-speeds/connected-nations-update-spring-2026
+    steps: [{pattern: 'href="([^"]*fixed_broadband_coverage[^"]*\.zip[^"]*)"'}]
+  format: zip
+  # Output-area files only (the zip also has 240 postcode files)
+  extract: ["*fixed_oa_*coverage*.csv"]
+  landing_page: https://www.ofcom.org.uk/phones-and-broadband/coverage-and-speeds/connected-nations-update-spring-2026
+  description: Share of premises in each output area that can get gigabit, superfast or decent broadband, and those below the universal service obligation.
+  licence: OGL-3.0
+  attribution: "Ofcom, Connected Nations, licensed under the Open Government Licence v3.0."
+  cadence: quarterly
+  size_hint: 32MB zipped
 
 # ---------------------------------------------------------------------------------------
 # Amenities
@@ -518,3 +636,78 @@ fsa_fhrs:
   attribution: "Food Standards Agency food hygiene rating data, licensed under the Open Government Licence v3.0."
   cadence: daily
   size_hint: 300MB
+
+# ---------------------------------------------------------------------------------------
+# Housing & affordability
+# ---------------------------------------------------------------------------------------
+
+msoa_income:
+  title: ONS income estimates for small areas (MSOA)
+  theme: housing
+  access:
+    type: html_link
+    page: https://www.ons.gov.uk/employmentandlabourmarket/peopleinwork/earningsandworkinghours/datasets/smallareaincomeestimatesformiddlelayersuperoutputareasenglandandwales
+    steps: [{pattern: 'href="(/file\?uri=[^"]*/financialyearending\d{4}/[^"]*\.xlsx)"', order: desc}]
+  format: xlsx
+  description: Model-based mean household income per MSOA, total and net, before and after housing costs.
+  licence: OGL-3.0
+  attribution: *ons
+  cadence: adhoc
+  size_hint: 3MB
+
+council_tax:
+  title: Council Tax levels set by local authorities in England
+  theme: housing
+  access:
+    type: govuk_attachment
+    path: government/statistics/council-tax-levels-set-by-local-authorities-in-england-2026-to-2027
+    attachment_regex: 'Tables_1-9_\d{4}-\d{2}\.ods$'
+  format: ods
+  description: Average Band D council tax per billing authority, including adult social care and parish precepts.
+  licence: OGL-3.0
+  attribution: "Ministry of Housing, Communities and Local Government, Council Tax levels, licensed under the Open Government Licence v3.0."
+  cadence: annual
+  size_hint: 1MB
+  notes: The page path names the financial year; update it each April.
+
+voa_ctsop:
+  title: VOA Council Tax stock of properties by band and build period (LSOA)
+  theme: housing
+  access:
+    type: govuk_attachment
+    path: government/statistics/council-tax-stock-of-properties-2026
+    attachment_regex: 'CTSOP_4_1\.zip$'
+  format: zip
+  description: Dwellings per LSOA by Council Tax band and the period they were built.
+  licence: OGL-3.0
+  attribution: "Valuation Office Agency, Council Tax: stock of properties, licensed under the Open Government Licence v3.0."
+  cadence: annual
+  size_hint: 10MB zipped
+  notes: The page path names the year; update it each September.
+
+# ---------------------------------------------------------------------------------------
+# Community & wellbeing
+# ---------------------------------------------------------------------------------------
+
+claimant_count:
+  title: Claimant count by LSOA (Nomis)
+  theme: community
+  access:
+    type: nomis
+    dataset: NM_162_1
+    params:
+      geography: TYPE151
+      date: latest
+      gender: "0"
+      age: "0"
+      measure: "1"
+      measures: "20100"
+      select: date_name,geography_code,obs_value
+  format: csv
+  landing_page: https://www.nomisweb.co.uk/datasets/ucjsa
+  description: People claiming unemployment-related benefits (Universal Credit searching for work, or JSA), latest month.
+  licence: OGL-3.0
+  attribution: *ons
+  cadence: monthly
+  size_hint: 2MB
+

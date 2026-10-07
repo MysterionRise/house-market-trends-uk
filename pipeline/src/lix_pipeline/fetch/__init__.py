@@ -15,7 +15,7 @@ import requests
 from lix_core.config import DatasetSpec, HttpAccess, load_registry
 from lix_core.log import setup_logging
 from lix_core.paths import data_dir
-from lix_pipeline.fetch import arcgis, govuk, html
+from lix_pipeline.fetch import arcgis, ckan, govuk, html, nomis
 from lix_pipeline.fetch.http import _read_meta, _write_meta, download
 from lix_pipeline.fetch.lock import read_lock, update_entry
 from lix_pipeline.fetch.session import make_session
@@ -94,6 +94,11 @@ def resolve(slug: str, spec: DatasetSpec, session: requests.Session) -> dict:
         resolved = govuk.resolve_attachment(access, session)
         # Republishing a file gives it a new /media/<id>/ URL, so the URL is the version
         resolved["version"] = resolved["url"]
+    elif access.type == "ckan":
+        resolved = ckan.resolve_resource(access, session)
+        resolved["version"] = resolved["url"]
+    elif access.type == "nomis":
+        resolved = nomis.resolve_query(access, session)
     else:  # manual
         resolved = {"url": None, "version": None, "instructions": access.instructions}
     return {**resolved, "resolved_at": _now()}
@@ -129,7 +134,8 @@ def _fetch_manual(slug: str, spec: DatasetSpec) -> dict:
     }
 
 
-def _fetch_featureserver(slug: str, spec: DatasetSpec, resolved: dict, force: bool, session):
+def _fetch_paged(slug: str, spec: DatasetSpec, resolved: dict, force: bool, download_to):
+    """Download a paged API query (ArcGIS layer, Nomis) into one file, with caching."""
     dest_dir = data_dir("raw") / slug
     out_path = dest_dir / f"{slug}.{spec.format}"
     meta = _read_meta(dest_dir)
@@ -137,7 +143,7 @@ def _fetch_featureserver(slug: str, spec: DatasetSpec, resolved: dict, force: bo
     if not force and meta.get("completed") and same and out_path.exists():
         logger.info(f"[{slug}] Already downloaded — skipping (use --force to re-download)")
         return meta
-    rows = arcgis.fetch_featureserver(resolved["url"], spec.access, out_path, session)
+    rows = download_to(out_path)
     meta = {
         "slug": slug,
         "url": resolved["url"],
@@ -184,7 +190,17 @@ def fetch(
     resolved = entry.get("resolved") or resolve_and_lock(slug, spec, session)
 
     if spec.access.type == "arcgis_item" and spec.access.mode == "featureserver":
-        meta = _fetch_featureserver(slug, spec, resolved, force, session)
+        meta = _fetch_paged(
+            slug,
+            spec,
+            resolved,
+            force,
+            lambda out: arcgis.fetch_featureserver(resolved["url"], spec.access, out, session),
+        )
+    elif spec.access.type == "nomis":
+        meta = _fetch_paged(
+            slug, spec, resolved, force, lambda out: nomis.fetch_query(spec.access, out, session)
+        )
     else:
         meta = download(
             slug,
