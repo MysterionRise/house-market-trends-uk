@@ -77,6 +77,20 @@ make eval MODEL=openrouter:anthropic/claude-opus-5.5     # all cases; costs real
 Claude Opus 5.5, Claude Haiku 5.5 and Qwen 3.8 27B (open weights) all pass the 30 cases;
 results, costs and what the evals caught are in [docs/evals.md](docs/evals.md).
 
+### Demo
+
+A 7–10 minute stakeholder walkthrough, with talking points and a rehearsal checklist, is in
+[docs/demo.md](docs/demo.md):
+
+```bash
+make demo           # Docker, real model from .env, opens http://localhost:3000
+make demo-offline   # recorded conversations (config/demo_cassettes.json): no network needed
+make demo-record    # re-record them after changing data or prompts
+```
+
+`LIX_DEMO=1 npx playwright test demo-storyline` (in `web/`) rehearses the storyline against a
+running demo and saves a screenshot per step.
+
 ### Running it with Docker
 
 ```bash

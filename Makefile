@@ -1,4 +1,4 @@
-.PHONY: up down up-demo data-pack data-unpack eval install resolve fetch stage indicators score tiles build-data validate demo-data docs schemas api web-install web web-test e2e dev test lint format
+.PHONY: up down up-demo data-pack data-unpack eval demo demo-offline demo-check demo-record install resolve fetch stage indicators score tiles build-data validate demo-data docs schemas api web-install web web-test e2e dev test lint format
 
 PY_DIRS := core pipeline api
 # Local runs read model keys from .env when it exists (see .env.example)
@@ -119,4 +119,30 @@ data-unpack:
 #   make eval MODEL=openrouter:anthropic/claude-opus-5.5 CASES=family_leeds_budget,compare_two
 eval:
 	cd api && uv run $(ENV_FILE) python -m evals.run --model $(MODEL) $(if $(CASES),--cases $(CASES),)
+
+# --- Stakeholder demo (docs/demo.md) ---------------------------------------------------
+# make demo          real model from .env (Docker: api, static data, web)
+# make demo-offline  recorded conversations (config/demo_cassettes.json): no network needed
+# make demo-record   re-record those conversations with a real model
+# NO_OPEN=1 skips opening the browser (rehearsal scripts)
+DEMO_URL := http://localhost:3000
+
+demo: demo-check
+	docker compose up -d --build --wait
+	@curl -sf "http://localhost:8000/api/v1/areas/LS6%203AA" >/dev/null && echo "API warmed up"
+	@echo "Demo running at $(DEMO_URL) (assistant: $${LIX_MODEL:-from .env}); stop with make down"
+	@$(if $(NO_OPEN),true,(open $(DEMO_URL) || xdg-open $(DEMO_URL)) >/dev/null 2>&1 || true)
+
+demo-offline:
+	LIX_MODEL=replay $(MAKE) demo
+
+demo-check:
+	@test -f data/serve/manifest.json || (echo "No built data: make build-data, or make data-unpack PACK=..." && exit 1)
+	@uv run lix validate serve
+	@test -f config/demo_cassettes.json || echo "Note: no recorded demo (make demo-record); offline mode falls back to the scripted assistant"
+	@if [ "$$LIX_MODEL" != "replay" ] && ! grep -qE '^(OPENROUTER|ANTHROPIC|OPENAI|GEMINI)_API_KEY=.+' .env 2>/dev/null; then \
+		echo "Note: no model key in .env; the assistant will say it isn't configured (or use make demo-offline)"; fi
+
+demo-record:
+	uv run $(ENV_FILE) python -m lix_api.agent.replay record --model $${MODEL:-openrouter:anthropic/claude-opus-5.5}
 

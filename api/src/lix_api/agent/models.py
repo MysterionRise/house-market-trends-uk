@@ -5,7 +5,8 @@ LIX_MODEL            provider:model, e.g. anthropic:claude-opus-5-5 (default),
                      openrouter:anthropic/claude-opus-5.5 (one OPENROUTER_API_KEY for
                      many providers), openai:gpt-5, google:gemini-2.5-pro,
                      ollama:llama3.1 (with OLLAMA_BASE_URL), or "test" for a scripted
-                     model that needs no API key (end-to-end tests and demos)
+                     model that needs no API key (end-to-end tests and demos), or
+                     "replay" for the recorded demo conversations (offline demos)
 LIX_FALLBACK_MODELS  comma-separated models to try if the first fails
 LIX_EFFORT           reasoning effort (default "low": the assistant mostly picks and
                      fills in tools)
@@ -55,6 +56,10 @@ def build_model() -> Model:
     name = model_name()
     if name == "test":
         return scripted_model()
+    if name == "replay":
+        from lix_api.agent.replay import replay_model
+
+        return replay_model()
     fallbacks = [
         m.strip() for m in os.environ.get("LIX_FALLBACK_MODELS", "").split(",") if m.strip()
     ]

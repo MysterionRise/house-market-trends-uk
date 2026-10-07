@@ -199,19 +199,35 @@ def nearest_pois(
     """
     result: PoiResult = pois.nearest_pois(get_store(), category, near, max_km, min(limit, 25))
     ctx.deps.state.map.pois = result.pois
+    # Fit the map to the search point and the places found, so the markers are in view
+    lons = [result.origin.lon, *(p.point.lon for p in result.pois)]
+    lats = [result.origin.lat, *(p.point.lat for p in result.pois)]
+    pad_lon, pad_lat = 0.004, 0.0025
+    ctx.deps.state.map.bbox = (
+        min(lons) - pad_lon,
+        min(lats) - pad_lat,
+        max(lons) + pad_lon,
+        max(lats) + pad_lat,
+    )
     return _with_state(ctx, result)
 
 
 @agent.tool
 @_recoverable
-def explain_score(ctx: RunContext[Deps], area: str, theme: str | None = None) -> Explanation:
+def explain_score(ctx: RunContext[Deps], area: str, theme: str | None = None) -> ToolReturn:
     """Explain an area's score: each theme's share and the indicators behind it.
 
     Args:
         area: a postcode, place name or LSOA code
         theme: limit the explanation to one theme (e.g. "safety")
     """
-    return explain.explain_score(get_store(), area, theme=theme, **_weights(ctx))
+    store = get_store()
+    result: Explanation = explain.explain_score(store, area, theme=theme, **_weights(ctx))
+    # The map follows the conversation: select and show the area being explained
+    row = store.features.row(store.lsoa_index[result.lsoa21cd], named=True)
+    ctx.deps.state.map.selected = result.lsoa21cd
+    ctx.deps.state.map.bbox = (row["bbox_w"], row["bbox_s"], row["bbox_e"], row["bbox_n"])
+    return _with_state(ctx, result)
 
 
 # Changes the shared state: tools called after it in the same turn see the change

@@ -222,3 +222,45 @@ def test_data_files_must_be_revalidated(tmp_path, monkeypatch):
     app.mount("/data", DataFiles(directory=tmp_path), name="data")
     r = TestClient(app).get("/data/scores.parquet", headers={"Range": "bytes=0-3"})
     assert r.status_code == 206 and r.headers["cache-control"] == "no-cache"
+
+
+def test_replay_plays_a_recorded_turn_and_falls_back(client, tmp_path):
+    from pydantic_ai.messages import ModelMessagesTypeAdapter, ModelResponse, TextPart, ToolCallPart
+
+    from lix_api.agent.agent import agent
+    from lix_api.agent.replay import replay_model
+
+    turn = [
+        ModelResponse(
+            parts=[ToolCallPart("set_weights", {"preset": "retiree"}, tool_call_id="c1")]
+        ),
+        ModelResponse(parts=[TextPart("Recorded reply about retirees.")]),
+    ]
+    path = tmp_path / "cassettes.json"
+    path.write_text(
+        json.dumps({"weights for retirees": json.loads(ModelMessagesTypeAdapter.dump_json(turn))})
+    )
+
+    with agent.override(model=replay_model(path)):
+        events = _agui(client, "Weights for retirees?")
+        other = _agui(client, "Use family weights please")
+    text = "".join(e.get("delta", "") for e in events if e["type"] == "TEXT_MESSAGE_CONTENT")
+    assert text == "Recorded reply about retirees."
+    snapshot = next(e for e in events if e["type"] == "STATE_SNAPSHOT")["snapshot"]
+    assert snapshot["preset"] == "retiree"  # the recorded tool call ran for real
+    # An unrecorded prompt falls back to the scripted model
+    assert next(e for e in other if e["type"] == "TOOL_CALL_START")["toolCallName"] == "set_weights"
+
+
+def test_explaining_an_area_shows_it_on_the_map(client):
+    events = _agui(client, "Why is the score low in LS6 3HN?")
+    snapshot = next(e for e in events if e["type"] == "STATE_SNAPSHOT")["snapshot"]
+    assert snapshot["map"]["selected"] == "E01000001" and snapshot["map"]["bbox"]
+
+
+def test_nearby_places_bring_the_map_to_them(client):
+    events = _agui(client, "Show me well-run pubs near LS6 3HN")
+    snapshot = next(e for e in events if e["type"] == "STATE_SNAPSHOT")["snapshot"]
+    west, south, east, north = snapshot["map"]["bbox"]
+    for poi in snapshot["map"]["pois"]:
+        assert west <= poi["point"]["lon"] <= east and south <= poi["point"]["lat"] <= north

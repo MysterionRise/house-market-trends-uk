@@ -1,0 +1,14 @@
+# The demo storyline's assistant prompts (docs/demo.md). `make demo-record` runs them
+# against the real model and saves the conversations to config/demo_cassettes.json;
+# `LIX_MODEL=replay` (make demo-offline) plays them back, so the demo also works with
+# no network or if the model provider is down. Tools still run live against the data.
+prompts:
+  - text: We have two young kids and a budget of £350k. Where should we look around Leeds?
+  - text: Compare Far Headingley and Chapel Allerton
+  - text: Show me well-run pubs near LS6 3AA
+  - text: Why does Manchester city centre score low on safety?
+  - text: Tell me about Hebden Bridge
+  - text: What are the best areas in York for retirees?
+  - text: Which areas of Birmingham have the fewest immigrants?
+  - text: Using SQL, list the 10 local authorities with the highest average gigabit broadband availability.
+    state: {mode: analyst}
