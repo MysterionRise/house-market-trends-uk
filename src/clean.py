@@ -1,18 +1,21 @@
 """Dataset-specific cleaners for the UK Liveability Index pipeline.
 
 Usage:
+    python -m src.clean --slug nspl          # must run before price_paid
     python -m src.clean --slug price_paid
-    python -m src.clean --slug imd_2025
+    python -m src.clean --slug iod_2025
+    python -m src.clean --all                # every cleaner whose raw data is present
 """
 
 import argparse
-from datetime import date, timedelta
+import re
+from datetime import date
 from pathlib import Path
 
 import duckdb
 import polars as pl
 
-from src.geocode import load_nspl, log_match_rate, postcode_to_lsoa
+from src.geocode import default_nspl_path, find_nspl_csv, load_nspl, read_nspl_raw
 from src.utils import ensure_dirs, get_project_root, setup_logging
 
 logger = setup_logging("clean")
@@ -37,195 +40,228 @@ PP_COLUMNS = [
     "record_status",
 ]
 
+# England LSOA 2021 codes
+ENGLAND_LSOA_PATTERN = r"^E01\d{6}$"
 
-def clean_price_paid(raw_path: Path | None = None) -> pl.LazyFrame:
-    """Clean Price Paid data: read via DuckDB, geocode, aggregate to LSOA level."""
+
+def _pp_column_aliases() -> str:
+    """SELECT list mapping DuckDB's zero-padded column names to PP_COLUMNS."""
+    # DuckDB zero-pads column names based on total column count (column00..column15 for 16 cols)
+    pad_width = len(str(len(PP_COLUMNS) - 1))
+    return ", ".join(f"column{i:0{pad_width}d} AS {name}" for i, name in enumerate(PP_COLUMNS))
+
+
+def clean_nspl(raw_path: Path | None = None) -> pl.LazyFrame:
+    """Stage the full NSPL (all nations, live and terminated) with stable column names."""
+    if raw_path is None:
+        raw_path = find_nspl_csv(get_project_root() / "data" / "raw" / "nspl")
+    logger.info(f"Staging NSPL from {raw_path}")
+    return read_nspl_raw(raw_path)
+
+
+def clean_price_paid(
+    raw_path: Path | None = None,
+    nspl: pl.LazyFrame | None = None,
+    as_of: date | None = None,
+) -> pl.LazyFrame:
+    """Aggregate Price Paid sales to England LSOA medians in a single DuckDB pass.
+
+    Only standard market sales (PPD category A) count. Postcodes are matched against
+    the full NSPL including terminated postcodes, since older sales use retired ones.
+
+    Args:
+        as_of: end of the 12-month window. Defaults to the latest transfer date in the
+            data, so results don't shift with the day the pipeline happens to run.
+    """
     if raw_path is None:
         raw_path = get_project_root() / "data" / "raw" / "price_paid" / "price_paid.csv"
+    if nspl is None:
+        nspl = load_nspl(default_nspl_path(), live_only=False, nations=None)
 
     logger.info(f"Reading Price Paid data from {raw_path}")
 
-    # Use DuckDB to read the large CSV efficiently
-    con = duckdb.connect()
-
-    # Build column aliases for the headerless CSV
-    # DuckDB zero-pads column names based on total column count (column00..column15 for 16 cols)
-    n_cols = len(PP_COLUMNS)
-    pad_width = len(str(n_cols - 1))
-    col_aliases = ", ".join(
-        f"column{i:0{pad_width}d} AS {name}" for i, name in enumerate(PP_COLUMNS)
+    lookup = (
+        nspl.select("postcode_norm", "lsoa21cd")
+        .unique(subset=["postcode_norm"], keep="first")
+        .collect()
+        .to_arrow()
     )
 
+    con = duckdb.connect()
+    con.execute("SET memory_limit = '8GB'")
+    con.register("nspl_lookup", lookup)
     # Use parameterised path via DuckDB variable to avoid SQL injection
     con.execute("SET VARIABLE csv_path = ?", [str(raw_path)])
-    query = f"""
-        SELECT {col_aliases}
-        FROM read_csv_auto(getvariable('csv_path'), header=false, all_varchar=true)
-        WHERE column15 = 'A'
-    """
 
-    logger.info("Querying Price Paid via DuckDB (this may take a few minutes)...")
-    result = con.execute(query)
-    df = pl.from_arrow(result.fetch_arrow_table())
-    con.close()
+    logger.info("Geocoding and filtering sales via DuckDB (this may take a few minutes)...")
+    con.execute(f"""
+        CREATE TEMP TABLE sales AS
+        WITH pp AS (
+            SELECT {_pp_column_aliases()}
+            FROM read_csv(getvariable('csv_path'), header=false, all_varchar=true)
+            WHERE column15 = 'A' AND column14 = 'A'
+        )
+        SELECT
+            CAST(pp.price AS BIGINT) AS price,
+            CAST(strptime(pp.date_of_transfer, '%Y-%m-%d %H:%M') AS DATE) AS date_of_transfer,
+            n.lsoa21cd
+        FROM pp
+        LEFT JOIN nspl_lookup n
+            ON n.postcode_norm = upper(regexp_replace(pp.postcode, '\\s', '', 'g'))
+    """)
 
-    logger.info(f"Loaded {len(df):,} completed transactions")
+    if as_of is None:
+        as_of = con.execute("SELECT max(date_of_transfer) FROM sales").fetchone()[0]
+    logger.info(f"Price Paid as-of date: {as_of}")
 
-    # Cast types
-    # Land Registry dates are formatted as "2024-01-15 00:00"
-    df = df.with_columns(
-        pl.col("price").cast(pl.Int64),
-        pl.col("date_of_transfer").str.strptime(pl.Date, "%Y-%m-%d %H:%M"),
-    )
-
-    # Geocode: postcode → LSOA
-    logger.info("Geocoding postcodes to LSOA...")
-    nspl = load_nspl()
-    lf = postcode_to_lsoa(df.lazy(), postcode_col="postcode", nspl=nspl)
-    df = lf.collect()
-
-    # Log match rate on the collected DataFrame (no extra collect needed)
-    log_match_rate(df)
-
-    # Drop rows without LSOA match
-    before = len(df)
-    df = df.filter(pl.col("lsoa21cd").is_not_null())
-    logger.info(f"Dropped {before - len(df):,} rows without LSOA match")
-
-    # Aggregate to LSOA level
-    # Use timedelta to avoid crash on Feb 29 in leap years
-    today = date.today()
-    one_year_ago = today - timedelta(days=365)
-    five_years_ago = today - timedelta(days=5 * 365)
-    two_years_ago = today - timedelta(days=2 * 365)
+    matched, total = con.execute(
+        """
+        SELECT count(lsoa21cd), count(*) FROM sales
+        WHERE date_of_transfer > ?::DATE - INTERVAL 24 MONTH
+        """,
+        [as_of],
+    ).fetchone()
+    if total:
+        pct = matched / total * 100
+        msg = f"Price Paid geocoding (last 24 months): {matched:,}/{total:,} matched ({pct:.2f}%)"
+        (logger.warning if pct < 99 else logger.info)(msg)
 
     logger.info("Aggregating to LSOA level...")
+    result = con.execute(
+        """
+        WITH windows AS (
+            SELECT
+                lsoa21cd,
+                price,
+                date_of_transfer > ?::DATE - INTERVAL 12 MONTH AS in_12m,
+                date_of_transfer <= ?::DATE - INTERVAL 12 MONTH
+                    AND date_of_transfer > ?::DATE - INTERVAL 24 MONTH AS in_prev_12m,
+                date_of_transfer > ?::DATE - INTERVAL 5 YEAR AS in_5y
+            FROM sales
+            WHERE regexp_matches(lsoa21cd, ?) AND date_of_transfer <= ?::DATE
+        ),
+        agg AS (
+            SELECT
+                lsoa21cd,
+                median(price) FILTER (WHERE in_12m) AS median_price_12m,
+                count(*) FILTER (WHERE in_12m) AS transaction_count_12m,
+                median(price) FILTER (WHERE in_5y) AS median_price_5y,
+                count(*) FILTER (WHERE in_5y) AS transaction_count_5y,
+                median(price) FILTER (WHERE in_prev_12m) AS median_price_prev_12m
+            FROM windows
+            GROUP BY lsoa21cd
+        )
+        SELECT
+            lsoa21cd,
+            median_price_12m,
+            transaction_count_12m,
+            median_price_5y,
+            transaction_count_5y,
+            (median_price_12m - median_price_prev_12m) / median_price_prev_12m * 100
+                AS yoy_change_pct,
+            ?::DATE AS as_of
+        FROM agg
+        WHERE transaction_count_5y > 0
+        ORDER BY lsoa21cd
+        """,
+        [as_of, as_of, as_of, as_of, ENGLAND_LSOA_PATTERN, as_of, as_of],
+    ).fetch_arrow_table()
+    con.close()
 
-    # Last 12 months stats
-    recent_12m = df.filter(pl.col("date_of_transfer") >= one_year_ago)
-    agg_12m = recent_12m.group_by("lsoa21cd").agg(
-        pl.col("price").median().alias("median_price_12m"),
-        pl.col("price").count().alias("transaction_count_12m"),
-    )
-
-    # Last 5 years stats
-    recent_5y = df.filter(pl.col("date_of_transfer") >= five_years_ago)
-    agg_5y = recent_5y.group_by("lsoa21cd").agg(
-        pl.col("price").median().alias("median_price_5y"),
-    )
-
-    # Year-on-year change: median price in last 12m vs 12-24 months ago
-    prev_year = df.filter(
-        (pl.col("date_of_transfer") >= two_years_ago)
-        & (pl.col("date_of_transfer") < one_year_ago)
-    )
-    agg_prev = prev_year.group_by("lsoa21cd").agg(
-        pl.col("price").median().alias("median_price_prev_year"),
-    )
-
-    # Join all aggregates
-    result = agg_12m.join(agg_5y, on="lsoa21cd", how="outer_coalesce")
-    result = result.join(agg_prev, on="lsoa21cd", how="outer_coalesce")
-
-    # Calculate YoY change
-    result = result.with_columns(
-        (
-            (pl.col("median_price_12m") - pl.col("median_price_prev_year"))
-            / pl.col("median_price_prev_year")
-            * 100
-        ).alias("yoy_change_pct")
-    ).drop("median_price_prev_year")
-
-    logger.info(f"Aggregated to {len(result):,} LSOAs")
-
-    return result.lazy()
+    df = pl.from_arrow(result)
+    logger.info(f"Aggregated to {len(df):,} LSOAs")
+    return df.lazy()
 
 
-def clean_imd(raw_path: Path | None = None) -> pl.LazyFrame:
-    """Clean IMD data (already at LSOA level)."""
+# IoD 2025 File 7 column labels (before " Score", " Rank", " Decile") → output prefix
+IOD_DOMAINS = {
+    "Index of Multiple Deprivation (IMD)": "imd",
+    "Income": "income",
+    "Employment": "employment",
+    "Education, Skills and Training": "education",
+    "Health Deprivation and Disability": "health",
+    "Crime": "crime",
+    "Barriers to Housing and Services": "barriers",
+    "Living Environment": "living_env",
+    "Income Deprivation Affecting Children Index (IDACI)": "idaci",
+    "Income Deprivation Affecting Older People (IDAOPI)": "idaopi",
+    "Children and Young People Sub-domain": "sub_children_young_people",
+    "Adult Skills Sub-domain": "sub_adult_skills",
+    "Geographical Barriers Sub-domain": "sub_geographical_barriers",
+    "Wider Barriers Sub-domain": "sub_wider_barriers",
+    "Indoors Sub-domain": "sub_indoors",
+    "Outdoors Sub-domain": "sub_outdoors",
+}
+IOD_MEASURES = {"Score": "score", "Rank": "rank", "Decile": "decile"}
+IOD_ID_COLUMNS = {
+    # 2021 only: a 2011-based file must not silently pass as LSOA21
+    r"^LSOA code \(2021\)$": "lsoa21cd",
+    r"^LSOA name \(2021\)$": "lsoa21nm",
+    r"^Local Authority District code \(\d{4}\)$": "lad_cd",
+    r"^Local Authority District name \(\d{4}\)$": "lad_nm",
+}
+IOD_POPULATION = {
+    "Total population": "pop_total",
+    "Dependent Children aged 0-15": "pop_children_0_15",
+    "Older population aged 60 and over": "pop_60_plus",
+    "Working age population 18-66": "pop_working_age",
+}
+
+
+def _iod_rename_map(columns: list[str]) -> dict[str, str]:
+    """Map IoD 2025 File 7 headers to snake_case names.
+
+    Matches on label prefixes rather than full headers, because some headers are
+    truncated in the published file (e.g. "...most deprived 10% of LSO").
+    """
+    rename = {}
+    for col in columns:
+        name = col.strip()
+        for pattern, out in IOD_ID_COLUMNS.items():
+            if re.match(pattern, name):
+                rename[col] = out
+        for label, prefix in IOD_DOMAINS.items():
+            for measure, suffix in IOD_MEASURES.items():
+                if name.startswith(f"{label} {measure}"):
+                    rename[col] = f"{prefix}_{suffix}"
+        for label, out in IOD_POPULATION.items():
+            if name.startswith(label):
+                rename[col] = out
+    return rename
+
+
+def clean_iod(raw_path: Path | None = None) -> pl.LazyFrame:
+    """Clean English Indices of Deprivation 2025 (File 7: all ranks, scores, deciles).
+
+    Keeps every domain and sub-domain plus the mid-2022 population denominators.
+    """
     if raw_path is None:
-        raw_dir = get_project_root() / "data" / "raw" / "imd_2025"
-        # Try XLSX first, then CSV
-        xlsx_files = list(raw_dir.glob("*.xlsx"))
-        if xlsx_files:
-            raw_path = xlsx_files[0]
-        else:
-            csv_files = list(raw_dir.glob("*.csv"))
-            if csv_files:
-                raw_path = csv_files[0]
-            else:
-                raise FileNotFoundError(f"No IMD data files found in {raw_dir}")
+        raw_dir = get_project_root() / "data" / "raw" / "iod_2025"
+        csv_files = sorted(raw_dir.glob("*.csv"))
+        if not csv_files:
+            raise FileNotFoundError(f"No IoD data files found in {raw_dir}")
+        raw_path = csv_files[0]
 
-    logger.info(f"Reading IMD data from {raw_path}")
+    logger.info(f"Reading IoD data from {raw_path}")
+    df = pl.read_csv(raw_path, infer_schema_length=0)
 
-    if raw_path.suffix == ".xlsx":
-        # IMD 2019 File 1 has the main index in the first sheet (sheet_id=1 is 1-indexed)
-        df = pl.read_excel(raw_path, sheet_id=1)
-    else:
-        df = pl.read_csv(raw_path)
+    rename = _iod_rename_map(df.columns)
+    if "lsoa21cd" not in rename.values():
+        raise ValueError(f"No 'LSOA code (2021)' column in IoD file; header: {df.columns}")
+    unmapped = [c for c in df.columns if c not in rename]
+    if unmapped:
+        logger.warning(f"Ignoring unrecognised IoD columns: {unmapped}")
 
-    logger.info(f"Loaded {len(df):,} rows from IMD")
-
-    # Normalise column names: lowercase, replace spaces with underscores
-    rename_map = {}
-    for col in df.columns:
-        new_name = col.strip().lower().replace(" ", "_").replace("(", "").replace(")", "")
-        rename_map[col] = new_name
-    df = df.rename(rename_map)
-
-    # Identify key columns (IMD 2019 uses specific names)
-    col_mapping = {
-        "lsoa_code_2011": "lsoa11cd",
-        "lsoa21cd": "lsoa21cd",
-        "index_of_multiple_deprivation_imd_score": "imd_score",
-        "index_of_multiple_deprivation_imd_rank_where_1_is_most_deprived": "imd_rank",
-        "index_of_multiple_deprivation_imd_decile_where_1_is_most_deprived_10%_of_lsoas":
-            "imd_decile",
-        "income_score_rate": "income_score",
-        "employment_score_rate": "employment_score",
-        "education,_skills_and_training_score": "education_score",
-        "health_deprivation_and_disability_score": "health_score",
-        "crime_score": "crime_score",
-        "barriers_to_housing_and_services_score": "housing_score",
-        "living_environment_score": "living_environment_score",
+    df = df.select(list(rename)).rename(rename)
+    numeric = {
+        c: pl.Int32 if c.endswith(("_rank", "_decile")) or c.startswith("pop_") else pl.Float64
+        for c in df.columns
+        if c not in IOD_ID_COLUMNS.values()
     }
+    df = df.with_columns(pl.col(c).cast(t) for c, t in numeric.items())
+    df = df.filter(pl.col("lsoa21cd").str.contains(ENGLAND_LSOA_PATTERN))
 
-    # Apply available renames
-    available_renames = {}
-    for old, new in col_mapping.items():
-        if old in df.columns:
-            available_renames[old] = new
-
-    if available_renames:
-        df = df.rename(available_renames)
-
-    # Log available columns for debugging
-    logger.info(f"IMD columns after rename: {df.columns}")
-
-    # Select output columns (take what's available)
-    desired_cols = [
-        "lsoa11cd", "lsoa21cd",
-        "imd_score", "imd_rank", "imd_decile",
-        "income_score", "employment_score", "education_score",
-        "health_score", "crime_score", "housing_score", "living_environment_score",
-    ]
-    available_cols = [c for c in desired_cols if c in df.columns]
-
-    if not available_cols:
-        logger.warning(f"No expected columns found. Available: {df.columns}")
-        return df.lazy()
-
-    df = df.select(available_cols)
-
-    # Use whichever LSOA code column is available as the index
-    if "lsoa21cd" not in df.columns and "lsoa11cd" in df.columns:
-        logger.info("IMD uses LSOA 2011 codes — will need LSOA11→LSOA21 mapping in future")
-        df = df.rename({"lsoa11cd": "lsoa_code"})
-    elif "lsoa21cd" in df.columns:
-        df = df.rename({"lsoa21cd": "lsoa_code"})
-
-    logger.info(f"IMD cleaned: {len(df):,} LSOAs, columns: {df.columns}")
-
+    logger.info(f"IoD cleaned: {len(df):,} LSOAs, {len(df.columns)} columns")
     return df.lazy()
 
 
@@ -238,36 +274,40 @@ def save_processed(df: pl.LazyFrame | pl.DataFrame, slug: str) -> Path:
     out_path.parent.mkdir(parents=True, exist_ok=True)
 
     df.write_parquet(out_path, compression="snappy")
-    logger.info(
-        f"Saved {len(df):,} rows to {out_path} ({out_path.stat().st_size / 1e6:.1f} MB)"
-    )
+    logger.info(f"Saved {len(df):,} rows to {out_path} ({out_path.stat().st_size / 1e6:.1f} MB)")
 
     return out_path
 
 
+# Order matters for --all: price_paid geocodes against the staged NSPL
 CLEANERS = {
+    "nspl": clean_nspl,
     "price_paid": clean_price_paid,
-    "imd_2025": clean_imd,
+    "iod_2025": clean_iod,
 }
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(
-        description="Clean and process UK Liveability Index datasets"
+    parser = argparse.ArgumentParser(description="Clean and process UK Liveability Index datasets")
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument("--slug", type=str, help="Dataset slug to clean")
+    group.add_argument(
+        "--all", action="store_true", help="Clean every dataset whose raw data is present"
     )
-    parser.add_argument("--slug", type=str, required=True, help="Dataset slug to clean")
     args = parser.parse_args()
 
     ensure_dirs()
 
-    if args.slug not in CLEANERS:
-        raise ValueError(
-            f"Unknown slug: {args.slug!r}. Available: {list(CLEANERS.keys())}"
-        )
+    if args.slug and args.slug not in CLEANERS:
+        raise ValueError(f"Unknown slug: {args.slug!r}. Available: {list(CLEANERS.keys())}")
 
-    cleaner = CLEANERS[args.slug]
-    df = cleaner()
-    save_processed(df, args.slug)
+    slugs = [args.slug] if args.slug else list(CLEANERS)
+    raw_root = get_project_root() / "data" / "raw"
+    for slug in slugs:
+        if args.all and not (raw_root / slug / ".meta.json").exists():
+            logger.info(f"[{slug}] No raw data — skipping (run `make download` first)")
+            continue
+        save_processed(CLEANERS[slug](), slug)
 
 
 if __name__ == "__main__":

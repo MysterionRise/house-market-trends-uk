@@ -4,71 +4,135 @@ Usage:
     python -m src.geocode   # no standalone action yet; used as a library
 """
 
+import re
 from pathlib import Path
 
 import geopandas as gpd
 import polars as pl
 
-from src.utils import get_config, get_project_root, setup_logging
+from src.utils import get_project_root, setup_logging
 
 logger = setup_logging("geocode")
 
+# NSPL columns we keep, by stem. Columns whose names carry a boundary vintage
+# (lad26cd, rgn26cd, ...) are matched by stem so a new NSPL release with lad27cd
+# still works; the output always uses the stem (lad_cd, rgn_cd, ...).
+NSPL_FIXED_COLUMNS = [
+    "pcds",
+    "doterm",
+    "oa21cd",
+    "lsoa21cd",
+    "msoa21cd",
+    "east1m",
+    "north1m",
+    "lat",
+    "long",
+]
+NSPL_VINTAGED_STEMS = {
+    "lad": "lad_cd",
+    "rgn": "rgn_cd",
+    "ctry": "ctry_cd",
+    "pfa": "pfa_cd",
+    "ruc": "ruc_ind",
+}
+# Country codes start with the nation letter: E92000001 England, W92000004 Wales, ...
+ENGLAND = ("E",)
 
-def _find_nspl_csv(nspl_dir: Path) -> Path:
-    """Locate the NSPL CSV inside the extracted directory."""
-    config = get_config("datasets")
-    inner = config["nspl"].get("inner_path")
-    if inner:
-        candidate = nspl_dir / inner
-        if candidate.exists():
-            return candidate
-        logger.warning(f"Configured inner_path {inner!r} not found, falling back to glob")
 
-    # Fallback: find any CSV matching NSPL pattern
-    for csv in sorted(nspl_dir.rglob("NSPL*.csv")):
+def find_nspl_csv(nspl_dir: Path) -> Path:
+    """Locate the NSPL CSV inside the extracted directory (version-agnostic)."""
+    for csv in sorted(nspl_dir.rglob("NSPL*_UK.csv")):
         return csv
-
     raise FileNotFoundError(f"No NSPL CSV found in {nspl_dir}")
 
 
-def load_nspl(nspl_path: Path | None = None) -> pl.LazyFrame:
-    """Load NSPL CSV and return a LazyFrame with postcode, lsoa21cd, lat, long.
+def _resolve_vintaged(columns: list[str], stem: str) -> str | None:
+    """Return the newest column matching ``{stem}NN(cd|ind)``, e.g. lad26cd for 'lad'."""
+    pattern = re.compile(rf"^{stem}(\d{{2}})(cd|ind)$")
+    matches = [(int(m.group(1)), c) for c in columns if (m := pattern.match(c))]
+    return max(matches)[1] if matches else None
 
-    Only live postcodes (doterm is null) are included.
+
+def default_nspl_path() -> Path:
+    """Staged NSPL Parquet if it exists, else the raw CSV."""
+    root = get_project_root()
+    staged = root / "data" / "processed" / "nspl.parquet"
+    if staged.exists():
+        return staged
+    return find_nspl_csv(root / "data" / "raw" / "nspl")
+
+
+def read_nspl_raw(nspl_path: Path) -> pl.LazyFrame:
+    """Scan the raw NSPL CSV and return the kept columns under stable names.
+
+    All codes (and ``doterm``, a YYYYMM string) are read as strings so leading zeros
+    and empty values survive.
+    """
+    # Header only; read_csv(n_rows=0) still type-infers rows and chokes on "UN1"
+    header = pl.scan_csv(nspl_path, infer_schema=False).collect_schema().names()
+    rename = {}
+    for stem, out in NSPL_VINTAGED_STEMS.items():
+        col = _resolve_vintaged(header, stem)
+        if col is None:
+            raise ValueError(f"NSPL has no {stem}NNcd/ind column; header: {header}")
+        rename[col] = out
+    missing = [c for c in NSPL_FIXED_COLUMNS if c not in header]
+    if missing:
+        raise ValueError(f"NSPL is missing expected columns {missing}")
+
+    keep = NSPL_FIXED_COLUMNS + list(rename)
+    float_cols = {"lat", "long"}
+    lf = pl.scan_csv(
+        nspl_path,
+        schema_overrides={c: pl.Float64 if c in float_cols else pl.Utf8 for c in keep},
+        infer_schema=False,
+    )
+    lf = lf.select(keep).rename(rename)
+
+    # NSPL quotes every field, so blanks arrive as "" rather than null
+    string_cols = [c for c in lf.collect_schema().names() if c not in float_cols]
+    lf = lf.with_columns(
+        pl.when(pl.col(c).str.strip_chars() != "").then(pl.col(c)).alias(c) for c in string_cols
+    )
+
+    # Normalise postcode: strip all whitespace, uppercase
+    return lf.with_columns(
+        pl.col("pcds").alias("postcode"),
+        pl.col("pcds").str.replace_all(r"\s", "").str.to_uppercase().alias("postcode_norm"),
+        pl.col("doterm").is_null().alias("live"),
+        pl.col("east1m").cast(pl.Int32, strict=False),
+        pl.col("north1m").cast(pl.Int32, strict=False),
+    ).drop("pcds")
+
+
+def load_nspl(
+    nspl_path: Path | None = None,
+    live_only: bool = True,
+    nations: tuple[str, ...] | None = ENGLAND,
+) -> pl.LazyFrame:
+    """Load NSPL (raw CSV or staged Parquet) as a LazyFrame keyed by ``postcode_norm``.
+
+    Args:
+        live_only: drop terminated postcodes. Set False to geocode historic records,
+            e.g. house sales at postcodes that have since been retired.
+        nations: keep postcodes whose country code starts with one of these letters
+            ("E", "W", "S", "N", plus "L"/"M" for Channel Islands / Isle of Man).
+            None keeps everything.
     """
     if nspl_path is None:
-        nspl_path = _find_nspl_csv(get_project_root() / "data" / "raw" / "nspl")
+        nspl_path = default_nspl_path()
 
     logger.info(f"Loading NSPL from {nspl_path}")
 
-    lf = pl.scan_csv(nspl_path, infer_schema_length=10000)
+    if nspl_path.suffix == ".parquet":
+        lf = pl.scan_parquet(nspl_path)
+    else:
+        lf = read_nspl_raw(nspl_path)
 
-    # Select and rename relevant columns
-    lf = lf.select([
-        pl.col("pcds").alias("postcode_raw"),
-        pl.col("lsoa21"),
-        pl.col("doterm"),
-        pl.col("lat"),
-        pl.col("long"),
-    ])
-
-    # Filter to live postcodes only (doterm is null)
-    lf = lf.filter(pl.col("doterm").is_null())
-
-    # Normalise postcode: strip all whitespace, uppercase
-    lf = lf.with_columns(
-        pl.col("postcode_raw")
-        .str.strip_chars()
-        .str.replace_all(r"\s", "")
-        .str.to_uppercase()
-        .alias("postcode_norm"),
-    ).select([
-        pl.col("postcode_raw").alias("postcode"),
-        pl.col("postcode_norm"),
-        pl.col("lsoa21").alias("lsoa21cd"),
-        pl.col("lat"),
-        pl.col("long"),
-    ])
+    if live_only:
+        lf = lf.filter(pl.col("live"))
+    if nations is not None:
+        lf = lf.filter(pl.col("ctry_cd").str.slice(0, 1).is_in(list(nations)))
 
     # No eager collect here — let the caller decide when to materialise
     return lf
@@ -96,10 +160,12 @@ def postcode_to_lsoa(
     )
 
     # Left join on normalised postcode
-    nspl_lookup = nspl.select([
-        pl.col("postcode_norm"),
-        pl.col("lsoa21cd"),
-    ]).unique(subset=["postcode_norm"], keep="first")
+    nspl_lookup = nspl.select(
+        [
+            pl.col("postcode_norm"),
+            pl.col("lsoa21cd"),
+        ]
+    ).unique(subset=["postcode_norm"], keep="first")
 
     result = df.join(nspl_lookup, left_on="_pc_norm", right_on="postcode_norm", how="left")
 
@@ -123,14 +189,18 @@ def log_match_rate(df: pl.DataFrame, lsoa_col: str = "lsoa21cd") -> None:
         logger.info(msg)
 
 
-def load_lsoa_boundaries(simplify_tolerance: float = 50.0) -> gpd.GeoDataFrame:
-    """Load LSOA 2021 boundary GeoPackage and simplify for web rendering."""
-    geo_dir = get_project_root() / "data" / "geo"
+def load_lsoa_boundaries(
+    slug: str = "lsoa_boundaries", simplify_tolerance: float = 0.0
+) -> gpd.GeoDataFrame:
+    """Load an LSOA 2021 boundary GeoPackage downloaded under ``data/raw/{slug}``.
 
-    # Find the GeoPackage file
-    gpkg_files = list(geo_dir.glob("*.gpkg"))
+    ``lsoa_boundaries`` is the 20m generalised (BGC) set; ``lsoa_boundaries_bsc`` is the
+    lighter 200m (BSC) set. Pass ``simplify_tolerance`` (metres) to simplify further.
+    """
+    gpkg_dir = get_project_root() / "data" / "raw" / slug
+    gpkg_files = sorted(gpkg_dir.glob("*.gpkg"))
     if not gpkg_files:
-        raise FileNotFoundError(f"No GeoPackage files found in {geo_dir}")
+        raise FileNotFoundError(f"No GeoPackage files found in {gpkg_dir}")
 
     gpkg_path = gpkg_files[0]
     logger.info(f"Loading LSOA boundaries from {gpkg_path}")
@@ -155,7 +225,6 @@ def load_lsoa_boundaries(simplify_tolerance: float = 50.0) -> gpd.GeoDataFrame:
     if lsoa_col != "lsoa21cd":
         gdf = gdf.rename(columns={lsoa_col: "lsoa21cd"})
 
-    # Simplify geometry for performance
     if simplify_tolerance > 0:
         gdf["geometry"] = gdf["geometry"].simplify(tolerance=simplify_tolerance)
 

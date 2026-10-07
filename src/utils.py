@@ -21,7 +21,7 @@ def get_config(name: str) -> dict:
 def ensure_dirs() -> None:
     """Create data and output directories if they don't exist."""
     root = get_project_root()
-    for d in ["data/raw", "data/processed", "data/geo", "outputs/maps"]:
+    for d in ["data/raw", "data/processed", "outputs/maps"]:
         (root / d).mkdir(parents=True, exist_ok=True)
 
 

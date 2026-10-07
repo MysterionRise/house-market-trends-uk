@@ -1,21 +1,24 @@
 """Tests for the clean module."""
 
+from datetime import date
 from pathlib import Path
 
-import duckdb
 import polars as pl
 import pytest
 
-from src.clean import PP_COLUMNS, clean_imd, save_processed
+from src.clean import PP_COLUMNS, _iod_rename_map, clean_iod, clean_price_paid, save_processed
+from src.geocode import load_nspl
 
 
 class TestSaveProcessed:
     def test_writes_valid_parquet(self, tmp_path: Path):
         """save_processed should write a valid Parquet file."""
-        df = pl.DataFrame({
-            "lsoa21cd": ["E01000001", "E01000002"],
-            "value": [100, 200],
-        })
+        df = pl.DataFrame(
+            {
+                "lsoa21cd": ["E01000001", "E01000002"],
+                "value": [100, 200],
+            }
+        )
 
         with pytest.MonkeyPatch.context() as m:
             m.setattr("src.clean.get_project_root", lambda: tmp_path)
@@ -32,10 +35,12 @@ class TestSaveProcessed:
 
     def test_writes_lazyframe(self, tmp_path: Path):
         """save_processed should handle LazyFrames by collecting them."""
-        lf = pl.DataFrame({
-            "lsoa21cd": ["E01000001"],
-            "score": [42.0],
-        }).lazy()
+        lf = pl.DataFrame(
+            {
+                "lsoa21cd": ["E01000001"],
+                "score": [42.0],
+            }
+        ).lazy()
 
         with pytest.MonkeyPatch.context() as m:
             m.setattr("src.clean.get_project_root", lambda: tmp_path)
@@ -52,118 +57,236 @@ class TestPricePaidColumns:
         assert len(PP_COLUMNS) == 16
 
     def test_key_columns_present(self):
-        assert "transaction_id" in PP_COLUMNS
-        assert "price" in PP_COLUMNS
-        assert "postcode" in PP_COLUMNS
-        assert "date_of_transfer" in PP_COLUMNS
-        assert "record_status" in PP_COLUMNS
-        assert "property_type" in PP_COLUMNS
+        for col in (
+            "transaction_id",
+            "price",
+            "postcode",
+            "date_of_transfer",
+            "ppd_category",
+            "record_status",
+        ):
+            assert col in PP_COLUMNS
 
 
-class TestCleanPricePaidDuckDB:
-    """Test that the DuckDB query correctly reads and filters the Price Paid CSV."""
+def _pp_row(txn: int, price: int, day: str, postcode: str, category="A", status="A") -> str:
+    values = [
+        f"{{TXN-{txn:06d}}}",
+        str(price),
+        f"{day} 00:00",
+        postcode,
+        "T",
+        "N",
+        "F",
+        "1",
+        "",
+        "TEST ST",
+        "",
+        "LONDON",
+        "WESTMINSTER",
+        "GREATER LONDON",
+        category,
+        status,
+    ]
+    return ",".join(f'"{v}"' for v in values)
 
-    def _build_col_aliases(self):
-        """Build column aliases matching production code's zero-padding logic."""
-        n_cols = len(PP_COLUMNS)
-        pad_width = len(str(n_cols - 1))
-        return ", ".join(
-            f"column{i:0{pad_width}d} AS {name}" for i, name in enumerate(PP_COLUMNS)
+
+@pytest.fixture
+def price_paid_csv(tmp_path: Path) -> Path:
+    """Headerless Price Paid CSV exercising the filters and time windows."""
+    rows = [
+        # SW1A 1AA → E01000001: 3 sales in the last 12 months, 1 in the 12 months before
+        _pp_row(1, 300_000, "2026-08-01", "SW1A 1AA"),
+        _pp_row(2, 400_000, "2026-03-15", "sw1a1aa"),
+        _pp_row(3, 500_000, "2025-11-20", "SW1A  1AA"),
+        _pp_row(4, 200_000, "2025-01-10", "SW1A 1AA"),
+        # Non-market (category B) and deleted records are excluded
+        _pp_row(5, 9_000_000, "2026-08-01", "SW1A 1AA", category="B"),
+        _pp_row(6, 9_000_000, "2026-08-01", "SW1A 1AA", status="D"),
+        # Terminated postcode E1 6AN → E01000006 still geocodes
+        _pp_row(7, 250_000, "2026-06-01", "E1 6AN"),
+        # Only a sale 3 years ago: in the 5-year stats, absent from 12m
+        _pp_row(8, 150_000, "2023-09-01", "EC1A 1BB"),
+        # Older than 5 years: no row at all for N1 9GU
+        _pp_row(9, 100_000, "2015-01-01", "N1 9GU"),
+        # Welsh sale geocodes (counts towards match rate) but is dropped from output
+        _pp_row(10, 180_000, "2026-08-29", "CF10 1AA"),
+        # Unknown postcode
+        _pp_row(11, 210_000, "2026-07-01", "ZZ99 9ZZ"),
+    ]
+    path = tmp_path / "price_paid.csv"
+    path.write_text("\n".join(rows) + "\n")
+    return path
+
+
+class TestCleanPricePaid:
+    def _run(self, price_paid_csv, nspl_csv, as_of=None) -> pl.DataFrame:
+        nspl = load_nspl(nspl_csv, live_only=False, nations=None)
+        return clean_price_paid(price_paid_csv, nspl=nspl, as_of=as_of).collect()
+
+    def test_england_lsoas_only(self, price_paid_csv, nspl_csv):
+        df = self._run(price_paid_csv, nspl_csv)
+        assert df["lsoa21cd"].to_list() == ["E01000001", "E01000002", "E01000006"]
+
+    def test_as_of_defaults_to_latest_sale(self, price_paid_csv, nspl_csv):
+        df = self._run(price_paid_csv, nspl_csv)
+        # Latest standard sale is the Welsh one on 2026-08-29
+        assert df["as_of"].unique().to_list() == [date(2026, 8, 29)]
+
+    def test_windows_and_filters(self, price_paid_csv, nspl_csv):
+        df = self._run(price_paid_csv, nspl_csv)
+        sw1 = df.filter(pl.col("lsoa21cd") == "E01000001").row(0, named=True)
+
+        # Category B and deleted £9m sales are excluded
+        assert sw1["transaction_count_12m"] == 3
+        assert sw1["median_price_12m"] == 400_000
+        assert sw1["transaction_count_5y"] == 4
+        assert sw1["median_price_5y"] == 350_000
+        # 12m median 400k vs previous 12m median 200k
+        assert sw1["yoy_change_pct"] == pytest.approx(100.0)
+
+    def test_area_with_only_older_sales(self, price_paid_csv, nspl_csv):
+        df = self._run(price_paid_csv, nspl_csv)
+        ec1 = df.filter(pl.col("lsoa21cd") == "E01000002").row(0, named=True)
+        assert ec1["transaction_count_12m"] == 0
+        assert ec1["median_price_12m"] is None
+        assert ec1["median_price_5y"] == 150_000
+
+    def test_terminated_postcode_geocodes(self, price_paid_csv, nspl_csv):
+        df = self._run(price_paid_csv, nspl_csv)
+        assert "E01000006" in df["lsoa21cd"].to_list()
+
+    def test_explicit_as_of_excludes_later_sales(self, price_paid_csv, nspl_csv):
+        df = self._run(price_paid_csv, nspl_csv, as_of=date(2026, 1, 15))
+        sw1 = df.filter(pl.col("lsoa21cd") == "E01000001").row(0, named=True)
+        # Only the 2025-11-20 sale falls in the 12 months to 2026-01-15
+        assert sw1["transaction_count_12m"] == 1
+        assert sw1["median_price_12m"] == 500_000
+
+    def test_logs_match_rate(self, price_paid_csv, nspl_csv, caplog):
+        import logging
+
+        with caplog.at_level(logging.INFO, logger="clean"):
+            self._run(price_paid_csv, nspl_csv)
+        # 7 standard sales in the 24 months to 2026-08-29; only ZZ99 9ZZ fails to match
+        assert "6/7 matched" in caplog.text
+
+
+# Real IoD 2025 File 7 header (subset), including the truncated one
+IOD_HEADER = [
+    "LSOA code (2021)",
+    "LSOA name (2021)",
+    "Local Authority District code (2024)",
+    "Local Authority District name (2024)",
+    "Index of Multiple Deprivation (IMD) Score",
+    "Index of Multiple Deprivation (IMD) Rank (where 1 is most deprived)",
+    "Index of Multiple Deprivation (IMD) Decile (where 1 is most deprived 10% of LSOAs)",
+    "Income Score (rate)",
+    "Income Rank (where 1 is most deprived)",
+    "Crime Score",
+    "Income Deprivation Affecting Children Index (IDACI) Score (rate)",
+    "Children and Young People Sub-domain Decile (where 1 is most deprived 10% of LSO",
+    "Outdoors Sub-domain Score",
+    "Total population: mid 2022",
+    "Working age population 18-66 (for use with Employment Deprivation Domain): mid 2022",
+]
+
+
+@pytest.fixture
+def iod_csv(tmp_path: Path) -> Path:
+    rows = [
+        [
+            "E01000001",
+            "City of London 001A",
+            "E09000001",
+            "City of London",
+            "8.742",
+            "26525",
+            "8",
+            "0.013",
+            "33730",
+            "-2.22",
+            "0.039",
+            "10",
+            "1.414",
+            "1795",
+            "1248",
+        ],
+        [
+            "E01000002",
+            "City of London 001B",
+            "E09000001",
+            "City of London",
+            "6.1",
+            "29000",
+            "9",
+            "0.010",
+            "33000",
+            "-1.5",
+            "0.020",
+            "9",
+            "0.9",
+            "1600",
+            "1100",
+        ],
+        # Non-England rows (should never appear, but must be filtered if they do)
+        [
+            "W01000001",
+            "Somewhere",
+            "W06000001",
+            "Anglesey",
+            "1",
+            "1",
+            "1",
+            "0",
+            "1",
+            "0",
+            "0",
+            "1",
+            "0",
+            "1",
+            "1",
+        ],
+    ]
+    path = tmp_path / "iod.csv"
+    pl.DataFrame(rows, schema=IOD_HEADER, orient="row").write_csv(path)
+    return path
+
+
+class TestCleanIod:
+    def test_rename_map(self):
+        rename = _iod_rename_map(IOD_HEADER)
+        assert rename["LSOA code (2021)"] == "lsoa21cd"
+        assert rename["Local Authority District code (2024)"] == "lad_cd"
+        assert (
+            rename[
+                "Index of Multiple Deprivation (IMD) Decile (where 1 is most deprived 10% of LSOAs)"
+            ]
+            == "imd_decile"
         )
+        # "Income Score" must not be confused with the IDACI "Income Deprivation..." label
+        assert rename["Income Score (rate)"] == "income_score"
+        assert rename["Income Deprivation Affecting Children Index (IDACI) Score (rate)"] == (
+            "idaci_score"
+        )
+        assert rename[IOD_HEADER[11]] == "sub_children_young_people_decile"
+        assert rename["Total population: mid 2022"] == "pop_total"
+        assert len(rename) == len(IOD_HEADER)
 
-    def test_record_status_filter_via_duckdb(self, tmp_path: Path):
-        """DuckDB query should filter to record_status='A' using column15."""
-        # Write a headerless CSV matching the Price Paid format
-        csv_path = tmp_path / "pp_test.csv"
-        lines = []
-        # record_status is column index 15 (the 16th column)
-        base = [
-            "{TXN-000001}", "250000", "2024-01-15 00:00", "SW1A 1AA",
-            "D", "N", "F", "1", "", "TEST ST", "", "LONDON",
-            "WESTMINSTER", "GREATER LONDON", "A",
-        ]
-        # 3 rows with record_status='A'
-        for i in range(3):
-            row = base.copy()
-            row[0] = f"{{TXN-{i:06d}}}"
-            row.append("A")
-            lines.append(",".join(f'"{v}"' for v in row))
-        # 2 rows with record_status='D'
-        for i in range(3, 5):
-            row = base.copy()
-            row[0] = f"{{TXN-{i:06d}}}"
-            row.append("D")
-            lines.append(",".join(f'"{v}"' for v in row))
+    def test_clean_iod(self, iod_csv):
+        df = clean_iod(iod_csv).collect()
 
-        csv_path.write_text("\n".join(lines) + "\n")
+        assert df["lsoa21cd"].to_list() == ["E01000001", "E01000002"]
+        row = df.row(0, named=True)
+        assert row["imd_score"] == pytest.approx(8.742)
+        assert row["imd_rank"] == 26525
+        assert row["crime_score"] == pytest.approx(-2.22)
+        assert row["pop_total"] == 1795
+        assert df.schema["imd_decile"] == pl.Int32
+        assert df.schema["lad_nm"] == pl.Utf8
 
-        # Run the same DuckDB query that clean_price_paid uses
-        con = duckdb.connect()
-        col_aliases = self._build_col_aliases()
-        con.execute("SET VARIABLE csv_path = ?", [str(csv_path)])
-        query = f"""
-            SELECT {col_aliases}
-            FROM read_csv_auto(getvariable('csv_path'), header=false, all_varchar=true)
-            WHERE column15 = 'A'
-        """
-        result = con.execute(query)
-        df = pl.from_arrow(result.fetch_arrow_table())
-        con.close()
-
-        assert len(df) == 3
-        assert (df["record_status"] == "A").all()
-        assert "transaction_id" in df.columns
-        assert "price" in df.columns
-        assert "postcode" in df.columns
-
-    def test_column_aliases_match_duckdb_naming(self):
-        """Column aliases should use zero-padded names matching DuckDB convention."""
-        col_aliases = self._build_col_aliases()
-        # 16 columns → pad to 2 digits: column00, column01, ..., column15
-        assert "column00 AS transaction_id" in col_aliases
-        assert "column15 AS record_status" in col_aliases
-
-
-class TestCleanImd:
-    """Test clean_imd by calling it with actual test data files."""
-
-    def test_clean_imd_with_csv(self, tmp_path: Path):
-        """clean_imd should process a CSV with IMD-like column names."""
-        # Create a test CSV mimicking the normalised IMD column structure
-        csv_path = tmp_path / "imd_test.csv"
-        df = pl.DataFrame({
-            "LSOA code (2011)": ["E01000001", "E01000002", "E01000003"],
-            "LSOA name (2011)": ["Area A", "Area B", "Area C"],
-            "Index of Multiple Deprivation (IMD) Score": [10.5, 20.3, 30.1],
-            "Index of Multiple Deprivation (IMD) Rank (where 1 is most deprived)": [
-                100, 200, 300
-            ],
-            "Income Score (rate)": [0.1, 0.2, 0.3],
-            "Employment Score (rate)": [0.05, 0.10, 0.15],
-        })
-        df.write_csv(csv_path)
-
-        result = clean_imd(csv_path).collect()
-
-        assert len(result) == 3
-        assert "lsoa_code" in result.columns
-        assert "imd_score" in result.columns
-        assert "imd_rank" in result.columns
-        assert "income_score" in result.columns
-        assert "employment_score" in result.columns
-        # Original column "LSOA name" should not appear in output
-        assert "lsoa_name_2011" not in result.columns
-
-    def test_clean_imd_column_values(self, tmp_path: Path):
-        """clean_imd should preserve data values correctly."""
-        csv_path = tmp_path / "imd_values.csv"
-        df = pl.DataFrame({
-            "LSOA code (2011)": ["E01000001"],
-            "Index of Multiple Deprivation (IMD) Score": [42.5],
-        })
-        df.write_csv(csv_path)
-
-        result = clean_imd(csv_path).collect()
-
-        assert result["imd_score"][0] == pytest.approx(42.5)
-        assert result["lsoa_code"][0] == "E01000001"
+    def test_rejects_file_without_lsoa21_column(self, tmp_path: Path):
+        path = tmp_path / "old.csv"
+        pl.DataFrame({"LSOA code (2011)": ["E01000001"]}).write_csv(path)
+        # IoD 2019 uses 2011 LSOAs: must fail loudly rather than mis-join
+        with pytest.raises(ValueError):
+            clean_iod(path)

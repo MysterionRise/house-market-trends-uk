@@ -1,39 +1,59 @@
+# Dataset registry. Each slug downloads to data/raw/{slug}/.
+# ONS Open Geography items are deleted when a new version is published; if a download
+# returns HTTP 400 "Item does not exist", look up the newest item on the ONS Geoportal.
+# (Phase 1 replaces these pinned URLs with resolvers and a lockfile.)
+
 nspl:
-  name: "National Statistics Postcode Lookup (August 2025)"
+  name: "National Statistics Postcode Lookup (August 2026)"
   phase: 1
-  url: "https://geoportal.statistics.gov.uk/datasets/ons::national-statistics-postcode-lookup-2021-census-august-2025/about"
-  download_url: "https://www.arcgis.com/sharing/rest/content/items/3648ef4d85c04043a0d9f3089e6e2a6f/data"
+  url: "https://geoportal.statistics.gov.uk/search?q=PRD_NSPL"
+  download_url: "https://www.arcgis.com/sharing/rest/content/items/9d8364ebae8b4439aa66cda440e54fc8/data"
   format: zip
-  inner_path: "Data/NSPL21_AUG_2025_UK.csv"
-  description: "Postcode to LSOA 2021 lookup. Best-fit through Census Output Areas."
-  licence: "OGL v3.0"
+  # The zip also holds a .txt copy and per-area CSVs (2.7 GB unpacked); take only these
+  extract:
+    - "Data/NSPL_*_UK.csv"
+    - "Documents/*.csv"
+  size_hint: "185MB zipped, 1GB extracted"
+  description: "Postcode to OA/LSOA/MSOA 2021, LAD, region, police force area, coordinates."
+  licence: "OGL v3.0 — Contains OS data, Royal Mail data and GeoPlace data © Crown copyright and database right."
 
 lsoa_boundaries:
-  name: "LSOA 2021 Boundaries (BSC, Clipped)"
+  name: "LSOA 2021 Boundaries (BGC V5, generalised 20m, clipped)"
   phase: 1
-  url: "https://geoportal.statistics.gov.uk/datasets/ons::lsoa-dec-2021-boundaries-super-generalised-clipped-ew-bsc/about"
-  download_url: "https://open-geography-portalx-ons.hub.arcgis.com/api/download/v1/items/1d5fc63bdf1b4048a24339581d1e79f1/geoPackage?layers=0"
+  url: "https://geoportal.statistics.gov.uk/datasets/ons::lower-layer-super-output-areas-december-2021-boundaries-ew-bgc-v5"
+  download_url: "https://geoportal.statistics.gov.uk/api/download/v1/items/68515293204e43ca8ab56fa13ae8a547/geoPackage?layers=0"
   format: gpkg
-  dest_dir: "data/geo"
-  description: "LSOA 2021 boundary polygons for England and Wales (super generalised, clipped)."
-  licence: "OGL v3.0"
+  size_hint: "50MB"
+  description: "LSOA 2021 polygons for England and Wales; source for map tiles and point-in-polygon."
+  licence: "OGL v3.0 — Source: Office for National Statistics licensed under the Open Government Licence v3.0. Contains OS data © Crown copyright and database right."
+
+lsoa_boundaries_bsc:
+  name: "LSOA 2021 Boundaries (BSC V4, super generalised 200m, clipped)"
+  phase: 1
+  url: "https://geoportal.statistics.gov.uk/datasets/ons::lower-layer-super-output-areas-december-2021-boundaries-ew-bsc-v4"
+  download_url: "https://geoportal.statistics.gov.uk/api/download/v1/items/04c65a08ecff4858bffc16e9ca9356f4/geoPackage?layers=0"
+  format: gpkg
+  size_hint: "16MB"
+  description: "Lightweight LSOA 2021 polygons for quick plots."
+  licence: "OGL v3.0 — Source: Office for National Statistics licensed under the Open Government Licence v3.0. Contains OS data © Crown copyright and database right."
 
 price_paid:
   name: "HM Land Registry Price Paid Data (Complete)"
   phase: 1
   url: "https://www.gov.uk/government/statistical-data-sets/price-paid-data-downloads"
-  download_url: "https://prod.publicdata.landregistry.gov.uk.s3.eu-west-1.amazonaws.com/pp-complete.csv"
+  # Path-style S3 URL: the virtual-hosted form fails TLS because the bucket name has dots
+  download_url: "https://s3.eu-west-1.amazonaws.com/prod1.publicdata.landregistry.gov.uk/pp-complete.csv"
   format: csv
-  size_hint: "4.3GB"
+  size_hint: "5.5GB"
   description: "All residential property transactions in England and Wales since 1995."
-  licence: "OGL v3.0 — Contains HM Land Registry data Crown copyright and database right."
+  licence: "OGL v3.0 — Contains HM Land Registry data © Crown copyright and database right 2026."
 
-imd_2025:
-  name: "English Indices of Deprivation 2019"
+iod_2025:
+  name: "English Indices of Deprivation 2025 (File 7: all ranks, scores, deciles and denominators)"
   phase: 1
-  url: "https://www.gov.uk/government/statistics/english-indices-of-deprivation-2019"
-  download_url: "https://assets.publishing.service.gov.uk/media/5d8b387740f0b604d7453cdc/File_1_-_IMD2019_Index_of_Multiple_Deprivation.xlsx"
-  format: xlsx
-  description: "Index of Multiple Deprivation at LSOA level for England."
-  licence: "OGL v3.0 — Crown copyright."
-  notes: "IMD 2025 not yet published; using IMD 2019 as placeholder. Update when available."
+  url: "https://www.gov.uk/government/statistics/english-indices-of-deprivation-2025"
+  download_url: "https://assets.publishing.service.gov.uk/media/691ded56d140bbbaa59a2a7d/File_7_IoD2025_All_Ranks_Scores_Deciles_Population_Denominators.csv"
+  format: csv
+  size_hint: "9.4MB"
+  description: "IMD 2025, its 7 domains, IDACI/IDAOPI and 6 sub-domains for 33,755 England LSOAs (2021)."
+  licence: "OGL v3.0 — Ministry of Housing, Communities and Local Government, © Crown copyright."
