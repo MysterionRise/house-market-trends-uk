@@ -1,0 +1,209 @@
+"""Checks on a traced case (see cases.yaml for the expectation format)."""
+
+import re
+from dataclasses import dataclass, field
+from typing import Any
+
+from pydantic_evals.evaluators import EvaluationReason, Evaluator, EvaluatorContext
+
+from evals.harness import Trace
+
+
+def _ok(passed: bool, reason: str = "") -> EvaluationReason:
+    return EvaluationReason(value=passed, reason=reason or None)
+
+
+@dataclass
+class NoError(Evaluator):
+    def evaluate(self, ctx: EvaluatorContext) -> EvaluationReason:
+        trace: Trace = ctx.output
+        return _ok(trace.error is None, trace.error or "")
+
+
+@dataclass
+class ToolsInOrder(Evaluator):
+    """The expected tools appear in this order among the calls (others may interleave)."""
+
+    tools: list[str] = field(default_factory=list)
+
+    def evaluate(self, ctx: EvaluatorContext) -> EvaluationReason:
+        called = [c.name for c in ctx.output.calls]
+        it = iter(called)
+        ok = all(any(name == t for name in it) for t in self.tools)
+        return _ok(ok, f"called {called}, expected {self.tools} in order")
+
+
+@dataclass
+class AnyTool(Evaluator):
+    tools: list[str] = field(default_factory=list)
+
+    def evaluate(self, ctx: EvaluatorContext) -> EvaluationReason:
+        called = [c.name for c in ctx.output.calls]
+        return _ok(
+            bool(set(called) & set(self.tools)), f"called {called}, wanted one of {self.tools}"
+        )
+
+
+@dataclass
+class ForbiddenTools(Evaluator):
+    tools: list[str] = field(default_factory=list)
+
+    def evaluate(self, ctx: EvaluatorContext) -> EvaluationReason:
+        bad = [c.name for c in ctx.output.calls if c.name in self.tools]
+        return _ok(not bad, f"called forbidden {bad}" if bad else "")
+
+
+@dataclass
+class NoTools(Evaluator):
+    def evaluate(self, ctx: EvaluatorContext) -> EvaluationReason:
+        called = [c.name for c in ctx.output.calls]
+        return _ok(not called, f"called {called}" if called else "")
+
+
+def _check(actual: Any, op: str, value: Any) -> bool:
+    if op == "truthy":
+        return bool(actual)
+    if actual is None:
+        return False
+    if op == "eq":
+        return str(actual).lower() == str(value).lower()
+    if op == "contains":
+        return str(value).lower() in str(actual).lower()
+    if op == "approx":
+        try:
+            return abs(float(actual) - float(value)) <= 0.1 * abs(float(value))
+        except (TypeError, ValueError):
+            return False
+    if op == "len":
+        return hasattr(actual, "__len__") and len(actual) == int(value)
+    if op == "gte":
+        return float(actual) >= float(value)
+    raise ValueError(f"Unknown op {op!r}")
+
+
+@dataclass
+class ArgCheck(Evaluator):
+    """A check on an argument of the first call of ``tool``."""
+
+    tool: str = ""
+    arg: str = ""
+    op: str = "eq"
+    value: Any = None
+
+    def get_default_evaluation_name(self) -> str:
+        return f"arg:{self.tool}.{self.arg}"
+
+    def evaluate(self, ctx: EvaluatorContext) -> EvaluationReason:
+        call = next((c for c in ctx.output.calls if c.name == self.tool), None)
+        if call is None:
+            return _ok(False, f"{self.tool} not called")
+        actual = call.args.get(self.arg)
+        return _ok(
+            _check(actual, self.op, self.value),
+            f"{self.tool}.{self.arg}={actual!r} {self.op} {self.value!r}",
+        )
+
+
+@dataclass
+class StateCheck(Evaluator):
+    path: str = ""
+    op: str = "eq"
+    value: Any = None
+
+    def get_default_evaluation_name(self) -> str:
+        return f"state:{self.path}"
+
+    def evaluate(self, ctx: EvaluatorContext) -> EvaluationReason:
+        actual: Any = ctx.output.state
+        for key in self.path.split("."):
+            actual = actual.get(key) if isinstance(actual, dict) else None
+        return _ok(
+            _check(actual, self.op, self.value),
+            f"state.{self.path}={actual!r} {self.op} {self.value!r}",
+        )
+
+
+@dataclass
+class ReplyCheck(Evaluator):
+    any_of: list[str] = field(default_factory=list)
+    none_of: list[str] = field(default_factory=list)
+
+    def evaluate(self, ctx: EvaluatorContext) -> EvaluationReason:
+        reply = ctx.output.reply.lower()
+        if self.any_of and not any(s.lower() in reply for s in self.any_of):
+            return _ok(False, f"reply has none of {self.any_of}")
+        hit = [s for s in self.none_of if s.lower() in reply]
+        return _ok(not hit, f"reply contains {hit}" if hit else "")
+
+
+NUMBER = re.compile(r"(?<![\w.])£?(\d{1,3}(?:,\d{3})+|\d+(?:\.\d+)?)\s*(k|%|km|m\b)?", re.I)
+
+
+def numbers_in(text: str) -> list[tuple[float, str]]:
+    out = []
+    for m in NUMBER.finditer(text):
+        value = float(m.group(1).replace(",", ""))
+        out.append((value, (m.group(2) or "").lower()))
+    return out
+
+
+def grounded_numbers(reply: str, sources: list[str]) -> list[str]:
+    """Numbers in the reply that no tool result (or the prompt) supports.
+
+    Small counts (≤ 10) and years are ignored: "two kids", "top 5", "in 2025". A number
+    is supported if a source number matches it after rounding (72 for 72.4), with a
+    1% tolerance, or ×1,000 for "k" (£350k) and metres for "km". Denominators ("per
+    1,000") are skipped.
+    """
+    known = [v for s in sources for v, _ in numbers_in(s)]
+    unsupported = []
+    for m in NUMBER.finditer(reply):
+        value, unit = float(m.group(1).replace(",", "")), (m.group(2) or "").lower()
+        # "per 1,000 residents" is a unit, not a claim
+        if reply[max(0, m.start() - 4) : m.start()].lower() == "per ":
+            continue
+        if value <= 10 or (1990 <= value <= 2035 and value == int(value) and not unit):
+            continue
+        candidates = [value]
+        if unit == "k":
+            candidates.append(value * 1000)
+        if unit == "km":
+            candidates.append(value * 1000)
+        ok = any(
+            abs(c - k) <= max(0.51, 0.01 * abs(k)) or abs(c - round(k)) < 0.5
+            for c in candidates
+            for k in known
+        )
+        if not ok:
+            unsupported.append(f"{value:g}{unit}")
+    return unsupported
+
+
+@dataclass
+class Grounded(Evaluator):
+    def evaluate(self, ctx: EvaluatorContext) -> EvaluationReason:
+        trace: Trace = ctx.output
+        bad = grounded_numbers(trace.reply, trace.returns + [trace.prompt])
+        return _ok(not bad, f"unsupported numbers {bad}" if bad else "")
+
+
+def evaluators_for(expect: dict) -> list[Evaluator]:
+    """The evaluators a case's ``expect`` block asks for (NoError always)."""
+    out: list[Evaluator] = [NoError()]
+    if expect.get("tools"):
+        out.append(ToolsInOrder(tools=expect["tools"]))
+    if expect.get("tools_any"):
+        out.append(AnyTool(tools=expect["tools_any"]))
+    if expect.get("forbid_tools"):
+        out.append(ForbiddenTools(tools=expect["forbid_tools"]))
+    if expect.get("no_tools"):
+        out.append(NoTools())
+    out += [ArgCheck(**a) for a in expect.get("args", [])]
+    out += [StateCheck(**s) for s in expect.get("state", [])]
+    if expect.get("reply_any") or expect.get("reply_none"):
+        out.append(
+            ReplyCheck(any_of=expect.get("reply_any", []), none_of=expect.get("reply_none", []))
+        )
+    if expect.get("grounded"):
+        out.append(Grounded())
+    return out

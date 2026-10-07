@@ -2,12 +2,14 @@
 """Which LLM drives the assistant, from the environment.
 
 LIX_MODEL            provider:model, e.g. anthropic:claude-opus-5-5 (default),
-                     openai:gpt-5, google:gemini-2.5-pro, ollama:llama3.1
-                     (with OLLAMA_BASE_URL), or "test" for a scripted model that
-                     needs no API key (end-to-end tests and demos)
+                     openrouter:anthropic/claude-opus-5.5 (one OPENROUTER_API_KEY for
+                     many providers), openai:gpt-5, google:gemini-2.5-pro,
+                     ollama:llama3.1 (with OLLAMA_BASE_URL), or "test" for a scripted
+                     model that needs no API key (end-to-end tests and demos)
 LIX_FALLBACK_MODELS  comma-separated models to try if the first fails
-LIX_EFFORT           reasoning effort for Anthropic models (default "low": the
-                     assistant mostly picks and fills in tools)
+LIX_EFFORT           reasoning effort (default "low": the assistant mostly picks and
+                     fills in tools)
+LIX_MODEL_TIMEOUT    seconds before a model request is abandoned (default 60)
 """
 
 import json
@@ -17,6 +19,7 @@ import re
 from pydantic_ai.messages import (
     ModelMessage,
     ModelResponse,
+    RetryPromptPart,
     TextPart,
     ToolCallPart,
     ToolReturnPart,
@@ -27,6 +30,10 @@ from pydantic_ai.models.fallback import FallbackModel
 from pydantic_ai.models.function import AgentInfo, DeltaToolCall, FunctionModel
 from pydantic_ai.settings import ModelSettings
 
+from lix_core.log import setup_logging
+
+logger = setup_logging("agent.models")
+
 DEFAULT_MODEL = "anthropic:claude-opus-5-5"
 
 
@@ -34,28 +41,67 @@ def model_name() -> str:
     return os.environ.get("LIX_MODEL", DEFAULT_MODEL)
 
 
-def build_model() -> Model | str:
+# Why the configured model couldn't be built (e.g. a missing API key), if it couldn't
+MODEL_PROBLEM: str | None = None
+
+
+def build_model() -> Model:
+    """The model from LIX_MODEL (plus fallbacks); a model that explains the problem if
+    it can't be built, so a missing key doesn't stop the map and API from starting."""
+    global MODEL_PROBLEM
+    from pydantic_ai.exceptions import UserError
+    from pydantic_ai.models import infer_model
+
     name = model_name()
     if name == "test":
         return scripted_model()
     fallbacks = [
         m.strip() for m in os.environ.get("LIX_FALLBACK_MODELS", "").split(",") if m.strip()
     ]
-    if fallbacks:
-        from pydantic_ai.models import infer_model
+    try:
+        primary = infer_model(name)
+        return (
+            FallbackModel(primary, *[infer_model(m) for m in fallbacks]) if fallbacks else primary
+        )
+    except (UserError, ValueError, ImportError) as e:
+        MODEL_PROBLEM = f"{name}: {e}"
+        logger.error(f"The assistant's model can't be used ({MODEL_PROBLEM})")
+        return unconfigured_model(MODEL_PROBLEM)
 
-        return FallbackModel(infer_model(name), *[infer_model(m) for m in fallbacks])
-    return name
+
+def unconfigured_model(problem: str) -> FunctionModel:
+    """Answers every message by saying how to configure the assistant."""
+    text = (
+        "The assistant isn't configured yet, so I can't answer. The map, weights and area "
+        f"pages still work. To fix it, set the model's API key in .env and restart. ({problem})"
+    )
+
+    def reply(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
+        return ModelResponse(parts=[TextPart(text)])
+
+    async def stream(messages: list[ModelMessage], info: AgentInfo):
+        yield text
+
+    return FunctionModel(reply, stream_function=stream, model_name="unconfigured")
 
 
 def model_settings() -> ModelSettings:
     """Provider-specific settings; ignored by providers they don't apply to."""
-    settings: dict = {"max_tokens": 4000}
-    if model_name().startswith("anthropic:"):
+    name = model_name()
+    effort = os.environ.get("LIX_EFFORT", "low")
+    settings: dict = {"max_tokens": 4000, "timeout": float(os.environ.get("LIX_MODEL_TIMEOUT", 60))}
+    if name.startswith("anthropic:"):
         # Tool definitions are the stable prefix (tools render before the system
         # prompt); per-turn state sits in the instructions after them
         settings["anthropic_cache_tool_definitions"] = True
-        settings["anthropic_effort"] = os.environ.get("LIX_EFFORT", "low")
+        settings["anthropic_effort"] = effort
+    elif name.startswith("openrouter:"):
+        settings["openrouter_reasoning"] = {"effort": effort}
+        # Report the cost of each request, so usage limits and the turn log can use it
+        settings["openrouter_usage"] = {"include": True}
+        if name.split(":", 1)[1].startswith("anthropic/"):
+            # Anthropic's own endpoint first: prompt caching and the newest features
+            settings["openrouter_provider"] = {"order": ["anthropic"], "allow_fallbacks": True}
     return settings  # type: ignore[return-value]
 
 
@@ -85,6 +131,9 @@ _RULES: list[tuple[str, str, callable]] = [
 def _scripted(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
     """Deterministic stand-in for an LLM: one tool call per matching request, then a summary."""
     last = messages[-1]
+    retries = [p for p in last.parts if isinstance(p, RetryPromptPart)]
+    if retries:
+        return ModelResponse(parts=[TextPart(f"Sorry, I couldn't do that: {retries[0].content}")])
     returns = [p for p in last.parts if isinstance(p, ToolReturnPart)]
     if returns:
         names = ", ".join(p.tool_name for p in returns)

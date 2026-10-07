@@ -8,6 +8,7 @@ docker compose a static file server does that instead.
 """
 
 import os
+import time
 from contextlib import asynccontextmanager
 from typing import Annotated
 
@@ -17,9 +18,10 @@ from fastapi.responses import Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from pydantic_ai.ui import StateDeps
-from pydantic_ai.ui.ag_ui import AGUIAdapter
 
 from lix_api.agent.agent import agent
+from lix_api.agent.errors import FriendlyAGUIAdapter
+from lix_api.agent.runlog import log_run, usage_limits
 from lix_api.agent.state import LiveabilityState
 from lix_api.mcp_server import mcp
 from lix_api.models import (
@@ -77,8 +79,15 @@ async def bad_request(request: Request, exc: ValueError):
 
 @app.get("/health")
 def health() -> dict:
+    from lix_api.agent import models
+
     store = get_store()
-    return {"status": "ok", "lsoas": len(store.lsoa_index), "built": store.manifest["generated_at"]}
+    return {
+        "status": "ok",
+        "lsoas": len(store.lsoa_index),
+        "built": store.manifest["generated_at"],
+        "assistant": {"model": models.model_name(), "problem": models.MODEL_PROBLEM},
+    }
 
 
 api = "/api/v1"
@@ -156,8 +165,13 @@ def run_sql(query: Annotated[str, Body(embed=True)]) -> dict:
 @app.post("/agent")
 async def run_agent(request: Request) -> Response:
     """AG-UI endpoint: streams the assistant's messages, tool calls and state snapshots."""
-    return await AGUIAdapter.dispatch_request(
-        request, agent=agent, deps=StateDeps(LiveabilityState())
+    started = time.monotonic()
+    return await FriendlyAGUIAdapter.dispatch_request(
+        request,
+        agent=agent,
+        deps=StateDeps(LiveabilityState()),
+        usage_limits=usage_limits(),
+        on_complete=lambda result: log_run(result, started),
     )
 
 

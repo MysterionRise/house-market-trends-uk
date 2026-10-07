@@ -10,7 +10,7 @@ from pathlib import Path
 
 # raw: as downloaded · manual: login-gated files placed by hand · staged: tidy Parquet per
 # source · indicators: per-LSOA indicator table · serve: files the API and browser load
-DATA_KINDS = ("raw", "manual", "staged", "indicators", "serve")
+DATA_KINDS = ("raw", "manual", "staged", "indicators", "serve", "logs")
 
 
 def get_project_root() -> Path:

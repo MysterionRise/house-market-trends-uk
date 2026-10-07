@@ -1,4 +1,4 @@
-.PHONY: up down up-demo data-pack data-unpack install resolve fetch stage indicators score tiles build-data validate demo-data docs schemas api web-install web web-test e2e dev test lint format
+.PHONY: up down up-demo data-pack data-unpack eval install resolve fetch stage indicators score tiles build-data validate demo-data docs schemas api web-install web web-test e2e dev test lint format
 
 PY_DIRS := core pipeline api
 
@@ -111,4 +111,9 @@ data-unpack:
 	mkdir -p data
 	tar -C data -xzf $(PACK)
 	uv run lix validate serve
+
+# Assistant eval on the full build (api/evals/cases.yaml). Real models cost money:
+#   make eval MODEL=openrouter:anthropic/claude-opus-5.5 CASES=family_leeds_budget,compare_two
+eval:
+	cd api && uv run python -m evals.run --model $(MODEL) $(if $(CASES),--cases $(CASES),)
 

@@ -58,9 +58,21 @@ Datasets ingested so far (full list with licences: [docs/data-sources.md](docs/d
 - an [MCP](https://modelcontextprotocol.io) server at `/mcp` with the same tools, for Claude
   Desktop and other MCP clients
 
-The model is set with `LIX_MODEL` (default `anthropic:claude-opus-5-5`; also `openai:...`,
-`google:...`, `ollama:...`). `LIX_MODEL=test` runs a scripted assistant that needs no API key.
-See [.env.example](.env.example).
+The model is set with `LIX_MODEL`: `openrouter:...` (one `OPENROUTER_API_KEY` for many
+providers), `anthropic:...`, `openai:...`, `google:...` or `ollama:...`. `LIX_MODEL=test` runs a
+scripted assistant that needs no API key. See [.env.example](.env.example). Each question is
+capped (model requests, tool calls, tokens and optionally cost); a failure or a missing key is
+explained in the chat while the map keeps working, and every turn is logged to
+`data/logs/agent.jsonl` (tools called, latency, tokens, cost).
+
+The assistant has an eval suite ([api/evals/cases.yaml](api/evals/cases.yaml): about 30 cases
+covering ranking with constraints, look-ups, follow-ups, ambiguous places, out-of-scope and
+discriminatory requests, numbers grounded in tool results, analyst SQL and prompt injection):
+
+```bash
+make eval MODEL=openrouter:anthropic/claude-opus-5.5 CASES=family_leeds_budget,compare_two
+make eval MODEL=openrouter:anthropic/claude-opus-5.5     # all cases; costs real money
+```
 
 ### Running it with Docker
 

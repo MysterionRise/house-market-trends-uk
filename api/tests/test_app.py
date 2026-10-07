@@ -103,3 +103,70 @@ async def test_mcp_lists_and_calls_tools(store):
         assert {"search_place", "get_area_profile", "rank_areas", "explain_score"} <= names
         result = await c.call_tool("get_area_profile", {"area": "LS6 3HN"})
         assert result.structured_content["neighbourhood"] == "Headingley"
+
+
+def test_agent_turns_are_logged(client, tmp_path, monkeypatch):
+    monkeypatch.setenv("LIX_DATA_DIR", str(tmp_path))
+    _agui(client, "Use family weights please")
+    lines = (tmp_path / "logs" / "agent.jsonl").read_text().splitlines()
+    record = json.loads(lines[-1])
+    assert record["model"] == "test"
+    assert record["tools"] == ["set_weights"]
+    assert record["requests"] == 2  # the tool call, then the summary
+
+
+def test_runaway_tool_loop_is_stopped(client, monkeypatch):
+    from pydantic_ai.messages import ModelResponse, ToolCallPart
+    from pydantic_ai.models.function import FunctionModel
+
+    from lix_api.agent.agent import agent
+
+    def loop(messages, info):
+        return ModelResponse(parts=[ToolCallPart("list_indicators", {"theme": "safety"})])
+
+    async def stream_loop(messages, info):
+        from pydantic_ai.models.function import DeltaToolCall
+
+        yield {0: DeltaToolCall(name="list_indicators", json_args='{"theme": "safety"}')}
+
+    monkeypatch.setenv("LIX_REQUEST_LIMIT", "3")
+    with agent.override(model=FunctionModel(loop, stream_function=stream_loop)):
+        events = _agui(client, "loop forever")
+    types = [e["type"] for e in events]
+    # A plain assistant message explains it and the run finishes (no raw error toast)
+    assert "RUN_ERROR" not in types and types[-1] == "RUN_FINISHED"
+    text = "".join(e.get("delta", "") for e in events if e["type"] == "TEXT_MESSAGE_CONTENT")
+    assert "more steps than I'm allowed" in text
+
+
+def test_openrouter_settings(monkeypatch):
+    from lix_api.agent.models import model_settings
+
+    monkeypatch.setenv("LIX_MODEL", "openrouter:anthropic/claude-opus-5.5")
+    s = model_settings()
+    assert s["openrouter_reasoning"] == {"effort": "low"}
+    assert s["openrouter_usage"] == {"include": True}
+    assert s["openrouter_provider"]["order"] == ["anthropic"]
+    monkeypatch.setenv("LIX_MODEL", "openrouter:meta-llama/llama-4-maverick")
+    assert "openrouter_provider" not in model_settings()
+
+
+def test_unknown_place_goes_back_to_the_model(client):
+    # The scripted model ranks "Edinburgh"; the tool can't find it, and the model is told
+    # so (a retry prompt) instead of the whole turn failing
+    events = _agui(client, "What are the best areas in Edinburgh?")
+    types = [e["type"] for e in events]
+    assert "RUN_ERROR" not in types and types[-1] == "RUN_FINISHED"
+    text = "".join(e.get("delta", "") for e in events if e["type"] == "TEXT_MESSAGE_CONTENT")
+    assert "couldn't" in text.lower()
+
+
+def test_model_errors_get_plain_messages():
+    from pydantic_ai.exceptions import ModelHTTPError
+
+    from lix_api.agent.errors import friendly_message
+
+    assert "rejected" in friendly_message(ModelHTTPError(401, "m"))
+    assert "out of credit" in friendly_message(ModelHTTPError(402, "m"))
+    assert "busy" in friendly_message(ModelHTTPError(429, "m"))
+    assert "still work" in friendly_message(RuntimeError("boom"))
