@@ -15,8 +15,8 @@
     "test": "vitest run",
     "types": "json2ts --input ../contracts/schemas.json --output lib/contracts.gen.ts --unreachableDefinitions --additionalProperties false",
     "e2e": "playwright test",
-    "predev": "node scripts/copy-maplibre-worker.mjs",
-    "prebuild": "node scripts/copy-maplibre-worker.mjs"
+    "predev": "node scripts/copy-maplibre-worker.mjs && node scripts/copy-docs.mjs",
+    "prebuild": "node scripts/copy-maplibre-worker.mjs && node scripts/copy-docs.mjs"
   },
   "dependencies": {
     "@ag-ui/client": "1.0.2",
@@ -29,6 +29,8 @@
     "pmtiles": "4.5.0",
     "react": "19.3.0",
     "react-dom": "19.3.0",
+    "react-markdown": "^10.1.0",
+    "remark-gfm": "^4.0.1",
     "zod": "4.6.5"
   },
   "devDependencies": {

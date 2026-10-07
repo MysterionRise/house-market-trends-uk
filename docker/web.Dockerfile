@@ -12,6 +12,9 @@ ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL NEXT_PUBLIC_DATA_URL=$NEXT_PUBLIC_D
 COPY web/package.json web/package-lock.json ./
 RUN npm ci
 COPY web ./
+# The methodology and sources pages render these (scripts/copy-docs.mjs reads ../docs)
+COPY docs /docs
+COPY ATTRIBUTION.md /ATTRIBUTION.md
 RUN npm run build
 
 FROM node:24-alpine

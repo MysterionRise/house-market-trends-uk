@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 import { useLiveability } from "@/components/AppData";
 import { Band, Card, Muted, ScoreBar, formatValue, qualityNote } from "@/components/ui";
 import type { AreaProfile, IndicatorValue } from "@/lib/contracts.gen";
@@ -20,6 +22,34 @@ function Facts({ items }: { items: IndicatorValue[] }) {
         </div>
       ))}
     </dl>
+  );
+}
+
+/** Copies a link that opens this area with the current weights (the URL hash holds the view). */
+function CopyLink({ code }: { code: string }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <button
+      className="btn"
+      onClick={async () => {
+        const url = new URL(window.location.href);
+        try {
+          const view = JSON.parse(decodeURIComponent(url.hash.slice(1) || "{}"));
+          url.hash = encodeURIComponent(JSON.stringify({ ...view, s: code }));
+        } catch {
+          /* keep the current hash */
+        }
+        try {
+          await navigator.clipboard.writeText(url.toString());
+          setCopied(true);
+          setTimeout(() => setCopied(false), 2000);
+        } catch {
+          window.prompt("Copy this link", url.toString());
+        }
+      }}
+    >
+      {copied ? "Link copied" : "Copy link"}
+    </button>
   );
 }
 
@@ -52,10 +82,27 @@ export function AreaProfileCard({ profile }: { profile: AreaProfile }) {
         </p>
       )}
 
-      <div className="mt-3">
+      <div className="mt-3" data-testid="theme-bars">
         {profile.themes.map((t) => (
-          <ScoreBar key={t.theme} label={t.label} score={t.score} hint={t.percentile != null ? `Better than ${t.percentile}% of England` : undefined} />
+          <ScoreBar
+            key={t.theme}
+            label={t.label}
+            score={t.score}
+            hint={t.percentile != null ? `Better than ${t.percentile}% of England` : undefined}
+            marks={[
+              { value: t.local_median, kind: "local", label: `${profile.local_authority} median` },
+              { value: t.england_median, kind: "england", label: "England median" },
+            ]}
+          />
         ))}
+        <p className="mt-1 flex gap-3 text-[10px] text-[var(--text-muted)]">
+          <span className="inline-flex items-center gap-1">
+            <span className="inline-block h-2.5 w-[2px] bg-[var(--text-primary)]" aria-hidden /> {profile.local_authority} median
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <span className="inline-block h-2.5 w-px bg-[var(--text-muted)]" aria-hidden /> England median
+          </span>
+        </p>
       </div>
 
       <div className="mt-3 grid grid-cols-2 gap-3 text-xs">
@@ -103,6 +150,7 @@ export function AreaProfileCard({ profile }: { profile: AreaProfile }) {
         >
           {saved ? "In shortlist" : "Add to shortlist"}
         </button>
+        <CopyLink code={profile.lsoa21cd} />
       </div>
       <Muted>Scores are 0–100 (higher is better). Distances are straight-line.</Muted>
     </Card>

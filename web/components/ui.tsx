@@ -20,15 +20,41 @@ export function Card({ title, subtitle, children, testId }: {
 }
 
 /** A 0–100 score as a thin bar with its value in text (the bar never carries it alone). */
-export function ScoreBar({ label, score, hint }: { label: string; score: number | null | undefined; hint?: string }) {
+export interface BarMark {
+  value: number | null | undefined;
+  kind: "local" | "england";
+  label: string;
+}
+
+export function ScoreBar({
+  label,
+  score,
+  hint,
+  marks = [],
+}: {
+  label: string;
+  score: number | null | undefined;
+  hint?: string;
+  marks?: BarMark[];
+}) {
   const v = score == null || Number.isNaN(score) ? null : Math.max(0, Math.min(100, score));
+  const shown = marks.filter((m) => m.value != null && !Number.isNaN(m.value));
   return (
-    <div className="grid grid-cols-[minmax(0,9.5rem)_1fr_2.5rem] items-center gap-2 py-0.5" title={hint}>
+    <div
+      className="grid grid-cols-[minmax(0,9.5rem)_1fr_2.5rem] items-center gap-2 py-0.5"
+      title={[hint, ...shown.map((m) => `${m.label}: ${Math.round(m.value as number)}`)].filter(Boolean).join(" · ")}
+    >
       <span className="truncate text-xs text-[var(--text-secondary)]">{label}</span>
-      <span className="h-2 rounded-r-[4px] bg-[var(--track)]">
-        {v !== null && (
-          <span className="block h-2 rounded-r-[4px] bg-[var(--series-1)]" style={{ width: `${v}%` }} />
-        )}
+      <span className="relative h-2 rounded-r-[4px] bg-[var(--track)]">
+        {v !== null && <span className="block h-2 rounded-r-[4px] bg-[var(--series-1)]" style={{ width: `${v}%` }} />}
+        {shown.map((m) => (
+          <span
+            key={m.kind}
+            aria-hidden
+            className={`absolute -top-0.5 h-3 ${m.kind === "local" ? "w-[2px] bg-[var(--text-primary)]" : "w-px bg-[var(--text-muted)]"}`}
+            style={{ left: `calc(${Math.max(0, Math.min(100, m.value as number))}% - 1px)` }}
+          />
+        ))}
       </span>
       <span className="text-right text-xs tabular-nums text-[var(--text-primary)]">{v === null ? "–" : Math.round(v)}</span>
     </div>

@@ -36,6 +36,8 @@ class ThemeScore(BaseModel):
     label: str
     score: float | None = Field(None, description="0–100, higher is better")
     percentile: float | None = Field(None, description="Better than this % of England's LSOAs")
+    england_median: float | None = Field(None, description="Median score across England")
+    local_median: float | None = Field(None, description="Median score in the local authority")
 
 
 class IndicatorValue(BaseModel):

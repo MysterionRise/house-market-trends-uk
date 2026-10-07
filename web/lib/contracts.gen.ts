@@ -54,7 +54,15 @@ export type Population = number;
 export type Preset = string;
 export type Region = string;
 export type Strengths = IndicatorValue[];
+/**
+ * Median score across England
+ */
+export type EnglandMedian = number | null;
 export type Label1 = string;
+/**
+ * Median score in the local authority
+ */
+export type LocalMedian = number | null;
 /**
  * Better than this % of England's LSOAs
  */
@@ -251,7 +259,9 @@ export interface IndicatorValue {
  * via the `definition` "ThemeScore".
  */
 export interface ThemeScore {
+  england_median?: EnglandMedian;
   label: Label1;
+  local_median?: LocalMedian;
   percentile?: Percentile;
   score?: Score1;
   theme: Theme1;

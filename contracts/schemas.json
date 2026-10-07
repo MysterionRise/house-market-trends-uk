@@ -1203,9 +1203,35 @@
     },
     "ThemeScore": {
       "properties": {
+        "england_median": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Median score across England",
+          "title": "England Median"
+        },
         "label": {
           "title": "Label",
           "type": "string"
+        },
+        "local_median": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Median score in the local authority",
+          "title": "Local Median"
         },
         "percentile": {
           "anyOf": [

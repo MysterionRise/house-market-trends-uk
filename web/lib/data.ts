@@ -38,6 +38,8 @@ export interface Manifest {
   lsoa_count?: number;
   /** A small cut of the full build (CI and quick starts): see `lix demo-data` */
   demo?: boolean;
+  /** Checksums of the build's files, used to version their URLs */
+  files?: Record<string, { sha256: string; bytes: number }>;
   /** Spearman correlations between scored indicators, ordered by theme */
   correlations?: { ids: string[]; themes: string[]; rho: number[][] } | null;
 }
@@ -57,13 +59,18 @@ export interface ScoreData {
 }
 
 export async function loadManifest(): Promise<Manifest> {
-  const res = await fetch(`${DATA_URL}/manifest.json`);
+  // Always fresh: it says which build the other files belong to
+  const res = await fetch(`${DATA_URL}/manifest.json`, { cache: "no-store" });
   if (!res.ok) throw new Error(`manifest.json: HTTP ${res.status}`);
   return res.json();
 }
 
 export async function loadScores(manifest: Manifest): Promise<ScoreData> {
-  const file = await asyncBufferFromUrl({ url: `${DATA_URL}/scores.parquet` });
+  // Parquet is read in byte ranges; a cached range from a previous build would be
+  // garbage in this one, so each build's file gets its own URL
+  const version = manifest.files?.["scores.parquet"]?.sha256?.slice(0, 16);
+  const url = `${DATA_URL}/scores.parquet${version ? `?v=${version}` : ""}`;
+  const file = await asyncBufferFromUrl({ url });
   const rows = (await parquetReadObjects({ file })) as Record<string, unknown>[];
   const n = rows.length;
   const indicators: Record<string, Float64Array> = {};

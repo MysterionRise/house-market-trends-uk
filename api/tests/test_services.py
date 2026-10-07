@@ -181,3 +181,12 @@ def test_rankings_say_how_stable_each_result_is(store):
     assert all(0 <= r.stability <= 1 for r in result.results)
     # With every candidate shown, nothing can drop out
     assert all(r.stability == 1 for r in rank_areas(store, level="lsoa", limit=10).results)
+
+
+def test_profile_themes_carry_england_and_local_medians(store):
+    from lix_api.services.areas import area_profile
+
+    p = area_profile(store, "E01000003")
+    for t in p.themes:
+        if t.score is not None:
+            assert t.england_median is not None and t.local_median is not None

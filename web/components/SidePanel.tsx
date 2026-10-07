@@ -1,15 +1,14 @@
 "use client";
 
 import { CopilotChat, useConfigureSuggestions } from "@copilotkit/react-core/v2";
-import { useState } from "react";
+import { useEffect, useRef } from "react";
 
 import { useLiveability } from "@/components/AppData";
+import { type Tab, usePanel } from "@/components/PanelContext";
 import { AnalystPanel } from "@/components/panels/AnalystPanel";
 import { AreaPanel } from "@/components/panels/AreaPanel";
 import { ShortlistPanel } from "@/components/panels/ShortlistPanel";
 import { WeightPanel } from "@/components/panels/WeightPanel";
-
-type Tab = "assistant" | "weights" | "area" | "shortlist" | "analyst";
 
 const SUGGESTIONS = [
   { title: "Family-friendly near Leeds", message: "We have two young kids and a budget of £350k. Where should we look around Leeds?" },
@@ -20,17 +19,19 @@ const SUGGESTIONS = [
 
 export function SidePanel() {
   const { state, update } = useLiveability();
-  const [tab, setTab] = useState<Tab>("assistant");
+  const { tab, setTab } = usePanel();
 
   useConfigureSuggestions({ suggestions: SUGGESTIONS, available: "before-first-message" }, []);
 
   // Selecting an area (on the map or from a list) opens its profile, unless chatting.
-  // Adjusted during render rather than in an effect, as React recommends.
-  const [lastSelected, setLastSelected] = useState(state.map.selected);
-  if (state.map.selected !== lastSelected) {
-    setLastSelected(state.map.selected);
-    if (state.map.selected && tab !== "assistant") setTab("area");
-  }
+  // The tab lives in a parent context, so this runs after render, not during it.
+  const selected = state.map.selected;
+  const seenSelected = useRef(selected);
+  useEffect(() => {
+    if (selected === seenSelected.current) return;
+    seenSelected.current = selected;
+    if (selected && tab !== "assistant") setTab("area");
+  }, [selected, tab, setTab]);
 
   const tabs: [Tab, string][] = [
     ["assistant", "Assistant"],
@@ -42,12 +43,27 @@ export function SidePanel() {
 
   return (
     <aside className="flex h-full min-h-0 flex-col border-l border-[var(--border)] bg-[var(--surface-1)]">
-      <nav className="flex shrink-0 items-center gap-1 overflow-x-auto border-b border-[var(--border)] px-2" role="tablist">
+      <nav
+        className="flex shrink-0 items-center gap-1 overflow-x-auto border-b border-[var(--border)] px-2"
+        role="tablist"
+        aria-label="Panels"
+        onKeyDown={(e) => {
+          // Arrow keys move between tabs (WAI-ARIA tabs pattern)
+          if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+          const ids = tabs.map(([id]) => id);
+          const next = ids[(ids.indexOf(tab) + (e.key === "ArrowRight" ? 1 : ids.length - 1)) % ids.length];
+          setTab(next);
+          document.getElementById(`tab-${next}`)?.focus();
+        }}
+      >
         {tabs.map(([id, label]) => (
           <button
             key={id}
+            id={`tab-${id}`}
             role="tab"
             aria-selected={tab === id}
+            aria-controls={`panel-${id}`}
+            tabIndex={tab === id ? 0 : -1}
             data-testid={`tab-${id}`}
             onClick={() => setTab(id)}
             className={`whitespace-nowrap border-b-2 px-2.5 py-2 text-sm ${
@@ -75,16 +91,20 @@ export function SidePanel() {
       </nav>
       <div className="min-h-0 flex-1 overflow-y-auto">
         {/* Keep the chat mounted so the conversation survives tab switches */}
-        <div className={tab === "assistant" ? "h-full" : "hidden"} data-testid="chat">
+        <div className={tab === "assistant" ? "h-full" : "hidden"} data-testid="chat" id="panel-assistant" role="tabpanel">
           <CopilotChat
             className="h-full"
             labels={{ chatInputPlaceholder: "Ask about places in England…" }}
           />
         </div>
-        {tab === "weights" && <WeightPanel />}
-        {tab === "area" && <AreaPanel />}
-        {tab === "shortlist" && <ShortlistPanel />}
-        {tab === "analyst" && <AnalystPanel />}
+        {tab !== "assistant" && (
+          <div id={`panel-${tab}`} role="tabpanel" aria-labelledby={`tab-${tab}`}>
+            {tab === "weights" && <WeightPanel />}
+            {tab === "area" && <AreaPanel />}
+            {tab === "shortlist" && <ShortlistPanel />}
+            {tab === "analyst" && <AnalystPanel />}
+          </div>
+        )}
       </div>
     </aside>
   );

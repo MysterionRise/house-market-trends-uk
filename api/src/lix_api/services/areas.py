@@ -41,7 +41,12 @@ def area_profile(
     code = resolve_lsoa(store, ref)
     row = store.features.row(store.lsoa_index[code], named=True)
     name, themes, multipliers = resolve_weights(store, preset, theme_weights)
-    scores = scores_for(store, themes, multipliers).row(store.lsoa_index[code], named=True)
+    every = scores_for(store, themes, multipliers)
+    scores = every.row(store.lsoa_index[code], named=True)
+    local = every.filter(store.features["lad_cd"] == row["lad_cd"])
+
+    def median(df: pl.DataFrame, col: str) -> float | None:
+        return _round(df[col].median()) if col in df.columns else None
 
     theme_scores = [
         ThemeScore(
@@ -49,6 +54,8 @@ def area_profile(
             label=spec.label,
             score=_round(scores.get(f"theme__{t}")),
             percentile=_round(scores.get(f"theme_pct__{t}"), 0),
+            england_median=median(every, f"theme__{t}"),
+            local_median=median(local, f"theme__{t}"),
         )  # fmt: skip
         for t, spec in store.themes.items()
     ]

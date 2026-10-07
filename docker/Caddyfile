@@ -10,7 +10,9 @@
 		Access-Control-Allow-Origin *
 		Access-Control-Allow-Headers Range
 		Access-Control-Expose-Headers "Content-Length, Content-Range, ETag"
-		Cache-Control "public, max-age=3600"
+		# Revalidate (ETag) every time: PMTiles and Parquet are read in byte ranges, and a
+		# stale range from a previous build would corrupt the read
+		Cache-Control "no-cache"
 	}
 	file_server
 }

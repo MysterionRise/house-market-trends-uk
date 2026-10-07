@@ -176,8 +176,21 @@ async def run_agent(request: Request) -> Response:
 
 
 app.mount("/mcp", mcp_app)
+
+
+class DataFiles(StaticFiles):
+    """Static data files that browsers must revalidate (ETag) rather than reuse blindly:
+    PMTiles and Parquet are read in byte ranges, and a stale range from a previous build
+    corrupts the read."""
+
+    async def get_response(self, path, scope):
+        response = await super().get_response(path, scope)
+        response.headers["Cache-Control"] = "no-cache"
+        return response
+
+
 if os.environ.get("LIX_SERVE_DATA", "1") == "1":
-    app.mount("/data", StaticFiles(directory=get_store().serve_dir, check_dir=False), name="data")
+    app.mount("/data", DataFiles(directory=get_store().serve_dir, check_dir=False), name="data")
 
 
 def run() -> None:

@@ -5,3 +5,5 @@ next-env.d.ts
 test-results/
 playwright-report/
 public/maplibre-gl-worker.mjs
+# Copied from ../docs by scripts/copy-docs.mjs
+content/

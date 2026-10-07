@@ -209,3 +209,16 @@ def test_set_weights_stores_theme_ids(client):
         events = _agui(client, "weights for families, safety matters most")
     snapshot = next(e for e in events if e["type"] == "STATE_SNAPSHOT")["snapshot"]
     assert snapshot["preset"] == "family" and snapshot["theme_weights"] == {"safety": 3}
+
+
+def test_data_files_must_be_revalidated(tmp_path, monkeypatch):
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+
+    from lix_api.main import DataFiles
+
+    (tmp_path / "scores.parquet").write_bytes(b"PAR1....PAR1")
+    app = FastAPI()
+    app.mount("/data", DataFiles(directory=tmp_path), name="data")
+    r = TestClient(app).get("/data/scores.parquet", headers={"Range": "bytes=0-3"})
+    assert r.status_code == 206 and r.headers["cache-control"] == "no-cache"

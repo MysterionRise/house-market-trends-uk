@@ -95,3 +95,63 @@ test("analyst mode runs guarded SQL", async ({ page }) => {
   await page.getByRole("button", { name: "Run query" }).click();
   await expect(page.getByTestId("analyst").getByRole("alert")).toContainText("Only SELECT");
 });
+
+async function openFromSearch(page: Page, text: string) {
+  const input = page.getByTestId("search").locator("input");
+  await input.fill(text);
+  await expect(page.getByRole("option").first()).toContainText(text, { timeout: 15_000 });
+  await input.press("Enter");
+}
+
+test("searching a postcode opens its profile with benchmarks", async ({ page }) => {
+  await mapReady(page);
+  await openFromSearch(page, "LS6 3AA");
+  await expect(page.getByTestId("tab-area")).toHaveAttribute("aria-selected", "true");
+  const bars = page.getByTestId("theme-bars");
+  await expect(bars).toBeVisible({ timeout: 30_000 });
+  await expect(bars).toContainText("England median");
+});
+
+test("the welcome card's personas set the weights", async ({ page }) => {
+  await mapReady(page);
+  await page.getByTestId("persona-retiree").click();
+  await expect(page.getByTestId("onboarding")).toBeHidden();
+  await page.getByTestId("tab-weights").click();
+  await expect(page.locator("select").first()).toHaveValue("retiree");
+  // Dismissed for good in this browser
+  await page.reload();
+  await expect(page.getByTestId("legend")).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByTestId("onboarding")).toBeHidden();
+});
+
+test("two shortlisted areas can be compared", async ({ page }) => {
+  await mapReady(page);
+  for (const postcode of ["LS6 3AA", "LS7 3DJ"]) {
+    await openFromSearch(page, postcode);
+    await page.getByTestId("area-profile").getByRole("button", { name: "Add to shortlist" }).click();
+  }
+  await page.getByTestId("tab-shortlist").click();
+  await page.getByTestId("compare-shortlist").click();
+  await expect(page.getByTestId("comparison")).toContainText("Side by side", { timeout: 15_000 });
+});
+
+test("the method and sources pages render the docs", async ({ page }) => {
+  await page.goto("/methodology");
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("Methodology");
+  await page.getByRole("link", { name: "Sources & licences" }).click();
+  await expect(page.getByRole("heading", { name: "Data sources" })).toBeVisible();
+  await expect(page.locator("article").first()).toContainText("OGL-3.0");
+});
+
+test.describe("on a phone", () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test("fits the screen and search still opens a profile", async ({ page }) => {
+    await mapReady(page);
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+    expect(overflow).toBeLessThanOrEqual(0);
+    await page.getByRole("button", { name: "Skip" }).click();
+    await openFromSearch(page, "LS6 3AA");
+    await expect(page.getByTestId("area-profile")).toBeVisible({ timeout: 30_000 });
+  });
+});
