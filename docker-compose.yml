@@ -1,4 +1,6 @@
-# Local deployment: `docker compose up` after building data (`make build-data`).
+# Local deployment: `make up` (docker compose up --wait) after building data
+# (`make build-data`, or `make data-unpack` from a data pack). LIX_SERVE_DIR picks the
+# data: ./data/serve by default, ./fixtures/demo/serve for the small demo dataset.
 #   api     REST + assistant (AG-UI) + MCP          http://localhost:8000
 #   static  tiles and score files for the browser   http://localhost:8080
 #   web     the front end                           http://localhost:3000
@@ -14,19 +16,27 @@ services:
       LIX_EFFORT: ${LIX_EFFORT:-low}
       LIX_CORS_ORIGINS: ${LIX_CORS_ORIGINS:-http://localhost:3000}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      OPENROUTER_APP_TITLE: ${OPENROUTER_APP_TITLE:-UK Liveability Index}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
       OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://ollama:11434/v1}
     volumes:
-      - ./data/serve:/data/serve:ro
+      - ${LIX_SERVE_DIR:-./data/serve}:/data/serve:ro
+      - ./data/logs:/data/logs
     ports: ["8000:8000"]
 
   static:
     image: caddy:2-alpine
     volumes:
-      - ./data/serve:/srv:ro
+      - ${LIX_SERVE_DIR:-./data/serve}:/srv:ro
       - ./docker/Caddyfile:/etc/caddy/Caddyfile:ro
     ports: ["8080:8080"]
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:8080/manifest.json"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
 
   web:
     build:
@@ -35,11 +45,20 @@ services:
       args:
         NEXT_PUBLIC_API_URL: http://localhost:8000
         NEXT_PUBLIC_DATA_URL: http://localhost:8080
+        NEXT_PUBLIC_EXPOSE_MAP: ${LIX_EXPOSE_MAP:-0}
     environment:
       # Server-side relay from the CopilotKit runtime to the assistant
       AGENT_URL: http://api:8000/agent
     ports: ["3000:3000"]
-    depends_on: [api, static]
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 15s
+    depends_on:
+      api: { condition: service_healthy }
+      static: { condition: service_healthy }
 
   pipeline:
     profiles: [build]

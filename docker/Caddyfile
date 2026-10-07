@@ -1,8 +1,11 @@
 # Static files for the browser: map tiles (PMTiles), scores.parquet and manifest.json.
-# PMTiles is read with HTTP range requests, which file_server supports.
+# PMTiles is read with HTTP range requests, which file_server supports. Only JSON is
+# compressed: PMTiles and Parquet are compressed internally, and compressing a byte
+# range breaks the client's offsets.
 :8080 {
 	root * /srv
-	encode zstd gzip
+	@json path *.json
+	encode @json zstd gzip
 	header {
 		Access-Control-Allow-Origin *
 		Access-Control-Allow-Headers Range

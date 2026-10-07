@@ -1,0 +1,1974 @@
+{
+  "generated_at": "2026-10-07T21:08:05+00:00",
+  "lsoas": "England LSOA 2021",
+  "lsoa_count": 653,
+  "demo": true,
+  "scored_indicators": [
+    "crime_violence",
+    "crime_burglary",
+    "crime_asb",
+    "crime_theft",
+    "road_danger",
+    "no2",
+    "pm25",
+    "green_space_access",
+    "flood_risk",
+    "gp_distance",
+    "patients_per_gp",
+    "pharmacy_distance",
+    "dentist_distance",
+    "primary_school_access",
+    "secondary_school_access",
+    "nursery_access",
+    "connectivity_overall",
+    "station_distance",
+    "gigabit_broadband",
+    "well_run_pubs",
+    "food_and_drink",
+    "supermarket_distance",
+    "leisure",
+    "culture",
+    "house_price",
+    "housing_condition",
+    "council_tax",
+    "income_deprivation",
+    "health_deprivation"
+  ],
+  "indicators": [
+    {
+      "id": "crime_violence",
+      "theme": "safety",
+      "label": "Violent and sexual offences",
+      "description": "Recorded violence and sexual offences per 1,000 residents a year (36-month average).",
+      "unit": "per 1,000 residents a year",
+      "direction": "lower_better",
+      "sources": [
+        "police_crime",
+        "iod_2025"
+      ],
+      "builder": "safety:crime_rate",
+      "params": {
+        "types": [
+          "Violence and sexual offences"
+        ]
+      },
+      "normalise": "rank",
+      "log1p": true,
+      "good": null,
+      "bad": null,
+      "scale_max": 1.0,
+      "weight": 1.5,
+      "role": "scored",
+      "overlap_group": "violence_disorder",
+      "caveats": "Rates use residents as the denominator, so town centres with few residents and many visitors score badly. Greater Manchester Police publishes no data; its area is estimated from IoD 2025's crime domain."
+    },
+    {
+      "id": "crime_burglary",
+      "theme": "safety",
+      "label": "Burglary",
+      "description": "Recorded burglaries per 1,000 residents a year.",
+      "unit": "per 1,000 residents a year",
+      "direction": "lower_better",
+      "sources": [
+        "police_crime",
+        "iod_2025"
+      ],
+      "builder": "safety:crime_rate",
+      "params": {
+        "types": [
+          "Burglary"
+        ]
+      },
+      "normalise": "rank",
+      "log1p": true,
+      "good": null,
+      "bad": null,
+      "scale_max": 1.0,
+      "weight": 1.0,
+      "role": "scored",
+      "overlap_group": null,
+      "caveats": null
+    },
+    {
+      "id": "crime_asb",
+      "theme": "safety",
+      "label": "Anti-social behaviour",
+      "description": "Reported anti-social behaviour incidents per 1,000 residents a year.",
+      "unit": "per 1,000 residents a year",
+      "direction": "lower_better",
+      "sources": [
+        "police_crime",
+        "iod_2025"
+      ],
+      "builder": "safety:crime_rate",
+      "params": {
+        "types": [
+          "Anti-social behaviour"
+        ]
+      },
+      "normalise": "rank",
+      "log1p": true,
+      "good": null,
+      "bad": null,
+      "scale_max": 1.0,
+      "weight": 1.0,
+      "role": "scored",
+      "overlap_group": null,
+      "caveats": null
+    },
+    {
+      "id": "crime_theft",
+      "theme": "safety",
+      "label": "Robbery, theft and vehicle crime",
+      "description": "Robbery, theft from the person, vehicle crime and bicycle theft per 1,000 residents a year.",
+      "unit": "per 1,000 residents a year",
+      "direction": "lower_better",
+      "sources": [
+        "police_crime",
+        "iod_2025"
+      ],
+      "builder": "safety:crime_rate",
+      "params": {
+        "types": [
+          "Robbery",
+          "Theft from the person",
+          "Vehicle crime",
+          "Bicycle theft"
+        ]
+      },
+      "normalise": "rank",
+      "log1p": true,
+      "good": null,
+      "bad": null,
+      "scale_max": 1.0,
+      "weight": 1.0,
+      "role": "scored",
+      "overlap_group": null,
+      "caveats": null
+    },
+    {
+      "id": "crime_damage_disorder",
+      "theme": "safety",
+      "label": "Criminal damage and public order",
+      "description": "Criminal damage, arson and public order offences per 1,000 residents a year.",
+      "unit": "per 1,000 residents a year",
+      "direction": "lower_better",
+      "sources": [
+        "police_crime",
+        "iod_2025"
+      ],
+      "builder": "safety:crime_rate",
+      "params": {
+        "types": [
+          "Criminal damage and arson",
+          "Public order"
+        ]
+      },
+      "normalise": "rank",
+      "log1p": true,
+      "good": null,
+      "bad": null,
+      "scale_max": 1.0,
+      "weight": 1.0,
+      "role": "context",
+      "overlap_group": "violence_disorder",
+      "caveats": null
+    },
+    {
+      "id": "road_danger",
+      "theme": "safety",
+      "label": "Serious road collisions nearby",
+      "description": "Road collisions in which someone was killed or seriously injured within 500m of homes, per year (5-year average).",
+      "unit": "collisions a year within 500m",
+      "direction": "lower_better",
+      "sources": [
+        "stats19",
+        "nspl"
+      ],
+      "builder": "common:count_within",
+      "params": {
+        "slug": "stats19",
+        "column": "severity",
+        "values": [
+          "fatal",
+          "serious"
+        ],
+        "radius_m": 500,
+        "per_years": 5
+      },
+      "normalise": "rank",
+      "log1p": true,
+      "good": null,
+      "bad": null,
+      "scale_max": 1.0,
+      "weight": 0.75,
+      "role": "scored",
+      "overlap_group": null,
+      "caveats": "Busy roads near homes raise the count whoever was involved. Police forces moved to a new injury-reporting system at different times, which records more injuries as serious."
+    },
+    {
+      "id": "iod_crime",
+      "theme": "safety",
+      "label": "IoD 2025 crime domain score",
+      "description": "Modelled risk of personal and material victimisation (2021\u20132023 data).",
+      "unit": "score",
+      "direction": "lower_better",
+      "sources": [
+        "iod_2025"
+      ],
+      "builder": "common:iod",
+      "params": {
+        "column": "crime_score"
+      },
+      "normalise": "rank",
+      "log1p": false,
+      "good": null,
+      "bad": null,
+      "scale_max": 1.0,
+      "weight": 1.0,
+      "role": "diagnostic",
+      "overlap_group": "crime",
+      "caveats": null
+    },
+    {
+      "id": "no2",
+      "theme": "environment",
+      "label": "Nitrogen dioxide (NO\u2082)",
+      "description": "Annual mean background NO\u2082 where residents live (Defra 1km model).",
+      "unit": "\u00b5g/m\u00b3",
+      "direction": "lower_better",
+      "sources": [
+        "defra_pcm_no2",
+        "nspl"
+      ],
+      "builder": "environment:pcm",
+      "params": {
+        "slug": "defra_pcm_no2"
+      },
+      "normalise": "threshold",
+      "log1p": false,
+      "good": 10.0,
+      "bad": 30.0,
+      "scale_max": 1.0,
+      "weight": 1.0,
+      "role": "scored",
+      "overlap_group": "air_quality_no2",
+      "caveats": "Background concentrations; roadside levels on busy streets are higher. WHO guideline is 10 \u00b5g/m\u00b3."
+    },
+    {
+      "id": "pm25",
+      "theme": "environment",
+      "label": "Fine particles (PM2.5)",
+      "description": "Annual mean background PM2.5 where residents live (Defra 1km model).",
+      "unit": "\u00b5g/m\u00b3",
+      "direction": "lower_better",
+      "sources": [
+        "defra_pcm_pm25",
+        "nspl"
+      ],
+      "builder": "environment:pcm",
+      "params": {
+        "slug": "defra_pcm_pm25"
+      },
+      "normalise": "threshold",
+      "log1p": false,
+      "good": 5.0,
+      "bad": 12.0,
+      "scale_max": 1.0,
+      "weight": 1.0,
+      "role": "scored",
+      "overlap_group": null,
+      "caveats": "WHO guideline is 5 \u00b5g/m\u00b3."
+    },
+    {
+      "id": "green_space_access",
+      "theme": "environment",
+      "label": "Parks and green spaces nearby",
+      "description": "Entrances to public parks, gardens and playing fields within a 1km walk, weighted by distance.",
+      "unit": "index 0\u20131",
+      "direction": "higher_better",
+      "sources": [
+        "os_greenspace",
+        "nspl"
+      ],
+      "builder": "common:access",
+      "params": {
+        "slug": "os_greenspace",
+        "column": "function",
+        "values": [
+          "Public Park Or Garden",
+          "Playing Field"
+        ],
+        "radius_m": 1000,
+        "cap": 10
+      },
+      "normalise": "scale",
+      "log1p": false,
+      "good": null,
+      "bad": null,
+      "scale_max": 1.0,
+      "weight": 0.75,
+      "role": "scored",
+      "overlap_group": null,
+      "caveats": "Counts public parks and playing fields, not open countryside, so villages surrounded by fields and footpaths score lower than they feel."
+    },
+    {
+      "id": "play_spaces",
+      "theme": "environment",
+      "label": "Play areas nearby",
+      "description": "Entrances to public play spaces within 800m of homes, weighted by distance.",
+      "unit": "index 0\u20131",
+      "direction": "higher_better",
+      "sources": [
+        "os_greenspace",
+        "nspl"
+      ],
+      "builder": "common:access",
+      "params": {
+        "slug": "os_greenspace",
+        "column": "function",
+        "values": [
+          "Play Space"
+        ],
+        "radius_m": 800,
+        "cap": 5
+      },
+      "normalise": "scale",
+      "log1p": false,
+      "good": null,
+      "bad": null,
+      "scale_max": 1.0,
+      "weight": 1.0,
+      "role": "context",
+      "overlap_group": null,
+      "caveats": null
+    },
+    {
+      "id": "flood_risk",
+      "theme": "environment",
+      "label": "Homes at risk of flooding",
+      "description": "Share of homes at high or medium risk of flooding from rivers or the sea (at least a 1% chance a year).",
+      "unit": "% of homes",
+      "direction": "lower_better",
+      "sources": [
+        "ea_flood_postcodes",
+        "voa_ctsop",
+        "nspl"
+      ],
+      "builder": "environment:flood_risk",
+      "params": {
+        "bands": [
+          "high",
+          "medium"
+        ]
+      },
+      "normalise": "threshold",
+      "log1p": false,
+      "good": 0.0,
+      "bad": 25.0,
+      "scale_max": 1.0,
+      "weight": 1.0,
+      "role": "scored",
+      "overlap_group": null,
+      "caveats": "Rivers and the sea only, not surface water or groundwater; the Environment Agency's model takes flood defences into account."
+    },
+    {
+      "id": "iod_outdoors",
+      "theme": "environment",
+      "label": "IoD 2025 outdoor living environment",
+      "description": "Air quality and road traffic accidents (IoD 2025 sub-domain).",
+      "unit": "score",
+      "direction": "lower_better",
+      "sources": [
+        "iod_2025"
+      ],
+      "builder": "common:iod",
+      "params": {
+        "column": "sub_outdoors_score"
+      },
+      "normalise": "rank",
+      "log1p": false,
+      "good": null,
+      "bad": null,
+      "scale_max": 1.0,
+      "weight": 1.0,
+      "role": "diagnostic",
+      "overlap_group": null,
+      "caveats": null
+    },
+    {
+      "id": "gp_distance",
+      "theme": "health",
+      "label": "Distance to nearest GP practice",
+      "description": "Average straight-line distance from homes to the nearest GP practice.",
+      "unit": "metres",
+      "direction": "lower_better",
+      "sources": [
+        "ods_gp",
+        "nspl"
+      ],
+      "builder": "health:nearest_gp",
+      "params": {},
+      "normalise": "threshold",
+      "log1p": true,
+      "good": 1000.0,
+      "bad": 8000.0,
+      "scale_max": 1.0,
+      "weight": 1.0,
+      "role": "scored",
+      "overlap_group": null,
+      "caveats": null
+    },
+    {
+      "id": "patients_per_gp",
+      "theme": "health",
+      "label": "Patients per GP",
+      "description": "Registered patients per full-time-equivalent qualified GP at the practices residents actually use.",
+      "unit": "patients per FTE GP",
+      "direction": "lower_better",
+      "sources": [
+        "gp_registrations",
+        "gp_workforce"
+      ],
+      "builder": "health:patients_per_gp",
+      "params": {},
+      "normalise": "threshold",
+      "log1p": false,
+      "good": 1500.0,
+      "bad": 3500.0,
+      "scale_max": 1.0,
+      "weight": 1.0,
+      "role": "scored",
+      "overlap_group": null,
+      "caveats": "Excludes GPs in training; practices reporting under one full-time GP are left out of the average."
+    },
+    {
+      "id": "pharmacy_distance",
+      "theme": "health",
+      "label": "Distance to nearest pharmacy",
+      "description": "Average straight-line distance from homes to the nearest NHS community pharmacy.",
+      "unit": "metres",
+      "direction": "lower_better",
+      "sources": [
+        "nhsbsa_pharmacies",
+        "nspl"
+      ],
+      "builder": "common:nearest",
+      "params": {
+        "slug": "nhsbsa_pharmacies"
+      },
+      "normalise": "threshold",
+      "log1p": true,
+      "good": 1000.0,
+      "bad": 8000.0,
+      "scale_max": 1.0,
+      "weight": 0.75,
+      "role": "scored",
+      "overlap_group": null,
+      "caveats": "Rural GP practices that dispense medicines themselves aren't counted."
+    },
+    {
+      "id": "dentist_distance",
+      "theme": "health",
+      "label": "Distance to nearest NHS dentist",
+      "description": "Average straight-line distance from homes to the nearest dental practice with an NHS contract.",
+      "unit": "metres",
+      "direction": "lower_better",
+      "sources": [
+        "ods_dentists",
+        "nspl"
+      ],
+      "builder": "common:nearest",
+      "params": {
+        "slug": "ods_dentists"
+      },
+      "normalise": "threshold",
+      "log1p": true,
+      "good": 1500.0,
+      "bad": 10000.0,
+      "scale_max": 1.0,
+      "weight": 0.5,
+      "role": "scored",
+      "overlap_group": null,
+      "caveats": "Whether a practice takes new NHS patients isn't published as open data."
+    },
+    {
+      "id": "primary_school_access",
+      "theme": "education",
+      "label": "Good primary schools nearby",
+      "description": "State primary schools within 2km, each weighted by its inspection quality and distance.",
+      "unit": "index 0\u20131",
+      "direction": "higher_better",
+      "sources": [
+        "gias",
+        "ofsted_schools",
+        "nspl"
+      ],
+      "builder": "education:school_access",
+      "params": {
+        "phases": [
+          "Primary",
+          "All-through",
+          "Middle deemed primary"
+        ],
+        "radius_m": 2000,
+        "cap": 4
+      },
+      "normalise": "scale",
+      "log1p": false,
+      "good": null,
+      "bad": null,
+      "scale_max": 1.0,
+      "weight": 1.5,
+      "role": "scored",
+      "overlap_group": null,
+      "caveats": "Distance isn't admission; oversubscribed schools admit by catchment or faith criteria."
+    },
+    {
+      "id": "secondary_school_access",
+      "theme": "education",
+      "label": "Good secondary schools nearby",
+      "description": "State secondary schools within 5km, each weighted by its inspection quality and distance.",
+      "unit": "index 0\u20131",
+      "direction": "higher_better",
+      "sources": [
+        "gias",
+        "ofsted_schools",
+        "nspl"
+      ],
+      "builder": "education:school_access",
+      "params": {
+        "phases": [
+          "Secondary",
+          "All-through",
+          "Middle deemed secondary"
+        ],
+        "radius_m": 5000,
+        "cap": 4
+      },
+      "normalise": "scale",
+      "log1p": false,
+      "good": null,
+      "bad": null,
+      "scale_max": 1.0,
+      "weight": 1.5,
+      "role": "scored",
+      "overlap_group": null,
+      "caveats": null
+    },
+    {
+      "id": "nursery_access",
+      "theme": "education",
+      "label": "Good nurseries nearby",
+      "description": "Nurseries, pre-schools and school nursery classes within 1km, each weighted by its Ofsted grade and distance.",
+      "unit": "index 0\u20131",
+      "direction": "higher_better",
+      "sources": [
+        "ofsted_childcare",
+        "gias",
+        "nspl"
+      ],
+      "builder": "education:nursery_access",
+      "params": {
+        "radius_m": 1000,
+        "cap": 5
+      },
+      "normalise": "scale",
+      "log1p": false,
+      "good": null,
+      "bad": null,
+      "scale_max": 1.0,
+      "weight": 1.0,
+      "role": "scored",
+      "overlap_group": null,
+      "caveats": "Childminders aren't located (Ofsted withholds their addresses)."
+    },
+    {
+      "id": "connectivity_overall",
+      "theme": "transport",
+      "label": "Overall connectivity",
+      "description": "DfT connectivity score across all modes and destinations.",
+      "unit": "score 0\u2013100",
+      "direction": "higher_better",
+      "sources": [
+        "dft_connectivity"
+      ],
+      "builder": "common:column",
+      "params": {
+        "slug": "dft_connectivity",
+        "column": "tcm_overall"
+      },
+      "normalise": "scale",
+      "log1p": false,
+      "good": null,
+      "bad": null,
+      "scale_max": 100.0,
+      "weight": 1.5,
+      "role": "scored",
+      "overlap_group": "connectivity",
+      "caveats": null
+    },
+    {
+      "id": "connectivity_public_transport",
+      "theme": "transport",
+      "label": "Public transport connectivity",
+      "description": "DfT connectivity score for public transport to all destinations.",
+      "unit": "score 0\u2013100",
+      "direction": "higher_better",
+      "sources": [
+        "dft_connectivity"
+      ],
+      "builder": "common:column",
+      "params": {
+        "slug": "dft_connectivity",
+        "column": "tcm_overall_public_transport"
+      },
+      "normalise": "scale",
+      "log1p": false,
+      "good": null,
+      "bad": null,
+      "scale_max": 100.0,
+      "weight": 1.0,
+      "role": "context",
+      "overlap_group": "connectivity",
+      "caveats": null
+    },
+    {
+      "id": "connectivity_walking",
+      "theme": "transport",
+      "label": "Walkability",
+      "description": "DfT connectivity score for walking to all destinations.",
+      "unit": "score 0\u2013100",
+      "direction": "higher_better",
+      "sources": [
+        "dft_connectivity"
+      ],
+      "builder": "common:column",
+      "params": {
+        "slug": "dft_connectivity",
+        "column": "tcm_overall_walking"
+      },
+      "normalise": "scale",
+      "log1p": false,
+      "good": null,
+      "bad": null,
+      "scale_max": 100.0,
+      "weight": 1.0,
+      "role": "context",
+      "overlap_group": "connectivity",
+      "caveats": null
+    },
+    {
+      "id": "connectivity_cycling",
+      "theme": "transport",
+      "label": "Cycling connectivity",
+      "description": "DfT connectivity score for cycling to all destinations.",
+      "unit": "score 0\u2013100",
+      "direction": "higher_better",
+      "sources": [
+        "dft_connectivity"
+      ],
+      "builder": "common:column",
+      "params": {
+        "slug": "dft_connectivity",
+        "column": "tcm_overall_cycling"
+      },
+      "normalise": "scale",
+      "log1p": false,
+      "good": null,
+      "bad": null,
+      "scale_max": 100.0,
+      "weight": 0.5,
+      "role": "context",
+      "overlap_group": "connectivity",
+      "caveats": null
+    },
+    {
+      "id": "station_distance",
+      "theme": "transport",
+      "label": "Distance to nearest station",
+      "description": "Average straight-line distance from homes to the nearest railway, metro or tram stop.",
+      "unit": "metres",
+      "direction": "lower_better",
+      "sources": [
+        "naptan",
+        "nspl"
+      ],
+      "builder": "common:nearest",
+      "params": {
+        "slug": "naptan",
+        "column": "mode",
+        "values": [
+          "rail",
+          "metro_tram"
+        ]
+      },
+      "normalise": "threshold",
+      "log1p": true,
+      "good": 800.0,
+      "bad": 10000.0,
+      "scale_max": 1.0,
+      "weight": 0.75,
+      "role": "scored",
+      "overlap_group": null,
+      "caveats": null
+    },
+    {
+      "id": "bus_stops",
+      "theme": "transport",
+      "label": "Bus stops nearby",
+      "description": "Bus stops within 400m of homes, on average.",
+      "unit": "stops within 400m",
+      "direction": "higher_better",
+      "sources": [
+        "naptan",
+        "nspl"
+      ],
+      "builder": "common:count_within",
+      "params": {
+        "slug": "naptan",
+        "column": "mode",
+        "values": [
+          "bus"
+        ],
+        "radius_m": 400
+      },
+      "normalise": "rank",
+      "log1p": false,
+      "good": null,
+      "bad": null,
+      "scale_max": 1.0,
+      "weight": 1.0,
+      "role": "context",
+      "overlap_group": null,
+      "caveats": "Stops, not services; how often buses run isn't counted yet."
+    },
+    {
+      "id": "gigabit_broadband",
+      "theme": "transport",
+      "label": "Gigabit broadband",
+      "description": "Share of homes that can get gigabit-capable broadband (full fibre or cable).",
+      "unit": "% of homes",
+      "direction": "higher_better",
+      "sources": [
+        "ofcom_broadband"
+      ],
+      "builder": "common:column",
+      "params": {
+        "slug": "ofcom_broadband",
+        "column": "gigabit_pct"
+      },
+      "normalise": "scale",
+      "log1p": false,
+      "good": null,
+      "bad": null,
+      "scale_max": 100.0,
+      "weight": 0.75,
+      "role": "scored",
+      "overlap_group": null,
+      "caveats": null
+    },
+    {
+      "id": "slow_broadband",
+      "theme": "transport",
+      "label": "Homes without decent broadband",
+      "description": "Share of homes that can't get 10 Mbit/s broadband from a fixed line or fixed wireless.",
+      "unit": "% of homes",
+      "direction": "lower_better",
+      "sources": [
+        "ofcom_broadband"
+      ],
+      "builder": "common:column",
+      "params": {
+        "slug": "ofcom_broadband",
+        "column": "below_uso_pct"
+      },
+      "normalise": "rank",
+      "log1p": false,
+      "good": null,
+      "bad": null,
+      "scale_max": 1.0,
+      "weight": 1.0,
+      "role": "context",
+      "overlap_group": null,
+      "caveats": null
+    },
+    {
+      "id": "well_run_pubs",
+      "theme": "amenities",
+      "label": "Well-run pubs nearby",
+      "description": "Pubs within a 15-minute walk that hold a food hygiene rating of 4 or 5 from the last three years, weighted by distance, with a small bonus for real ale, food or outdoor seating.",
+      "unit": "index 0\u20131",
+      "direction": "higher_better",
+      "sources": [
+        "osm_england",
+        "fsa_fhrs",
+        "nspl"
+      ],
+      "builder": "pubs:well_run_pub_access",
+      "params": {
+        "radius_m": 1200,
+        "cap": 6
+      },
+      "normalise": "scale",
+      "log1p": false,
+      "good": null,
+      "bad": null,
+      "scale_max": 1.0,
+      "weight": 1.0,
+      "role": "scored",
+      "overlap_group": null,
+      "caveats": "Hygiene ratings measure how well a pub is run, not the beer or the atmosphere."
+    },
+    {
+      "id": "food_and_drink",
+      "theme": "amenities",
+      "label": "Caf\u00e9s and restaurants",
+      "description": "Caf\u00e9s and restaurants within 800m, weighted by distance.",
+      "unit": "index 0\u20131",
+      "direction": "higher_better",
+      "sources": [
+        "osm_england",
+        "nspl"
+      ],
+      "builder": "amenities:osm_access",
+      "params": {
+        "values": [
+          "cafe",
+          "restaurant"
+        ],
+        "radius_m": 800,
+        "cap": 15
+      },
+      "normalise": "scale",
+      "log1p": false,
+      "good": null,
+      "bad": null,
+      "scale_max": 1.0,
+      "weight": 1.0,
+      "role": "scored",
+      "overlap_group": "high_street",
+      "caveats": null
+    },
+    {
+      "id": "supermarket_distance",
+      "theme": "amenities",
+      "label": "Distance to nearest supermarket",
+      "description": "Average straight-line distance from homes to the nearest supermarket.",
+      "unit": "metres",
+      "direction": "lower_better",
+      "sources": [
+        "osm_england",
+        "nspl"
+      ],
+      "builder": "amenities:osm_nearest",
+      "params": {
+        "values": [
+          "supermarket"
+        ]
+      },
+      "normalise": "threshold",
+      "log1p": true,
+      "good": 1000.0,
+      "bad": 10000.0,
+      "scale_max": 1.0,
+      "weight": 1.0,
+      "role": "scored",
+      "overlap_group": null,
+      "caveats": null
+    },
+    {
+      "id": "shops",
+      "theme": "amenities",
+      "label": "Shops nearby",
+      "description": "Shops of every kind within 800m, weighted by distance.",
+      "unit": "index 0\u20131",
+      "direction": "higher_better",
+      "sources": [
+        "osm_england",
+        "nspl"
+      ],
+      "builder": "amenities:osm_access",
+      "params": {
+        "key": "shop",
+        "radius_m": 800,
+        "cap": 30
+      },
+      "normalise": "scale",
+      "log1p": false,
+      "good": null,
+      "bad": null,
+      "scale_max": 1.0,
+      "weight": 0.75,
+      "role": "context",
+      "overlap_group": "high_street",
+      "caveats": null
+    },
+    {
+      "id": "leisure",
+      "theme": "amenities",
+      "label": "Gyms and sports centres",
+      "description": "Fitness centres and sports centres within 2km.",
+      "unit": "index 0\u20131",
+      "direction": "higher_better",
+      "sources": [
+        "osm_england",
+        "nspl"
+      ],
+      "builder": "amenities:osm_access",
+      "params": {
+        "values": [
+          "fitness_centre",
+          "sports_centre"
+        ],
+        "radius_m": 2000,
+        "cap": 6
+      },
+      "normalise": "scale",
+      "log1p": false,
+      "good": null,
+      "bad": null,
+      "scale_max": 1.0,
+      "weight": 0.75,
+      "role": "scored",
+      "overlap_group": null,
+      "caveats": null
+    },
+    {
+      "id": "culture",
+      "theme": "amenities",
+      "label": "Libraries, cinemas, theatres and museums",
+      "description": "Libraries, cinemas, theatres, arts centres, museums and galleries within 2km.",
+      "unit": "index 0\u20131",
+      "direction": "higher_better",
+      "sources": [
+        "osm_england",
+        "nspl"
+      ],
+      "builder": "amenities:osm_access",
+      "params": {
+        "values": [
+          "library",
+          "cinema",
+          "theatre",
+          "arts_centre",
+          "museum",
+          "gallery"
+        ],
+        "radius_m": 2000,
+        "cap": 6
+      },
+      "normalise": "scale",
+      "log1p": false,
+      "good": null,
+      "bad": null,
+      "scale_max": 1.0,
+      "weight": 0.75,
+      "role": "scored",
+      "overlap_group": null,
+      "caveats": null
+    },
+    {
+      "id": "fast_food",
+      "theme": "amenities",
+      "label": "Fast-food outlets nearby",
+      "description": "Fast-food outlets within 800m.",
+      "unit": "index 0\u20131",
+      "direction": "lower_better",
+      "sources": [
+        "osm_england",
+        "nspl"
+      ],
+      "builder": "amenities:osm_access",
+      "params": {
+        "values": [
+          "fast_food"
+        ],
+        "radius_m": 800,
+        "cap": 15
+      },
+      "normalise": "scale",
+      "log1p": false,
+      "good": null,
+      "bad": null,
+      "scale_max": 1.0,
+      "weight": 1.0,
+      "role": "context",
+      "overlap_group": null,
+      "caveats": null
+    },
+    {
+      "id": "gambling",
+      "theme": "amenities",
+      "label": "Betting shops and casinos nearby",
+      "description": "Betting shops, gambling venues and casinos within 800m.",
+      "unit": "index 0\u20131",
+      "direction": "lower_better",
+      "sources": [
+        "osm_england",
+        "nspl"
+      ],
+      "builder": "amenities:osm_access",
+      "params": {
+        "values": [
+          "gambling",
+          "casino",
+          "bookmaker",
+          "lottery"
+        ],
+        "radius_m": 800,
+        "cap": 5
+      },
+      "normalise": "scale",
+      "log1p": false,
+      "good": null,
+      "bad": null,
+      "scale_max": 1.0,
+      "weight": 1.0,
+      "role": "context",
+      "overlap_group": null,
+      "caveats": null
+    },
+    {
+      "id": "house_price",
+      "theme": "housing",
+      "label": "Typical house price",
+      "description": "Median sale price over the last 12 months, steadied towards the surrounding area where sales are few.",
+      "unit": "\u00a3",
+      "direction": "lower_better",
+      "sources": [
+        "price_paid",
+        "nspl"
+      ],
+      "builder": "housing:median_price",
+      "params": {},
+      "normalise": "rank",
+      "log1p": false,
+      "good": null,
+      "bad": null,
+      "scale_max": 1.0,
+      "weight": 2.0,
+      "role": "scored",
+      "overlap_group": null,
+      "caveats": "Lower prices score as more affordable; the scale reflects price, not value."
+    },
+    {
+      "id": "housing_condition",
+      "theme": "housing",
+      "label": "Housing condition",
+      "description": "IoD 2025 indoors sub-domain (homes in poor condition or without central heating).",
+      "unit": "score",
+      "direction": "lower_better",
+      "sources": [
+        "iod_2025"
+      ],
+      "builder": "common:iod",
+      "params": {
+        "column": "sub_indoors_score"
+      },
+      "normalise": "rank",
+      "log1p": false,
+      "good": null,
+      "bad": null,
+      "scale_max": 1.0,
+      "weight": 1.0,
+      "role": "scored",
+      "overlap_group": null,
+      "caveats": null
+    },
+    {
+      "id": "price_change",
+      "theme": "housing",
+      "label": "House price change",
+      "description": "Change in the median sale price, last 12 months against the 12 months before.",
+      "unit": "%",
+      "direction": "higher_better",
+      "sources": [
+        "price_paid"
+      ],
+      "builder": "common:column",
+      "params": {
+        "slug": "price_paid",
+        "column": "yoy_change_pct"
+      },
+      "normalise": "rank",
+      "log1p": false,
+      "good": null,
+      "bad": null,
+      "scale_max": 1.0,
+      "weight": 1.0,
+      "role": "context",
+      "overlap_group": null,
+      "caveats": "Noisy where sales are few."
+    },
+    {
+      "id": "council_tax",
+      "theme": "housing",
+      "label": "Council tax (Band D)",
+      "description": "Annual council tax on a Band D home, including county, police, fire and average parish charges.",
+      "unit": "\u00a3 a year",
+      "direction": "lower_better",
+      "sources": [
+        "council_tax"
+      ],
+      "builder": "housing:council_tax",
+      "params": {
+        "band": "d"
+      },
+      "normalise": "rank",
+      "log1p": false,
+      "good": null,
+      "bad": null,
+      "scale_max": 1.0,
+      "weight": 0.5,
+      "role": "scored",
+      "overlap_group": null,
+      "caveats": "The same for every neighbourhood in a council area; a home's bill depends on its band."
+    },
+    {
+      "id": "price_to_income",
+      "theme": "housing",
+      "label": "Price to local income",
+      "description": "Typical house price divided by the area's mean net household income.",
+      "unit": "years of income",
+      "direction": "lower_better",
+      "sources": [
+        "price_paid",
+        "msoa_income"
+      ],
+      "builder": "housing:price_to_income",
+      "params": {},
+      "normalise": "rank",
+      "log1p": false,
+      "good": null,
+      "bad": null,
+      "scale_max": 1.0,
+      "weight": 1.0,
+      "role": "context",
+      "overlap_group": null,
+      "caveats": "Income is a model-based estimate for the wider area (MSOA), for 2022\u201323."
+    },
+    {
+      "id": "new_builds",
+      "theme": "housing",
+      "label": "Homes built since 2000",
+      "description": "Share of homes built in 2000 or later.",
+      "unit": "% of homes",
+      "direction": "higher_better",
+      "sources": [
+        "voa_ctsop"
+      ],
+      "builder": "common:share",
+      "params": {
+        "slug": "voa_ctsop",
+        "numerator": [
+          "built_2000_on"
+        ],
+        "denominator": "dwellings"
+      },
+      "normalise": "rank",
+      "log1p": false,
+      "good": null,
+      "bad": null,
+      "scale_max": 1.0,
+      "weight": 1.0,
+      "role": "context",
+      "overlap_group": null,
+      "caveats": null
+    },
+    {
+      "id": "period_homes",
+      "theme": "housing",
+      "label": "Homes built before 1919",
+      "description": "Share of homes built before 1919.",
+      "unit": "% of homes",
+      "direction": "higher_better",
+      "sources": [
+        "voa_ctsop"
+      ],
+      "builder": "common:share",
+      "params": {
+        "slug": "voa_ctsop",
+        "numerator": [
+          "built_pre_1919"
+        ],
+        "denominator": "dwellings"
+      },
+      "normalise": "rank",
+      "log1p": false,
+      "good": null,
+      "bad": null,
+      "scale_max": 1.0,
+      "weight": 1.0,
+      "role": "context",
+      "overlap_group": null,
+      "caveats": null
+    },
+    {
+      "id": "lower_band_homes",
+      "theme": "housing",
+      "label": "Homes in council tax bands A\u2013B",
+      "description": "Share of homes in the two lowest council tax bands (the cheapest homes in 1991 values).",
+      "unit": "% of homes",
+      "direction": "higher_better",
+      "sources": [
+        "voa_ctsop"
+      ],
+      "builder": "common:share",
+      "params": {
+        "slug": "voa_ctsop",
+        "numerator": [
+          "band_a",
+          "band_b"
+        ],
+        "denominator": "dwellings"
+      },
+      "normalise": "rank",
+      "log1p": false,
+      "good": null,
+      "bad": null,
+      "scale_max": 1.0,
+      "weight": 1.0,
+      "role": "context",
+      "overlap_group": null,
+      "caveats": null
+    },
+    {
+      "id": "income_deprivation",
+      "theme": "community",
+      "label": "Income deprivation",
+      "description": "Share of residents on low incomes (IoD 2025 income domain).",
+      "unit": "rate",
+      "direction": "lower_better",
+      "sources": [
+        "iod_2025"
+      ],
+      "builder": "common:iod",
+      "params": {
+        "column": "income_score"
+      },
+      "normalise": "rank",
+      "log1p": false,
+      "good": null,
+      "bad": null,
+      "scale_max": 1.0,
+      "weight": 1.0,
+      "role": "scored",
+      "overlap_group": "income_work",
+      "caveats": null
+    },
+    {
+      "id": "employment_deprivation",
+      "theme": "community",
+      "label": "Employment deprivation",
+      "description": "Share of working-age residents involuntarily out of work (IoD 2025 employment domain).",
+      "unit": "rate",
+      "direction": "lower_better",
+      "sources": [
+        "iod_2025"
+      ],
+      "builder": "common:iod",
+      "params": {
+        "column": "employment_score"
+      },
+      "normalise": "rank",
+      "log1p": false,
+      "good": null,
+      "bad": null,
+      "scale_max": 1.0,
+      "weight": 1.0,
+      "role": "context",
+      "overlap_group": "income_work",
+      "caveats": null
+    },
+    {
+      "id": "claimant_rate",
+      "theme": "community",
+      "label": "Claimant rate",
+      "description": "Residents claiming unemployment-related benefits, as a share of those aged 16\u201364 (latest month).",
+      "unit": "% of 16\u201364s",
+      "direction": "lower_better",
+      "sources": [
+        "claimant_count",
+        "census_ts007a"
+      ],
+      "builder": "community:claimant_rate",
+      "params": {},
+      "normalise": "rank",
+      "log1p": true,
+      "good": null,
+      "bad": null,
+      "scale_max": 1.0,
+      "weight": 1.0,
+      "role": "context",
+      "overlap_group": "income_work",
+      "caveats": "Not scored because it tracks IoD income deprivation closely (\u03c1\u22480.9), but it is far more recent (monthly). Includes Universal Credit claimants in low-paid work who must look for more."
+    },
+    {
+      "id": "household_income",
+      "theme": "community",
+      "label": "Household income",
+      "description": "Mean net household income in the wider area (MSOA), before housing costs.",
+      "unit": "\u00a3 a year",
+      "direction": "higher_better",
+      "sources": [
+        "msoa_income"
+      ],
+      "builder": "housing:msoa_income",
+      "params": {
+        "column": "income_net"
+      },
+      "normalise": "rank",
+      "log1p": false,
+      "good": null,
+      "bad": null,
+      "scale_max": 1.0,
+      "weight": 1.0,
+      "role": "context",
+      "overlap_group": "income_work",
+      "caveats": null
+    },
+    {
+      "id": "health_deprivation",
+      "theme": "community",
+      "label": "Health and disability",
+      "description": "Premature death, illness and disability (IoD 2025 health deprivation and disability domain).",
+      "unit": "score",
+      "direction": "lower_better",
+      "sources": [
+        "iod_2025"
+      ],
+      "builder": "common:iod",
+      "params": {
+        "column": "health_score"
+      },
+      "normalise": "rank",
+      "log1p": false,
+      "good": null,
+      "bad": null,
+      "scale_max": 1.0,
+      "weight": 1.0,
+      "role": "scored",
+      "overlap_group": "population_health",
+      "caveats": "Built to account for age, unlike self-reported health, which flatters areas of young adults."
+    },
+    {
+      "id": "good_health",
+      "theme": "community",
+      "label": "Good health (self-reported)",
+      "description": "Residents describing their health as good or very good (Census 2021).",
+      "unit": "%",
+      "direction": "higher_better",
+      "sources": [
+        "census_ts037"
+      ],
+      "builder": "community:census_share",
+      "params": {
+        "table": "census_ts037",
+        "numerator": [
+          "very_good_health",
+          "good_health"
+        ]
+      },
+      "normalise": "rank",
+      "log1p": false,
+      "good": null,
+      "bad": null,
+      "scale_max": 1.0,
+      "weight": 1.0,
+      "role": "context",
+      "overlap_group": "population_health",
+      "caveats": "Not adjusted for age, so student areas look healthiest."
+    },
+    {
+      "id": "imd",
+      "theme": "community",
+      "label": "Index of Multiple Deprivation 2025",
+      "description": "Overall deprivation score; not scored because its domains overlap other indicators.",
+      "unit": "score",
+      "direction": "lower_better",
+      "sources": [
+        "iod_2025"
+      ],
+      "builder": "common:iod",
+      "params": {
+        "column": "imd_score"
+      },
+      "normalise": "rank",
+      "log1p": false,
+      "good": null,
+      "bad": null,
+      "scale_max": 1.0,
+      "weight": 1.0,
+      "role": "context",
+      "overlap_group": null,
+      "caveats": null
+    },
+    {
+      "id": "population_density",
+      "theme": "community",
+      "label": "Population density",
+      "description": "Residents per square kilometre (Census 2021).",
+      "unit": "people per km\u00b2",
+      "direction": "lower_better",
+      "sources": [
+        "census_ts006"
+      ],
+      "builder": "common:column",
+      "params": {
+        "slug": "census_ts006",
+        "column": "persons_per_square_kilometre"
+      },
+      "normalise": "rank",
+      "log1p": false,
+      "good": null,
+      "bad": null,
+      "scale_max": 1.0,
+      "weight": 1.0,
+      "role": "context",
+      "overlap_group": null,
+      "caveats": null
+    },
+    {
+      "id": "households_with_children",
+      "theme": "community",
+      "label": "Households with dependent children",
+      "description": "Share of households with dependent children (Census 2021).",
+      "unit": "%",
+      "direction": "higher_better",
+      "sources": [
+        "census_ts003"
+      ],
+      "builder": "community:census_share",
+      "params": {
+        "table": "census_ts003",
+        "numerator": [
+          "single_family_household_married_or_civil_partnership_couple_dependent_children",
+          "single_family_household_cohabiting_couple_family_with_dependent_children",
+          "single_family_household_lone_parent_family_with_dependent_children",
+          "other_household_types_with_dependent_children"
+        ]
+      },
+      "normalise": "rank",
+      "log1p": false,
+      "good": null,
+      "bad": null,
+      "scale_max": 1.0,
+      "weight": 1.0,
+      "role": "context",
+      "overlap_group": null,
+      "caveats": null
+    },
+    {
+      "id": "aged_65_plus",
+      "theme": "community",
+      "label": "Residents aged 65 and over",
+      "description": "Share of residents aged 65 or over (Census 2021).",
+      "unit": "%",
+      "direction": "higher_better",
+      "sources": [
+        "census_ts007a"
+      ],
+      "builder": "community:census_share",
+      "params": {
+        "table": "census_ts007a",
+        "numerator": [
+          "aged_65_to_69_years",
+          "aged_70_to_74_years",
+          "aged_75_to_79_years",
+          "aged_80_to_84_years",
+          "aged_85_years_and_over"
+        ]
+      },
+      "normalise": "rank",
+      "log1p": false,
+      "good": null,
+      "bad": null,
+      "scale_max": 1.0,
+      "weight": 1.0,
+      "role": "context",
+      "overlap_group": null,
+      "caveats": null
+    },
+    {
+      "id": "owner_occupied",
+      "theme": "community",
+      "label": "Owner-occupied homes",
+      "description": "Share of households that own their home outright or with a mortgage (Census 2021).",
+      "unit": "%",
+      "direction": "higher_better",
+      "sources": [
+        "census_ts054"
+      ],
+      "builder": "community:census_share",
+      "params": {
+        "table": "census_ts054",
+        "numerator": [
+          "owned"
+        ]
+      },
+      "normalise": "rank",
+      "log1p": false,
+      "good": null,
+      "bad": null,
+      "scale_max": 1.0,
+      "weight": 1.0,
+      "role": "context",
+      "overlap_group": null,
+      "caveats": null
+    },
+    {
+      "id": "no_car",
+      "theme": "community",
+      "label": "Households without a car",
+      "description": "Share of households with no car or van (Census 2021).",
+      "unit": "%",
+      "direction": "higher_better",
+      "sources": [
+        "census_ts045"
+      ],
+      "builder": "community:census_share",
+      "params": {
+        "table": "census_ts045",
+        "numerator": [
+          "no_cars_or_vans_in_household"
+        ]
+      },
+      "normalise": "rank",
+      "log1p": false,
+      "good": null,
+      "bad": null,
+      "scale_max": 1.0,
+      "weight": 1.0,
+      "role": "context",
+      "overlap_group": null,
+      "caveats": null
+    },
+    {
+      "id": "sustainable_commute",
+      "theme": "community",
+      "label": "Walk, cycle or public transport to work",
+      "description": "Share of workers commuting on foot, by bike or by public transport (Census 2021, during COVID-19 restrictions).",
+      "unit": "%",
+      "direction": "higher_better",
+      "sources": [
+        "census_ts061"
+      ],
+      "builder": "community:census_share",
+      "params": {
+        "table": "census_ts061",
+        "numerator": [
+          "underground_metro_light_rail_tram",
+          "train",
+          "bus_minibus_or_coach",
+          "bicycle",
+          "on_foot"
+        ]
+      },
+      "normalise": "rank",
+      "log1p": false,
+      "good": null,
+      "bad": null,
+      "scale_max": 1.0,
+      "weight": 1.0,
+      "role": "context",
+      "overlap_group": null,
+      "caveats": null
+    }
+  ],
+  "themes": {
+    "safety": {
+      "label": "Safety",
+      "description": "Recorded crime and anti-social behaviour where people live."
+    },
+    "environment": {
+      "label": "Environment",
+      "description": "Clean air, parks and green space nearby, and flood risk."
+    },
+    "health": {
+      "label": "Health services",
+      "description": "How easily residents can see a GP, pharmacist or dentist."
+    },
+    "education": {
+      "label": "Schools & childcare",
+      "description": "Good schools and nurseries within reach."
+    },
+    "transport": {
+      "label": "Transport & connectivity",
+      "description": "How well an area connects to jobs and services by every mode, and its broadband."
+    },
+    "amenities": {
+      "label": "Amenities & nightlife",
+      "description": "Shops, caf\u00e9s, well-run pubs, leisure and culture nearby."
+    },
+    "housing": {
+      "label": "Housing & affordability",
+      "description": "What homes cost and the condition of the housing stock."
+    },
+    "community": {
+      "label": "Community & wellbeing",
+      "description": "Income, work and health of the people who live there."
+    }
+  },
+  "default_preset": "balanced",
+  "presets": {
+    "balanced": {
+      "label": "Balanced",
+      "description": "Every theme counts equally.",
+      "themes": {
+        "safety": 1.0,
+        "environment": 1.0,
+        "health": 1.0,
+        "education": 1.0,
+        "transport": 1.0,
+        "amenities": 1.0,
+        "housing": 1.0,
+        "community": 1.0
+      },
+      "indicators": {}
+    },
+    "family": {
+      "label": "Family with children",
+      "description": "Good schools and nurseries, safety and green space come first.",
+      "themes": {
+        "safety": 2.0,
+        "environment": 1.5,
+        "health": 1.0,
+        "education": 2.5,
+        "transport": 0.75,
+        "amenities": 0.75,
+        "housing": 1.5,
+        "community": 1.0
+      },
+      "indicators": {
+        "nursery_access": 1.5,
+        "well_run_pubs": 0.5,
+        "culture": 0.75
+      }
+    },
+    "young_professional": {
+      "label": "Young professional",
+      "description": "Connections, things to do and well-run pubs; schools matter less.",
+      "themes": {
+        "safety": 1.0,
+        "environment": 0.75,
+        "health": 0.5,
+        "education": 0.25,
+        "transport": 2.0,
+        "amenities": 2.5,
+        "housing": 1.5,
+        "community": 0.5
+      },
+      "indicators": {
+        "well_run_pubs": 1.5,
+        "food_and_drink": 1.5
+      }
+    },
+    "retiree": {
+      "label": "Retired",
+      "description": "Safety, health services, clean air and a quieter area.",
+      "themes": {
+        "safety": 2.0,
+        "environment": 1.5,
+        "health": 2.5,
+        "education": 0.25,
+        "transport": 1.0,
+        "amenities": 1.0,
+        "housing": 1.0,
+        "community": 1.0
+      },
+      "indicators": {
+        "gp_distance": 1.5,
+        "pharmacy_distance": 1.5
+      }
+    },
+    "commuter": {
+      "label": "Commuter",
+      "description": "Fast connections to jobs, by public transport above all.",
+      "themes": {
+        "safety": 1.0,
+        "environment": 0.75,
+        "health": 0.75,
+        "education": 0.75,
+        "transport": 3.0,
+        "amenities": 1.0,
+        "housing": 1.5,
+        "community": 0.75
+      },
+      "indicators": {}
+    }
+  },
+  "sources": {
+    "census_ts003": {
+      "title": "Census 2021 TS003 Household composition",
+      "licence": "OGL-3.0",
+      "attribution": "Source: Office for National Statistics licensed under the Open Government Licence v3.0. Census 2021.",
+      "version": null,
+      "fetched_at": "2026-10-07T15:48:31.920812+00:00"
+    },
+    "census_ts006": {
+      "title": "Census 2021 TS006 Population density",
+      "licence": "OGL-3.0",
+      "attribution": "Source: Office for National Statistics licensed under the Open Government Licence v3.0. Census 2021.",
+      "version": null,
+      "fetched_at": "2026-10-07T15:48:33.847785+00:00"
+    },
+    "census_ts007a": {
+      "title": "Census 2021 TS007A Age by five-year age bands",
+      "licence": "OGL-3.0",
+      "attribution": "Source: Office for National Statistics licensed under the Open Government Licence v3.0. Census 2021.",
+      "version": null,
+      "fetched_at": "2026-10-07T15:48:36.745800+00:00"
+    },
+    "census_ts037": {
+      "title": "Census 2021 TS037 General health",
+      "licence": "OGL-3.0",
+      "attribution": "Source: Office for National Statistics licensed under the Open Government Licence v3.0. Census 2021.",
+      "version": null,
+      "fetched_at": "2026-10-07T15:48:39.018278+00:00"
+    },
+    "census_ts045": {
+      "title": "Census 2021 TS045 Car or van availability",
+      "licence": "OGL-3.0",
+      "attribution": "Source: Office for National Statistics licensed under the Open Government Licence v3.0. Census 2021.",
+      "version": null,
+      "fetched_at": "2026-10-07T15:48:42.914557+00:00"
+    },
+    "census_ts054": {
+      "title": "Census 2021 TS054 Tenure",
+      "licence": "OGL-3.0",
+      "attribution": "Source: Office for National Statistics licensed under the Open Government Licence v3.0. Census 2021.",
+      "version": null,
+      "fetched_at": "2026-10-07T15:48:45.668787+00:00"
+    },
+    "census_ts061": {
+      "title": "Census 2021 TS061 Method used to travel to work",
+      "licence": "OGL-3.0",
+      "attribution": "Source: Office for National Statistics licensed under the Open Government Licence v3.0. Census 2021.",
+      "version": null,
+      "fetched_at": "2026-10-07T15:48:50.333902+00:00"
+    },
+    "claimant_count": {
+      "title": "Claimant count by LSOA (Nomis)",
+      "licence": "OGL-3.0",
+      "attribution": "Source: Office for National Statistics licensed under the Open Government Licence v3.0. Contains OS data \u00a9 Crown copyright and database right 2026.",
+      "version": "August 2026",
+      "fetched_at": "2026-10-07T17:05:35+00:00"
+    },
+    "council_tax": {
+      "title": "Council Tax levels set by local authorities in England",
+      "licence": "OGL-3.0",
+      "attribution": "Ministry of Housing, Communities and Local Government, Council Tax levels, licensed under the Open Government Licence v3.0.",
+      "version": "https://assets.publishing.service.gov.uk/media/69de1fa63e81003ae0422508/Tables_1-9_2026-27.ods",
+      "fetched_at": "2026-10-07T17:05:37.057556+00:00"
+    },
+    "defra_pcm_no2": {
+      "title": "Defra modelled background NO2 (1km grid, latest year)",
+      "licence": "OGL-3.0",
+      "attribution": "\u00a9 Crown copyright. Defra via uk-air.defra.gov.uk, licensed under the Open Government Licence v3.0.",
+      "version": "https://uk-air.defra.gov.uk/datastore/pcm/mapno22024.csv",
+      "fetched_at": "2026-10-07T15:53:09.508188+00:00"
+    },
+    "defra_pcm_pm25": {
+      "title": "Defra modelled background PM2.5 (1km grid, latest year)",
+      "licence": "OGL-3.0",
+      "attribution": "\u00a9 Crown copyright. Defra via uk-air.defra.gov.uk, licensed under the Open Government Licence v3.0.",
+      "version": "https://uk-air.defra.gov.uk/datastore/pcm/mappm252024g.csv",
+      "fetched_at": "2026-10-07T15:57:24.557558+00:00"
+    },
+    "dft_connectivity": {
+      "title": "DfT Transport Connectivity Metric",
+      "licence": "OGL-3.0",
+      "attribution": "Department for Transport, Transport Connectivity Metric, licensed under the Open Government Licence v3.0.",
+      "version": "https://assets.publishing.service.gov.uk/media/68c966fc07d9e92bc5517b80/connectivity_metrics_2025.ods",
+      "fetched_at": "2026-10-07T16:01:54.343049+00:00"
+    },
+    "ea_flood_postcodes": {
+      "title": "Environment Agency flood risk from rivers and the sea, by postcode",
+      "licence": "OGL-3.0",
+      "attribution": "Contains Environment Agency information \u00a9 Environment Agency and/or database right, licensed under the Open Government Licence v3.0.",
+      "version": null,
+      "fetched_at": "2026-10-07T17:05:49.038772+00:00"
+    },
+    "fsa_fhrs": {
+      "title": "Food Standards Agency food hygiene ratings (all establishments)",
+      "licence": "OGL-3.0",
+      "attribution": "Food Standards Agency food hygiene rating data, licensed under the Open Government Licence v3.0.",
+      "version": "Wed, 07 Oct 2026 01:10:50 GMT",
+      "fetched_at": "2026-10-07T15:50:49.263411+00:00"
+    },
+    "gias": {
+      "title": "Get Information About Schools (all establishments)",
+      "licence": "OGL-3.0",
+      "attribution": "Department for Education, Get Information About Schools, licensed under the Open Government Licence v3.0.",
+      "version": "https://ea-edubase-api-prod.azurewebsites.net/edubase/downloads/public/edubasealldata20261007.csv",
+      "fetched_at": "2026-10-07T16:01:48.786646+00:00"
+    },
+    "gp_registrations": {
+      "title": "Patients registered at a GP practice, by LSOA",
+      "licence": "OGL-3.0",
+      "attribution": "NHS England, Patients Registered at a GP Practice, licensed under the Open Government Licence v3.0.",
+      "version": "https://files.digital.nhs.uk/93/C90730/gp-reg-pat-prac-lsoa-male-female-July-26.zip",
+      "fetched_at": "2026-10-07T16:01:43.333956+00:00"
+    },
+    "gp_workforce": {
+      "title": "General Practice Workforce, practice level",
+      "licence": "OGL-3.0",
+      "attribution": "NHS England, General Practice Workforce, licensed under the Open Government Licence v3.0.",
+      "version": "https://files.digital.nhs.uk/49/2ABF5A/GPWPracticeCSV.082026.zip",
+      "fetched_at": "2026-10-07T16:01:44.812764+00:00"
+    },
+    "iod_2025": {
+      "title": "English Indices of Deprivation 2025 (File 7)",
+      "licence": "OGL-3.0",
+      "attribution": "Ministry of Housing, Communities and Local Government, English Indices of Deprivation 2025, licensed under the Open Government Licence v3.0.",
+      "version": "https://assets.publishing.service.gov.uk/media/691ded56d140bbbaa59a2a7d/File_7_IoD2025_All_Ranks_Scores_Deciles_Population_Denominators.csv",
+      "fetched_at": "2026-10-07T15:38:37.099106+00:00"
+    },
+    "lsoa_boundaries": {
+      "title": "LSOA 2021 boundaries (BGC, generalised 20m, clipped)",
+      "licence": "OGL-3.0",
+      "attribution": "Source: Office for National Statistics licensed under the Open Government Licence v3.0. Contains OS data \u00a9 Crown copyright and database right 2026.",
+      "version": "2025-08-11T08:22:17+00:00",
+      "fetched_at": "2026-10-07T15:31:45.102614+00:00"
+    },
+    "msoa_income": {
+      "title": "ONS income estimates for small areas (MSOA)",
+      "licence": "OGL-3.0",
+      "attribution": "Source: Office for National Statistics licensed under the Open Government Licence v3.0. Contains OS data \u00a9 Crown copyright and database right 2026.",
+      "version": "https://www.ons.gov.uk/file?uri=/employmentandlabourmarket/peopleinwork/earningsandworkinghours/datasets/smallareaincomeestimatesformiddlelayersuperoutputareasenglandandwales/financialyearending2023/datasetfinal.xlsx",
+      "fetched_at": "2026-10-07T17:05:43.122832+00:00"
+    },
+    "naptan": {
+      "title": "NaPTAN public transport stops",
+      "licence": "OGL-3.0",
+      "attribution": "Department for Transport, National Public Transport Access Nodes (NaPTAN), licensed under the Open Government Licence v3.0.",
+      "version": null,
+      "fetched_at": "2026-10-07T17:06:00.508191+00:00"
+    },
+    "nhsbsa_pharmacies": {
+      "title": "NHSBSA consolidated pharmaceutical list",
+      "licence": "OGL-3.0",
+      "attribution": "NHS Business Services Authority, Consolidated Pharmaceutical List, licensed under the Open Government Licence v3.0.",
+      "version": "https://opendata.nhsbsa.net/dataset/240d142d-df82-4e97-b051-12371519e4e1/resource/ce6c7ad3-a3b5-442f-bb0a-a45d7c962944/download/consol_pharmacy_list_202606q1.csv",
+      "fetched_at": "2026-10-07T17:05:22.822882+00:00"
+    },
+    "nspl": {
+      "title": "National Statistics Postcode Lookup (latest)",
+      "licence": "OGL-3.0",
+      "attribution": "Source: Office for National Statistics licensed under the Open Government Licence v3.0. Contains OS data \u00a9 Crown copyright and database right 2026. Contains Royal Mail data \u00a9 Royal Mail copyright and database right 2026. Contains GeoPlace data \u00a9 Local Government Information House Limited copyright and database right 2026.",
+      "version": "2026-09-01T11:08:22+00:00",
+      "fetched_at": "2026-10-07T15:31:19.990666+00:00"
+    },
+    "ods_dentists": {
+      "title": "NHS ODS dental practices",
+      "licence": "OGL-3.0",
+      "attribution": "Contains NHS England Organisation Data Service data licensed under the Open Government Licence v3.0.",
+      "version": "\"zd4l3yx0ym1c4ct\"",
+      "fetched_at": "2026-10-07T17:05:20.440436+00:00"
+    },
+    "ods_gp": {
+      "title": "NHS ODS GP practices",
+      "licence": "OGL-3.0",
+      "attribution": "Contains NHS England Organisation Data Service data licensed under the Open Government Licence v3.0.",
+      "version": "\"f6aax5nol81z4xe\"",
+      "fetched_at": "2026-10-07T16:01:41.801033+00:00"
+    },
+    "ofcom_broadband": {
+      "title": "Ofcom Connected Nations fixed broadband coverage (output areas)",
+      "licence": "OGL-3.0",
+      "attribution": "Ofcom, Connected Nations, licensed under the Open Government Licence v3.0.",
+      "version": "https://www.ofcom.org.uk/siteassets/resources/documents/research-and-data/multi-sector/infrastructure-research/connected-nations-spring-2026/202601_fixed_broadband_coverage_and_full_fibre_take-up-r1.zip?v=422620",
+      "fetched_at": "2026-10-07T17:10:01.496090+00:00"
+    },
+    "ofsted_childcare": {
+      "title": "Ofsted childcare providers and inspections",
+      "licence": "OGL-3.0",
+      "attribution": "Ofsted, Management information: childcare providers and inspections, licensed under the Open Government Licence v3.0.",
+      "version": "https://assets.publishing.service.gov.uk/media/6a6ca4eb0c36759b5ccaa2e0/Management_information_-_childcare_providers_and_inspections_-_childcare_providers_data_as_at_30_June_2026.csv",
+      "fetched_at": "2026-10-07T17:05:25.515176+00:00"
+    },
+    "ofsted_schools": {
+      "title": "Ofsted state-funded school inspections (latest per school)",
+      "licence": "OGL-3.0",
+      "attribution": "Ofsted, Management information: state-funded schools, licensed under the Open Government Licence v3.0.",
+      "version": "https://assets.publishing.service.gov.uk/media/6aa0175392e72b8ac437ef37/Management_information_-_state-funded_schools_-_latest_inspections_as_at_31_August_2026.csv",
+      "fetched_at": "2026-10-07T16:01:50.697694+00:00"
+    },
+    "os_greenspace": {
+      "title": "OS Open Greenspace (GB)",
+      "licence": "OGL-3.0",
+      "attribution": "Contains OS data \u00a9 Crown copyright and database right 2026.",
+      "version": null,
+      "fetched_at": "2026-10-07T17:05:53.934114+00:00"
+    },
+    "osm_england": {
+      "title": "OpenStreetMap England extract (Geofabrik)",
+      "licence": "ODbL-1.0",
+      "attribution": "\u00a9 OpenStreetMap contributors, available under the Open Database Licence (ODbL).",
+      "version": "Wed, 07 Oct 2026 03:44:07 GMT",
+      "fetched_at": "2026-10-07T15:50:42.068660+00:00"
+    },
+    "police_crime": {
+      "title": "police.uk street-level crime (latest 36 months)",
+      "licence": "OGL-3.0",
+      "attribution": "Contains public sector information from police.uk licensed under the Open Government Licence v3.0.",
+      "version": "Wed, 30 Sep 2026 14:06:14 GMT",
+      "fetched_at": "2026-10-07T15:49:38.464335+00:00"
+    },
+    "price_paid": {
+      "title": "HM Land Registry Price Paid Data (complete)",
+      "licence": "OGL-3.0",
+      "attribution": "Contains HM Land Registry data \u00a9 Crown copyright and database right 2026. This data is licensed under the Open Government Licence v3.0.",
+      "version": "Mon, 28 Sep 2026 05:12:22 GMT",
+      "fetched_at": "2026-10-07T15:20:26.016900+00:00"
+    },
+    "stats19": {
+      "title": "DfT road collisions (STATS19, last 5 years)",
+      "licence": "OGL-3.0",
+      "attribution": "Department for Transport, Road Safety Data (STATS19), licensed under the Open Government Licence v3.0.",
+      "version": null,
+      "fetched_at": "2026-10-07T17:06:04.703530+00:00"
+    },
+    "voa_ctsop": {
+      "title": "VOA Council Tax stock of properties by band and build period (LSOA)",
+      "licence": "OGL-3.0",
+      "attribution": "Valuation Office Agency, Council Tax: stock of properties, licensed under the Open Government Licence v3.0.",
+      "version": "https://assets.publishing.service.gov.uk/media/6aa93b422f29b388848184b8/CTSOP_4_1.zip",
+      "fetched_at": "2026-10-07T17:05:41.807820+00:00"
+    }
+  },
+  "files": {
+    "lsoa_features.parquet": {
+      "sha256": "904025c1fb05b4fc2693359fe30fa7f8601565b0169f1a876e30880cd02bfb10",
+      "bytes": 718619
+    },
+    "scores.parquet": {
+      "sha256": "a9b4e2590991398ed097d990180beb0d1f3b4d0d933f661447f22e65436a82d9",
+      "bytes": 79246
+    },
+    "postcodes.parquet": {
+      "sha256": "9c0d4a5f973dc1ac323d641209e479a90e9a8125bac70fe392b621185630daa6",
+      "bytes": 663479
+    },
+    "places.parquet": {
+      "sha256": "7c07df87a95ec4486bad82ededc23800f936885953e47b3dd5e73c64a9f8987b",
+      "bytes": 15492
+    },
+    "areas.parquet": {
+      "sha256": "a573419a378563581f0e449043c0468ec0475f29fb48c7c44b8bc929fdffe932",
+      "bytes": 11620
+    },
+    "pois.parquet": {
+      "sha256": "831ecba284caf3e73d0ba274798fb344eeaa5fac7c1693c976d90b32b63ec99d",
+      "bytes": 722533
+    }
+  },
+  "encoding": {
+    "scores.parquet": "percentiles \u00d7 100 as uint16; 65535 = missing; quality_flags bit i set when scored_indicators[i] is imputed, low-sample, broadcast or missing"
+  },
+  "demo_local_authorities": [
+    "E08000035",
+    "E06000043"
+  ]
+}

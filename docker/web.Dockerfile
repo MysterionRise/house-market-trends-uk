@@ -4,7 +4,10 @@ FROM node:24-alpine AS build
 WORKDIR /app
 ARG NEXT_PUBLIC_API_URL=http://localhost:8000
 ARG NEXT_PUBLIC_DATA_URL=http://localhost:8080
+# 1 exposes the map as window.__map for browser tests against this image
+ARG NEXT_PUBLIC_EXPOSE_MAP=0
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL NEXT_PUBLIC_DATA_URL=$NEXT_PUBLIC_DATA_URL \
+    NEXT_PUBLIC_EXPOSE_MAP=$NEXT_PUBLIC_EXPOSE_MAP \
     NEXT_TELEMETRY_DISABLED=1 COPILOTKIT_TELEMETRY_DISABLED=true
 COPY web/package.json web/package-lock.json ./
 RUN npm ci

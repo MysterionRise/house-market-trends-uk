@@ -45,38 +45,66 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
 export const useData = () => useContext(Ctx);
 
-/** The state shared with the assistant, plus an updater that syncs it back. */
-export function useLiveability() {
+interface StateContext {
+  state: LiveabilityState;
+  update: (fn: (s: LiveabilityState) => LiveabilityState) => void;
+}
+
+const StateCtx = createContext<StateContext>({ state: DEFAULT_STATE, update: () => {} });
+
+/**
+ * The page owns the view state (preset, weights, map, shortlist) and mirrors it into the
+ * assistant's shared AG-UI state:
+ * - user changes update the page state and are pushed to the agent;
+ * - the agent's snapshots (the assistant set weights or highlighted areas) update the page;
+ * - a new agent instance (CopilotKit swaps in the runtime's agent once it connects, a few
+ *   seconds after load) is given the current state, so early changes aren't lost;
+ * - the URL hash mirrors the shareable part, and a shared link seeds the first state.
+ */
+export function LiveabilityStateProvider({ children }: { children: React.ReactNode }) {
   const { agent } = useAgent({ updates: [UseAgentUpdate.OnStateChanged] });
-  const state = normaliseState(agent.state as Partial<WireState>);
+  const [state, setState] = useState<LiveabilityState>(() =>
+    normaliseState({ ...DEFAULT_STATE, ...readHash() } as Partial<WireState>),
+  );
+  const latest = useRef(state);
+  const pushedTo = useRef<unknown>(null);
+
+  // Snapshots from the agent replace the page state (adjusted during render, not in an effect)
+  const [seenAgentState, setSeenAgentState] = useState<unknown>(agent.state);
+  if (agent.state !== seenAgentState) {
+    setSeenAgentState(agent.state);
+    const incoming = agent.state as Partial<WireState> | undefined;
+    if (incoming && Object.keys(incoming).length) setState(normaliseState(incoming));
+  }
+
+  useEffect(() => {
+    latest.current = state;
+    writeHash(state);
+  }, [state]);
+
+  // A new agent instance starts empty: hand it the current view
+  useEffect(() => {
+    if (pushedTo.current === agent) return;
+    pushedTo.current = agent;
+    agent.setState(latest.current);
+  }, [agent]);
 
   const update = useCallback(
     (fn: (s: LiveabilityState) => LiveabilityState) => {
-      agent.setState(fn(normaliseState(agent.state as Partial<WireState>)));
+      const next = fn(latest.current);
+      latest.current = next;
+      setState(next);
+      agent.setState(next);
     },
     [agent],
   );
 
-  return { state, update };
+  const value = useMemo(() => ({ state, update }), [state, update]);
+  return <StateCtx.Provider value={value}>{children}</StateCtx.Provider>;
 }
 
-/** Restores a shared view from the URL once and keeps the URL in step. Mount once:
- * restoring from every component that reads the state would undo the assistant's
- * updates whenever a new card mounts. */
-export function UrlStateSync() {
-  const { state, update } = useLiveability();
-  const restored = useRef(false);
-  useEffect(() => {
-    if (restored.current) return;
-    restored.current = true;
-    const fromHash = readHash();
-    if (Object.keys(fromHash).length) update((s) => normaliseState({ ...s, ...fromHash } as Partial<WireState>));
-  }, [update]);
-  useEffect(() => {
-    if (restored.current) writeHash(state);
-  }, [state]);
-  return null;
-}
+/** The view state shared with the assistant, plus an updater that syncs it. */
+export const useLiveability = () => useContext(StateCtx);
 
 export interface LayerValues {
   /** England percentile (0–100) per LSOA for the active layer (NaN = no value) */

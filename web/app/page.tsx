@@ -11,14 +11,25 @@ const LiveabilityMap = dynamic(() => import("@/components/map/LiveabilityMap").t
 });
 
 export default function Home() {
-  const { error } = useData();
+  const { error, manifest } = useData();
+  const count = (manifest?.lsoa_count ?? 33755).toLocaleString("en-GB");
   return (
     <main className="grid h-dvh grid-rows-[auto_1fr] bg-[var(--page)] text-[var(--text-primary)]">
       <header className="flex items-baseline gap-3 border-b border-[var(--border)] bg-[var(--surface-1)] px-4 py-2">
         <h1 className="text-base font-semibold">UK Liveability Index</h1>
         <span className="hidden text-xs text-[var(--text-secondary)] sm:inline">
-          England&apos;s 33,755 neighbourhoods, scored from open data
+          {manifest?.demo ? `Demo dataset: ${count} neighbourhoods` : `England's ${count} neighbourhoods`}, scored
+          from open data
         </span>
+        {manifest?.demo && (
+          <span
+            className="rounded border border-[var(--border)] px-1.5 py-0.5 text-xs text-[var(--text-secondary)]"
+            data-testid="demo-badge"
+            title="A small cut of the full build; percentiles on the map are relative to these areas"
+          >
+            demo data
+          </span>
+        )}
         <a className="ml-auto text-xs text-[var(--text-secondary)] underline" href="https://github.com/MysterionRise/uk-liveability-index/blob/master/docs/methodology.md" target="_blank" rel="noreferrer">
           How scores work
         </a>

@@ -98,7 +98,7 @@ def compact_scores(features: pl.DataFrame) -> pl.DataFrame:
     )
 
 
-def manifest(files: dict[str, Path]) -> dict:
+def manifest(files: dict[str, Path], lsoa_count: int | None = None) -> dict:
     catalogue = load_indicators()
     weights = load_weights()
     registry = load_registry()
@@ -109,6 +109,8 @@ def manifest(files: dict[str, Path]) -> dict:
     return {
         "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "lsoas": "England LSOA 2021",
+        "lsoa_count": lsoa_count,
+        "demo": False,
         "scored_indicators": [i.id for i in catalogue.scored()],
         "indicators": [i.model_dump() for i in catalogue.indicators],
         "themes": {k: v.model_dump() for k, v in catalogue.themes.items()},
@@ -148,7 +150,9 @@ def build_serve() -> dict[str, Path]:
     from lix_pipeline.serve.lookups import build_lookups
 
     files.update(build_lookups(features))
-    (out / "manifest.json").write_text(json.dumps(manifest(files), indent=2, default=str))
+    (out / "manifest.json").write_text(
+        json.dumps(manifest(files, lsoa_count=features.height), indent=2, default=str)
+    )
     files["manifest.json"] = out / "manifest.json"
     for name, path in files.items():
         logger.info(f"{name}: {path.stat().st_size / 1e6:.1f} MB")

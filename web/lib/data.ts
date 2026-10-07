@@ -34,6 +34,10 @@ export interface Manifest {
   default_preset: string;
   presets: Record<string, PresetMeta>;
   sources: Record<string, { title: string; licence: string; attribution: string; version?: string }>;
+  /** Neighbourhoods in this build (33,755 for England; fewer in a demo cut) */
+  lsoa_count?: number;
+  /** A small cut of the full build (CI and quick starts): see `lix demo-data` */
+  demo?: boolean;
 }
 
 export interface ScoreData {

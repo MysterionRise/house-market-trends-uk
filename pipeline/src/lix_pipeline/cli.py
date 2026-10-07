@@ -5,6 +5,8 @@ lix resolve --check --all      # is every source still reachable? (nightly link 
 lix fetch --theme geography    # download what the lockfile pins
 lix stage --all                # every stager whose inputs are fetched
 lix validate geo               # check the geography backbone
+lix validate serve             # check data/serve (or --dir another serve directory)
+lix demo-data --lad E08000035 E06000043 --out fixtures/demo   # small dataset for CI/demos
 """
 
 import argparse
@@ -91,12 +93,31 @@ def _stage(args: argparse.Namespace) -> int:
 
 
 def _validate(args: argparse.Namespace) -> int:
+    from pathlib import Path
+
     from lix_pipeline.qa.validate import VALIDATORS
 
-    problems = VALIDATORS[args.target]()
+    if args.target == "serve" and args.dir:
+        problems = VALIDATORS["serve"](Path(args.dir))
+    else:
+        problems = VALIDATORS[args.target]()
     for p in problems:
         print(f"FAIL {p}")
     print(f"{args.target}: {'OK' if not problems else f'{len(problems)} problem(s)'}")
+    return 1 if problems else 0
+
+
+def _demo_data(args: argparse.Namespace) -> int:
+    from pathlib import Path
+
+    from lix_pipeline.qa.validate import validate_serve
+    from lix_pipeline.serve.demo import build_demo
+
+    out = Path(args.out)
+    build_demo(args.lad, out)
+    problems = validate_serve(out / "serve")
+    for p in problems:
+        print(f"FAIL {p}")
     return 1 if problems else 0
 
 
@@ -167,9 +188,15 @@ def main(argv: list[str] | None = None) -> None:
     which.add_argument("--all", action="store_true", help="Every stager whose inputs are fetched")
     stage.set_defaults(func=_stage)
 
-    validate = sub.add_parser("validate", help="Check staged outputs")
-    validate.add_argument("target", choices=["geo"])
+    validate = sub.add_parser("validate", help="Check staged and serve outputs")
+    validate.add_argument("target", choices=["geo", "serve"])
+    validate.add_argument("--dir", help="serve: the directory to check (default data/serve)")
     validate.set_defaults(func=_validate)
+
+    demo = sub.add_parser("demo-data", help="Cut a small serve dataset from a full build")
+    demo.add_argument("--lad", nargs="+", required=True, help="Local authority codes to keep")
+    demo.add_argument("--out", default="fixtures/demo", help="Writes <out>/serve/")
+    demo.set_defaults(func=_demo_data)
 
     indicators = sub.add_parser("indicators", help="Build data/indicators/long.parquet")
     indicators.add_argument("--only", help="Comma-separated indicator ids to rebuild")

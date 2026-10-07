@@ -1,0 +1,15 @@
+# Keep build contexts small: data is mounted at run time, never baked into images
+data/
+fixtures/
+outputs/
+.git/
+.venv/
+**/__pycache__/
+**/.pytest_cache/
+.ruff_cache/
+web/node_modules/
+web/.next/
+web/test-results/
+web/playwright-report/
+web/public/maplibre-gl-worker.mjs
+.env

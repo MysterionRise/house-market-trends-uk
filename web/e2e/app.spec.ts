@@ -1,15 +1,16 @@
 import { type Page, expect, test } from "@playwright/test";
 
-// A known LSOA (City of London 001A) to watch the map colour of
-const LSOA = "E01000001";
+// A known LSOA (Leeds 034A, Chapel Allerton) to watch the map colour of; it is in both
+// the full build and the demo dataset (Leeds + Brighton) CI runs on
+const LSOA = "E01011350";
 
 async function mapReady(page: Page) {
   await page.goto("/");
   await expect(page.getByTestId("legend")).toBeVisible({ timeout: 30_000 });
-  await page.waitForFunction(() => {
+  await page.waitForFunction((code) => {
     const m = (window as any).__map;
-    return m && m.getSource("lsoa") && m.getFeatureState({ source: "lsoa", sourceLayer: "lsoa", id: "E01000001" })?.v != null;
-  }, null, { timeout: 30_000 });
+    return m && m.getSource("lsoa") && m.getFeatureState({ source: "lsoa", sourceLayer: "lsoa", id: code })?.v != null;
+  }, LSOA, { timeout: 30_000 });
 }
 
 const featureValue = (page: Page, code: string) =>
@@ -72,11 +73,11 @@ test("a ranking renders a card and outlines the areas on the map", async ({ page
 
 test("area profile, comparison and pubs render as components", async ({ page }) => {
   await mapReady(page);
-  await ask(page, "Tell me about Whitley Bay");
-  await expect(page.getByTestId("area-profile").first()).toContainText("Whitley Bay", { timeout: 30_000 });
+  await ask(page, "Tell me about Headingley");
+  await expect(page.getByTestId("area-profile").first()).toContainText("Headingley", { timeout: 30_000 });
   await ask(page, "Compare Headingley and Chapel Allerton");
   await expect(page.getByTestId("comparison")).toContainText("Side by side", { timeout: 30_000 });
-  await ask(page, "Show me well-run pubs near SW1A 1AA");
+  await ask(page, "Show me well-run pubs near LS6 3AA");
   await expect(page.getByTestId("poi-list")).toContainText("Well-run pubs", { timeout: 30_000 });
   await expect
     .poll(() => page.evaluate(() => (window as any).__map.getSource("pois").serialize().data.features.length))

@@ -47,22 +47,34 @@ def write_layer(gdf: gpd.GeoDataFrame, out: Path, layer: str, minzoom: int, maxz
     return out
 
 
-def build_tiles() -> list[Path]:
-    out_dir = data_dir("serve") / "tiles"
+def build_tiles(
+    out_dir: Path | None = None,
+    lsoas: set[str] | None = None,
+    lads: set[str] | None = None,
+) -> list[Path]:
+    """Write the three tilesets; ``lsoas``/``lads`` restrict them (for the demo dataset)."""
+    out_dir = out_dir or data_dir("serve") / "tiles"
     out_dir.mkdir(parents=True, exist_ok=True)
     outputs = []
 
     lsoa = _read("lsoa_boundaries").rename(columns={"LSOA21CD": "lsoa21cd"})
     lsoa = lsoa[lsoa["lsoa21cd"].str.match(ENGLAND_LSOA21)][["lsoa21cd", "geometry"]]
+    if lsoas is not None:
+        lsoa = lsoa[lsoa["lsoa21cd"].isin(lsoas)]
     outputs.append(write_layer(lsoa, out_dir / "lsoa.pmtiles", "lsoa", 8, 14))
 
     msoa = _read("msoa_boundaries").rename(columns={"MSOA21CD": "msoa21cd"})
     msoa = msoa[msoa["msoa21cd"].str.startswith("E02")][["msoa21cd", "geometry"]]
+    if lsoas is not None:
+        # MSOAs nest in local authorities, so keep those overlapping the chosen LSOAs
+        msoa = msoa[msoa.intersects(lsoa.to_crs(msoa.crs).union_all().buffer(-1))]
     outputs.append(write_layer(msoa, out_dir / "msoa.pmtiles", "msoa", 6, 12))
 
     lad = _read("lad_boundaries")
     code = next(c for c in lad.columns if c.upper().startswith("LAD") and c.upper().endswith("CD"))
     lad = lad.rename(columns={code: "lad_cd", code[:-2] + "NM": "name"})
     lad = lad[lad["lad_cd"].str.startswith("E")][["lad_cd", "name", "geometry"]]
+    if lads is not None:
+        lad = lad[lad["lad_cd"].isin(lads)]
     outputs.append(write_layer(lad, out_dir / "lad.pmtiles", "lad", 4, 10))
     return outputs

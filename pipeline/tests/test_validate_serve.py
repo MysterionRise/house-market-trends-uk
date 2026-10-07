@@ -1,0 +1,50 @@
+"""``lix validate serve`` on the committed demo dataset (fixtures/demo, `make demo-data`)."""
+
+import json
+import shutil
+from pathlib import Path
+
+import polars as pl
+import pytest
+
+from lix_core.paths import get_project_root
+from lix_pipeline.qa.validate import validate_serve
+
+DEMO = get_project_root() / "fixtures" / "demo" / "serve"
+
+
+@pytest.fixture
+def demo_copy(tmp_path: Path) -> Path:
+    if not DEMO.is_dir():
+        pytest.skip("demo dataset not built (make demo-data)")
+    out = tmp_path / "serve"
+    shutil.copytree(DEMO, out)
+    return out
+
+
+def test_demo_dataset_is_valid():
+    if not DEMO.is_dir():
+        pytest.skip("demo dataset not built (make demo-data)")
+    assert validate_serve(DEMO) == []
+
+
+def test_flags_a_file_changed_after_the_manifest(demo_copy):
+    (demo_copy / "places.parquet").write_bytes(b"not what the manifest says")
+    assert any("places.parquet doesn't match" in p for p in validate_serve(demo_copy))
+
+
+def test_flags_missing_files(demo_copy):
+    (demo_copy / "tiles" / "lsoa.pmtiles").unlink()
+    assert validate_serve(demo_copy) == [f"missing tiles/lsoa.pmtiles in {demo_copy}"]
+
+
+def test_flags_row_count_and_low_coverage(demo_copy):
+    path = demo_copy / "lsoa_features.parquet"
+    features = pl.read_parquet(path)
+    manifest = json.loads((demo_copy / "manifest.json").read_text())
+    scored = manifest["scored_indicators"][0]
+    features = features.head(100).with_columns(pl.lit(None, pl.Float64).alias(f"n__{scored}"))
+    features.write_parquet(path)
+    problems = validate_serve(demo_copy)
+    assert any("rows, expected" in p for p in problems)
+    assert any(p.startswith(f"{scored} covers 0.0%") for p in problems)

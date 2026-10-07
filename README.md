@@ -60,8 +60,20 @@ Datasets ingested so far (full list with licences: [docs/data-sources.md](docs/d
 
 The model is set with `LIX_MODEL` (default `anthropic:claude-opus-5-5`; also `openai:...`,
 `google:...`, `ollama:...`). `LIX_MODEL=test` runs a scripted assistant that needs no API key.
-See [.env.example](.env.example). `docker compose up` runs the API plus a static server for the
-map tiles (`make tiles` builds them).
+See [.env.example](.env.example).
+
+### Running it with Docker
+
+```bash
+make up          # api :8000, static data :8080, web http://localhost:3000 (data from ./data/serve)
+make up-demo     # the same on the committed demo dataset (fixtures/demo: Leeds + Brighton)
+make down
+```
+
+No full build on this machine? `make data-pack` on one that has it writes
+`dist/lix-serve-YYYYMMDD.tar.gz` (about 120 MB); `make data-unpack PACK=...` restores and
+validates it here. `make demo-data` re-cuts the demo dataset from a full build, and
+`lix validate serve` checks any serve directory (CI runs the browser tests on the demo data).
 
 ### Front end
 

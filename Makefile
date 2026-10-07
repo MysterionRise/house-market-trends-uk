@@ -1,4 +1,4 @@
-.PHONY: install resolve fetch stage indicators score tiles build-data validate docs schemas api web-install web web-test e2e dev test lint format
+.PHONY: up down up-demo data-pack data-unpack install resolve fetch stage indicators score tiles build-data validate demo-data docs schemas api web-install web web-test e2e dev test lint format
 
 PY_DIRS := core pipeline api
 
@@ -62,6 +62,11 @@ dev:
 
 validate:
 	uv run lix validate geo
+	uv run lix validate serve
+
+# Small dataset (Leeds + Brighton) cut from a full build, for CI end-to-end tests
+demo-data:
+	uv run lix demo-data --lad E08000035 E06000043 --out fixtures/demo
 
 # Regenerate docs/data-sources.md and ATTRIBUTION.md from config/datasets.yaml
 docs:
@@ -77,3 +82,33 @@ lint:
 format:
 	uv run ruff format $(PY_DIRS)
 	uv run ruff check --fix $(PY_DIRS)
+
+# Docker: everything at http://localhost:3000 (data from ./data/serve)
+up:
+	docker compose up -d --build --wait
+
+# The same on the small committed demo dataset (Leeds + Brighton)
+up-demo:
+	LIX_SERVE_DIR=./fixtures/demo/serve docker compose up -d --build --wait
+
+down:
+	docker compose down
+
+# Snapshot of a built data/serve (about 120 MB) so another machine can skip the 14 GB
+# raw download: `make data-pack`, copy dist/lix-serve-*.tar.gz, then
+# `make data-unpack PACK=dist/lix-serve-YYYYMMDD.tar.gz`
+PACK_NAME := lix-serve-$(shell date +%Y%m%d)
+data-pack:
+	uv run lix validate serve
+	mkdir -p dist
+	tar -C data -czf dist/$(PACK_NAME).tar.gz serve
+	cd dist && shasum -a 256 $(PACK_NAME).tar.gz > $(PACK_NAME).tar.gz.sha256
+	@echo "Wrote dist/$(PACK_NAME).tar.gz"
+
+data-unpack:
+	@test -n "$(PACK)" || (echo "Usage: make data-unpack PACK=dist/lix-serve-YYYYMMDD.tar.gz" && exit 1)
+	cd $(dir $(PACK)) && shasum -a 256 -c $(notdir $(PACK)).sha256
+	mkdir -p data
+	tar -C data -xzf $(PACK)
+	uv run lix validate serve
+

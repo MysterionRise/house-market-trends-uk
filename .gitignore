@@ -1,6 +1,8 @@
 # Data (every layer is rebuilt by the pipeline; `lix` creates the directories)
 data/
 outputs/
+# Data packs (make data-pack)
+dist/
 
 # Python
 __pycache__/
