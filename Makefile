@@ -65,6 +65,7 @@ dev:
 validate:
 	uv run lix validate geo
 	uv run lix validate serve
+	uv run lix validate places
 
 # Small dataset (Leeds + Brighton) cut from a full build, for CI end-to-end tests
 demo-data:

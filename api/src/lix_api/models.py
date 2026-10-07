@@ -61,6 +61,13 @@ class AreaProfile(BaseModel):
     overall: float | None
     overall_percentile: float | None
     band: int | None = Field(None, description="1 (bottom fifth of England) … 5 (top fifth)")
+    overall_percentile_range: list[float] | None = Field(
+        None,
+        min_length=2,
+        max_length=2,
+        description="5–95% range of the England percentile when each theme weight is "
+        "nudged by about a quarter (for presets; None with custom weights)",
+    )
     coverage: float | None
     preset: str
     themes: list[ThemeScore]
@@ -84,6 +91,11 @@ class RankedArea(BaseModel):
     median_price: float | None = None
     population: int
     centre: Point
+    stability: float | None = Field(
+        None,
+        description="Share of plausible weightings (each theme weight nudged by about a "
+        "quarter) under which this area stays in these top results, 0–1",
+    )
 
 
 class RankResult(BaseModel):
@@ -139,6 +151,16 @@ class Contribution(BaseModel):
     indicators: list[IndicatorValue]
 
 
+class SourceRef(BaseModel):
+    id: str
+    title: str
+    licence: str
+    attribution: str
+    version: str | None = Field(None, description="The upstream version the build used")
+    fetched_at: str | None = Field(None, description="When the build downloaded it (ISO 8601)")
+    stale: bool = Field(False, description="Older than the source's publishing cadence allows")
+
+
 class Explanation(BaseModel):
     lsoa21cd: str
     name: str
@@ -147,7 +169,7 @@ class Explanation(BaseModel):
     overall_percentile: float | None
     contributions: list[Contribution]
     caveats: list[str]
-    sources: list[str]
+    sources: list[SourceRef]
 
 
 class IndicatorInfo(BaseModel):

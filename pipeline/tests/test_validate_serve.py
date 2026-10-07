@@ -48,3 +48,15 @@ def test_flags_row_count_and_low_coverage(demo_copy):
     problems = validate_serve(demo_copy)
     assert any("rows, expected" in p for p in problems)
     assert any(p.startswith(f"{scored} covers 0.0%") for p in problems)
+
+
+def test_staleness_follows_the_publishing_cadence():
+    from datetime import datetime, timezone
+
+    from lix_pipeline.serve.scores import is_stale
+
+    now = datetime(2026, 10, 7, tzinfo=timezone.utc)
+    assert not is_stale("2026-09-20T00:00:00+00:00", "monthly", now)
+    assert is_stale("2026-07-01T00:00:00+00:00", "monthly", now)
+    assert not is_stale("2020-01-01T00:00:00+00:00", "static", now)
+    assert not is_stale(None, "monthly", now)

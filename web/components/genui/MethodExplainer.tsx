@@ -5,6 +5,11 @@ import { useState } from "react";
 import { Card, Muted, formatValue, qualityNote } from "@/components/ui";
 import type { Explanation } from "@/lib/contracts.gen";
 
+function formatDate(iso: string): string {
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? iso : d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+}
+
 export function MethodExplainer({ explanation }: { explanation: Explanation }) {
   const [open, setOpen] = useState<string | null>(explanation.contributions.length === 1 ? explanation.contributions[0].theme : null);
   const maxContribution = Math.max(...explanation.contributions.map((c) => c.contribution ?? 0), 1);
@@ -54,9 +59,17 @@ export function MethodExplainer({ explanation }: { explanation: Explanation }) {
           <ul className="mt-1 list-disc pl-4">{explanation.caveats.map((c) => <li key={c}>{c}</li>)}</ul>
         </details>
       )}
-      <details className="mt-1 text-xs text-[var(--text-muted)]">
-        <summary className="cursor-pointer">Sources</summary>
-        <ul className="mt-1 list-disc pl-4">{explanation.sources.map((s) => <li key={s}>{s}</li>)}</ul>
+      <details className="mt-1 text-xs text-[var(--text-muted)]" data-testid="sources">
+        <summary className="cursor-pointer">Sources ({explanation.sources.length})</summary>
+        <ul className="mt-1 list-disc pl-4">
+          {explanation.sources.map((s) => (
+            <li key={s.id} title={s.attribution}>
+              {s.title}
+              {s.fetched_at && <> · data as of {formatDate(s.fetched_at)}</>}
+              {s.stale && <span className="text-[var(--critical)]"> · may be out of date</span>}
+            </li>
+          ))}
+        </ul>
       </details>
       <Muted>Scores per indicator are 0–100 (higher is better).</Muted>
     </Card>

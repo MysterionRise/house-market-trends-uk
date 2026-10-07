@@ -115,6 +115,24 @@
           ],
           "title": "Overall Percentile"
         },
+        "overall_percentile_range": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "number"
+              },
+              "maxItems": 2,
+              "minItems": 2,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "5\u201395% range of the England percentile when each theme weight is nudged by about a quarter (for presets; None with custom weights)",
+          "title": "Overall Percentile Range"
+        },
         "population": {
           "title": "Population",
           "type": "integer"
@@ -405,7 +423,7 @@
         },
         "sources": {
           "items": {
-            "type": "string"
+            "$ref": "#/$defs/SourceRef"
           },
           "title": "Sources",
           "type": "array"
@@ -1039,6 +1057,19 @@
           "title": "Rank",
           "type": "integer"
         },
+        "stability": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Share of plausible weightings (each theme weight nudged by about a quarter) under which this area stays in these top results, 0\u20131",
+          "title": "Stability"
+        },
         "themes": {
           "additionalProperties": {
             "anyOf": [
@@ -1108,6 +1139,66 @@
         "name"
       ],
       "title": "ShortlistItem",
+      "type": "object"
+    },
+    "SourceRef": {
+      "properties": {
+        "attribution": {
+          "title": "Attribution",
+          "type": "string"
+        },
+        "fetched_at": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "When the build downloaded it (ISO 8601)",
+          "title": "Fetched At"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "licence": {
+          "title": "Licence",
+          "type": "string"
+        },
+        "stale": {
+          "default": false,
+          "description": "Older than the source's publishing cadence allows",
+          "title": "Stale",
+          "type": "boolean"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        },
+        "version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The upstream version the build used",
+          "title": "Version"
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "licence",
+        "attribution"
+      ],
+      "title": "SourceRef",
       "type": "object"
     },
     "ThemeScore": {

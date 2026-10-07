@@ -4,6 +4,7 @@ import { useState } from "react";
 
 import { useData, useLiveability, useScores } from "@/components/AppData";
 import { type SqlData, SqlResult } from "@/components/genui/SqlResult";
+import { CorrelationHeatmap } from "@/components/panels/CorrelationHeatmap";
 import { IndicatorHistogram } from "@/components/panels/IndicatorHistogram";
 import { runSql } from "@/lib/api";
 
@@ -34,6 +35,7 @@ export function AnalystPanel() {
           marker={selectedIndex !== undefined ? values.lsoa[selectedIndex] : null}
         />
       )}
+      <CorrelationHeatmap />
       <div>
         <label className="mb-1 block text-xs font-medium text-[var(--text-secondary)]" htmlFor="sql">
           SQL (DuckDB, read-only) over tables lsoa, pois, areas, places, indicators

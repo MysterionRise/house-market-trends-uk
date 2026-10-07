@@ -41,6 +41,16 @@ export function AreaProfileCard({ profile }: { profile: AreaProfile }) {
       <div className="mt-1">
         <Band band={profile.band} percentile={profile.overall_percentile} />
       </div>
+      {profile.overall_percentile_range && (
+        <p
+          className="mt-1 text-xs text-[var(--text-muted)]"
+          data-testid="percentile-range"
+          title="The 5–95% range of the England percentile when each theme's weight is nudged by about a quarter"
+        >
+          With slightly different weights: better than {profile.overall_percentile_range[0]}–
+          {profile.overall_percentile_range[1]}% of England
+        </p>
+      )}
 
       <div className="mt-3">
         {profile.themes.map((t) => (

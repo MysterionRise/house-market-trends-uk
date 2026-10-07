@@ -1,6 +1,6 @@
 """Why an area scores what it does: each theme's share of the score and its indicators."""
 
-from lix_api.models import Contribution, Explanation
+from lix_api.models import Contribution, Explanation, SourceRef
 from lix_api.services.areas import indicator_value
 from lix_api.services.scoring import ThemeWeights, resolve_weights, scores_for
 from lix_api.services.search import resolve_lsoa
@@ -50,14 +50,25 @@ def explain_score(
         {store.indicators[v.id].caveats for c in contributions for v in c.indicators
          if store.indicators[v.id].caveats and v.role == "scored"}
     )  # fmt: skip
-    sources = sorted(
-        store.manifest["sources"][s]["attribution"] for s in used if s in store.manifest["sources"]
-    )
+    known = store.manifest["sources"]
+    sources = [
+        SourceRef(
+            id=s,
+            title=known[s]["title"],
+            licence=known[s]["licence"],
+            attribution=known[s]["attribution"],
+            version=None if known[s].get("version") is None else str(known[s]["version"]),
+            fetched_at=known[s].get("fetched_at"),
+            stale=bool(known[s].get("stale")),
+        )
+        for s in sorted(used)
+        if s in known
+    ]
     return Explanation(
         lsoa21cd=code, name=f"{row['lsoa21nm']} ({row['msoa_name']})", preset=name,
         overall=None if scores.get("overall") is None else round(scores["overall"], 1),
         overall_percentile=None
         if scores.get("overall_pct") is None
         else round(scores["overall_pct"]),
-        contributions=contributions, caveats=caveats, sources=sorted(set(sources)),
+        contributions=contributions, caveats=caveats, sources=sources,
     )  # fmt: skip

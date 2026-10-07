@@ -46,6 +46,10 @@ export type Msoa21Cd = string;
 export type Neighbourhood = string | null;
 export type Overall = number | null;
 export type OverallPercentile = number | null;
+/**
+ * 5–95% range of the England percentile when each theme weight is nudged by about a quarter (for presets; None with custom weights)
+ */
+export type OverallPercentileRange = [number, number] | null;
 export type Population = number;
 export type Preset = string;
 export type Region = string;
@@ -89,11 +93,27 @@ export type Name1 = string;
 export type Overall2 = number | null;
 export type OverallPercentile2 = number | null;
 export type Preset2 = string;
-export type Sources = string[];
+export type Attribution = string;
+/**
+ * When the build downloaded it (ISO 8601)
+ */
+export type FetchedAt = string | null;
+export type Id1 = string;
+export type Licence = string;
+/**
+ * Older than the source's publishing cadence allows
+ */
+export type Stale = boolean;
+export type Title = string;
+/**
+ * The upstream version the build used
+ */
+export type Version = string | null;
+export type Sources = SourceRef[];
 export type Caveats1 = string | null;
 export type Description = string;
 export type Direction = string;
-export type Id1 = string;
+export type Id2 = string;
 export type Label3 = string;
 export type Normalise = string;
 export type Role1 = string;
@@ -116,7 +136,7 @@ export type Highlighted = string[];
 export type Layer = string;
 export type Category = string;
 export type DistanceM = number;
-export type Licence = string;
+export type Licence1 = string;
 export type Name2 = string | null;
 export type Source = string;
 /**
@@ -164,6 +184,10 @@ export type Overall3 = number | null;
 export type OverallPercentile3 = number | null;
 export type Population1 = number;
 export type Rank = number;
+/**
+ * Share of plausible weightings (each theme weight nudged by about a quarter) under which this area stays in these top results, 0–1
+ */
+export type Stability = number | null;
 export type Results = RankedArea[];
 /**
  * The area or place the ranking was limited to
@@ -191,6 +215,7 @@ export interface AreaProfile {
   neighbourhood?: Neighbourhood;
   overall: Overall;
   overall_percentile: OverallPercentile;
+  overall_percentile_range?: OverallPercentileRange;
   population: Population;
   preset: Preset;
   region: Region;
@@ -297,13 +322,26 @@ export interface Explanation {
 }
 /**
  * This interface was referenced by `Schemas`'s JSON-Schema
+ * via the `definition` "SourceRef".
+ */
+export interface SourceRef {
+  attribution: Attribution;
+  fetched_at?: FetchedAt;
+  id: Id1;
+  licence: Licence;
+  stale?: Stale;
+  title: Title;
+  version?: Version;
+}
+/**
+ * This interface was referenced by `Schemas`'s JSON-Schema
  * via the `definition` "IndicatorInfo".
  */
 export interface IndicatorInfo {
   caveats?: Caveats1;
   description: Description;
   direction: Direction;
-  id: Id1;
+  id: Id2;
   label: Label3;
   normalise: Normalise;
   role: Role1;
@@ -350,7 +388,7 @@ export interface Poi {
   category: Category;
   detail?: Detail;
   distance_m: DistanceM;
-  licence: Licence;
+  licence: Licence1;
   name: Name2;
   point: Point;
   source: Source;
@@ -427,6 +465,7 @@ export interface RankedArea {
   overall_percentile: OverallPercentile3;
   population: Population1;
   rank: Rank;
+  stability?: Stability;
   themes: Themes2;
 }
 export interface Themes2 {

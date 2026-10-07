@@ -78,6 +78,12 @@ def build_serve_dir(path) -> None:
     df = pl.concat([df, scores], how="horizontal").with_columns(
         band(pl.col("overall_pct")).alias("band")
     )
+    # Percentile ranges over plausible weightings, as the pipeline writes them
+    from lix_pipeline.serve.scores import uncertainty_columns
+
+    df = df.with_columns(
+        uncertainty_columns(df, [(i.id, i.theme, i.weight) for i in catalogue.scored()], weights)
+    )
     df.write_parquet(path / "lsoa_features.parquet")
 
     manifest = {

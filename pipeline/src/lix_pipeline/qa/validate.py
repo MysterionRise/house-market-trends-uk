@@ -170,4 +170,10 @@ def validate_serve(serve_dir: Path | None = None) -> list[str]:
     return problems
 
 
-VALIDATORS = {"geo": validate_geo, "serve": validate_serve}
+def validate_places() -> list[str]:
+    from lix_pipeline.qa.places import anchor_problems
+
+    return anchor_problems()
+
+
+VALIDATORS = {"geo": validate_geo, "serve": validate_serve, "places": validate_places}

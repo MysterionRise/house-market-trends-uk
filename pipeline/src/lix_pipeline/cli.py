@@ -6,6 +6,8 @@ lix fetch --theme geography    # download what the lockfile pins
 lix stage --all                # every stager whose inputs are fetched
 lix validate geo               # check the geography backbone
 lix validate serve             # check data/serve (or --dir another serve directory)
+lix validate places            # anchor checks of the face-validity review
+lix qa places                  # write docs/validation.md
 lix demo-data --lad E08000035 E06000043 --out fixtures/demo   # small dataset for CI/demos
 """
 
@@ -121,6 +123,18 @@ def _demo_data(args: argparse.Namespace) -> int:
     return 1 if problems else 0
 
 
+def _qa(args: argparse.Namespace) -> int:
+    from lix_pipeline.qa.places import anchor_problems, review, write_review
+
+    path = write_review()
+    results = review()
+    checks = [c for r in results for c in r.checks]
+    print(f"{sum(c.passed for c in checks)}/{len(checks)} checks pass; wrote {path}")
+    for p in anchor_problems(results):
+        print(f"ANCHOR FAIL {p}")
+    return 0
+
+
 def _indicators(args: argparse.Namespace) -> int:
     from lix_pipeline.indicators import build_all
 
@@ -189,9 +203,13 @@ def main(argv: list[str] | None = None) -> None:
     stage.set_defaults(func=_stage)
 
     validate = sub.add_parser("validate", help="Check staged and serve outputs")
-    validate.add_argument("target", choices=["geo", "serve"])
+    validate.add_argument("target", choices=["geo", "serve", "places"])
     validate.add_argument("--dir", help="serve: the directory to check (default data/serve)")
     validate.set_defaults(func=_validate)
+
+    qa = sub.add_parser("qa", help="Quality reviews of the built data")
+    qa.add_argument("target", choices=["places"])
+    qa.set_defaults(func=_qa)
 
     demo = sub.add_parser("demo-data", help="Cut a small serve dataset from a full build")
     demo.add_argument("--lad", nargs="+", required=True, help="Local authority codes to keep")

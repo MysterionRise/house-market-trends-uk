@@ -15,6 +15,10 @@
   --series-1: #2a78d6;
   --no-data: #e1e0d9;
   --critical: #d03b3b;
+  /* Diverging (correlations): red < neutral grey < blue */
+  --div-neg: #e34948;
+  --div-mid: #f0efec;
+  --div-pos: #2a78d6;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -32,6 +36,12 @@
     --series-1: #3987e5;
     --no-data: #383835;
     --critical: #e66767;
+  --div-neg: #e66767;
+  --div-mid: #383835;
+  --div-pos: #3987e5;
+    --div-neg: #e66767;
+    --div-mid: #383835;
+    --div-pos: #3987e5;
   }
 }
 
@@ -49,6 +59,9 @@
   --series-1: #3987e5;
   --no-data: #383835;
   --critical: #e66767;
+  --div-neg: #e66767;
+  --div-mid: #383835;
+  --div-pos: #3987e5;
 }
 
 html,

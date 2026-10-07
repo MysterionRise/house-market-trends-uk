@@ -38,6 +38,8 @@ export interface Manifest {
   lsoa_count?: number;
   /** A small cut of the full build (CI and quick starts): see `lix demo-data` */
   demo?: boolean;
+  /** Spearman correlations between scored indicators, ordered by theme */
+  correlations?: { ids: string[]; themes: string[]; rho: number[][] } | null;
 }
 
 export interface ScoreData {

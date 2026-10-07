@@ -1251,14 +1251,21 @@ name = "lix-core"
 version = "0.1.0"
 source = { editable = "core" }
 dependencies = [
+    { name = "numpy" },
+    { name = "polars" },
     { name = "pydantic" },
     { name = "pyyaml" },
+    { name = "scipy", version = "1.17.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
+    { name = "scipy", version = "1.18.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
 ]
 
 [package.metadata]
 requires-dist = [
+    { name = "numpy", specifier = ">=1.26" },
+    { name = "polars", specifier = ">=1.38,<2" },
     { name = "pydantic", specifier = ">=2.7" },
     { name = "pyyaml", specifier = ">=6.0" },
+    { name = "scipy", specifier = ">=1.13" },
 ]
 
 [[package]]

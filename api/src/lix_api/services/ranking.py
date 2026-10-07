@@ -2,12 +2,14 @@
 
 import math
 
+import numpy as np
 import polars as pl
 
 from lix_api.models import Level, Point, RankedArea, RankResult
 from lix_api.services.scoring import ThemeWeights, resolve_weights, scores_for
 from lix_api.services.search import search_place
 from lix_api.store import Store
+from lix_core.uncertainty import top_share
 
 DEFAULT_RADIUS_KM = 10.0
 
@@ -104,7 +106,15 @@ def rank_areas(
         df = df.filter(pl.col(f"theme__{theme}") >= minimum)
 
     candidates = df.height
-    top = df.sort("overall", descending=True, nulls_last=True).head(limit)
+    df = df.sort("overall", descending=True, nulls_last=True)
+    # How robust the top results are to the exact weights (lix_core.uncertainty)
+    present = [t for t in store.themes if f"theme__{t}" in df.columns and themes.get(t, 0) > 0]
+    if df.height > limit and present:
+        theme_scores = {t: df[f"theme__{t}"].to_numpy().astype(float) for t in present}
+        shares = top_share(theme_scores, {t: themes[t] for t in present}, top_n=limit)
+    else:
+        shares = np.ones(df.height)
+    top = df.head(limit).with_columns(pl.Series("stability", shares[:limit]))
     results = [
         RankedArea(
             rank=i + 1,
@@ -121,6 +131,7 @@ def rank_areas(
             median_price=r["raw__house_price"],
             population=int(r["population"]),
             centre=Point(lat=r["pwc_lat"], lon=r["pwc_lon"]),
+            stability=round(float(r["stability"]), 2),
         )  # fmt: skip
         for i, r in enumerate(top.iter_rows(named=True))
     ]

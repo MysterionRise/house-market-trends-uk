@@ -160,3 +160,24 @@ def test_weights_accept_labels_and_everyday_words(store):
     assert themes["education"] == 3 and themes["safety"] == 2 and themes["transport"] == 0
     with pytest.raises(ValueError, match="Unknown themes"):
         resolve_weights(store, None, {"vibes": 2})
+
+
+def test_profile_has_a_percentile_range_for_presets_only(store):
+    from lix_api.services.areas import area_profile
+
+    p = area_profile(store, "E01000003", preset="family")
+    lo, hi = p.overall_percentile_range
+    assert 0 <= lo <= p.overall_percentile <= hi <= 100
+    assert (
+        area_profile(store, "E01000003", theme_weights={"safety": 3}).overall_percentile_range
+        is None
+    )
+
+
+def test_rankings_say_how_stable_each_result_is(store):
+    from lix_api.services.ranking import rank_areas
+
+    result = rank_areas(store, level="lsoa", limit=3)
+    assert all(0 <= r.stability <= 1 for r in result.results)
+    # With every candidate shown, nothing can drop out
+    assert all(r.stability == 1 for r in rank_areas(store, level="lsoa", limit=10).results)

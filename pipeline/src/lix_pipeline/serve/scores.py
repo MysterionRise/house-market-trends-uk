@@ -22,6 +22,7 @@ from lix_core.config import load_indicators, load_registry, load_weights
 from lix_core.log import setup_logging
 from lix_core.paths import data_dir
 from lix_core.scoring import band, normalise, score_lsoas
+from lix_core.uncertainty import percentile_interval
 from lix_pipeline.fetch.lock import read_lock
 
 logger = setup_logging("serve.scores")
@@ -68,7 +69,27 @@ def build_features() -> pl.DataFrame:
     df = pl.concat([df, scores], how="horizontal").with_columns(
         band(pl.col("overall_pct")).alias("band")
     )
+    df = df.with_columns(uncertainty_columns(df, scored, weights))
     return df.sort("lsoa21cd")
+
+
+def uncertainty_columns(df: pl.DataFrame, scored, weights) -> list[pl.Series]:
+    """Per preset, the 5–95% range of each LSOA's England percentile over plausible
+    weightings (each theme weight nudged by about a quarter): ``pct_lo__``/``pct_hi__``."""
+    out = []
+    for name, preset in weights.presets.items():
+        themes = score_lsoas(df, scored, preset.themes, preset.indicators)
+        theme_scores = {
+            c.removeprefix("theme__"): themes[c].to_numpy().astype(float)
+            for c in themes.columns
+            if c.startswith("theme__")
+        }
+        lo, hi = percentile_interval(theme_scores, preset.themes)
+        out += [
+            pl.Series(f"pct_lo__{name}", lo).round(1).fill_nan(None),
+            pl.Series(f"pct_hi__{name}", hi).round(1).fill_nan(None),
+        ]
+    return out
 
 
 def compact_scores(features: pl.DataFrame) -> pl.DataFrame:
@@ -98,7 +119,38 @@ def compact_scores(features: pl.DataFrame) -> pl.DataFrame:
     )
 
 
-def manifest(files: dict[str, Path], lsoa_count: int | None = None) -> dict:
+# A download older than this (days) has probably been superseded upstream. Daily and
+# weekly sources (food hygiene, OSM, schools) change a little at a time, so a month is fine
+STALE_AFTER_DAYS = {"daily": 30, "weekly": 30, "monthly": 62, "quarterly": 190, "annual": 400}
+
+
+def is_stale(fetched_at: str | None, cadence: str, now: datetime | None = None) -> bool:
+    """Whether a source fetched at ``fetched_at`` is older than its cadence allows."""
+    limit = STALE_AFTER_DAYS.get(cadence)
+    if limit is None or not fetched_at:
+        return False
+    fetched = datetime.fromisoformat(fetched_at)
+    if fetched.tzinfo is None:
+        fetched = fetched.replace(tzinfo=timezone.utc)
+    return ((now or datetime.now(timezone.utc)) - fetched).days > limit
+
+
+def correlation_matrix(features: pl.DataFrame) -> dict:
+    """Spearman correlations between scored indicators, ordered by theme (analyst view)."""
+    catalogue = load_indicators()
+    scored = sorted(catalogue.scored(), key=lambda i: (i.theme, i.id))
+    ids = [i.id for i in scored if f"n__{i.id}" in features.columns]
+    rho = features.select(f"n__{i}" for i in ids).to_pandas().corr(method="spearman")
+    return {
+        "ids": ids,
+        "themes": [next(i.theme for i in scored if i.id == iid) for iid in ids],
+        "rho": [[round(float(v), 2) for v in row] for row in rho.to_numpy()],
+    }
+
+
+def manifest(
+    files: dict[str, Path], lsoa_count: int | None = None, correlations: dict | None = None
+) -> dict:
     catalogue = load_indicators()
     weights = load_weights()
     registry = load_registry()
@@ -123,12 +175,17 @@ def manifest(files: dict[str, Path], lsoa_count: int | None = None) -> dict:
                 "attribution": registry[slug].attribution,
                 "version": lock.get(slug, {}).get("resolved", {}).get("version"),
                 "fetched_at": lock.get(slug, {}).get("fetched", {}).get("fetched_at"),
+                "cadence": registry[slug].cadence,
+                "stale": is_stale(
+                    lock.get(slug, {}).get("fetched", {}).get("fetched_at"), registry[slug].cadence
+                ),
             }
             for slug in used
         },
         "files": {
             name: {"sha256": _sha256(p), "bytes": p.stat().st_size} for name, p in files.items()
         },
+        "correlations": correlations,
         "encoding": {
             "scores.parquet": "percentiles × 100 as uint16; 65535 = missing; quality_flags bit i "
             "set when scored_indicators[i] is imputed, low-sample, broadcast or missing"
@@ -151,7 +208,11 @@ def build_serve() -> dict[str, Path]:
 
     files.update(build_lookups(features))
     (out / "manifest.json").write_text(
-        json.dumps(manifest(files, lsoa_count=features.height), indent=2, default=str)
+        json.dumps(
+            manifest(files, lsoa_count=features.height, correlations=correlation_matrix(features)),
+            indent=2,
+            default=str,
+        )
     )
     files["manifest.json"] = out / "manifest.json"
     for name, path in files.items():

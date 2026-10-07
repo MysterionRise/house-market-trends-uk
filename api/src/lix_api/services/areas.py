@@ -59,6 +59,9 @@ def area_profile(
         | ({FLAG_TEXT["low_n"]} if row.get("q__house_price") == "low_n" else set())
     )
     pct = scores.get("overall_pct")
+    # Precomputed per preset at build time; custom weights have no range
+    preset_id = None if theme_weights else name
+    lo, hi = row.get(f"pct_lo__{preset_id}"), row.get(f"pct_hi__{preset_id}")
     return AreaProfile(
         lsoa21cd=code,
         lsoa_name=row["lsoa21nm"],
@@ -71,6 +74,7 @@ def area_profile(
         overall=_round(scores.get("overall")),
         overall_percentile=_round(pct, 0),
         band=None if pct is None else min(int(pct // 20) + 1, 5),
+        overall_percentile_range=None if lo is None or hi is None else [round(lo), round(hi)],
         coverage=_round(scores.get("coverage"), 2),
         preset=name,
         themes=theme_scores,

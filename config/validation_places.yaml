@@ -1,0 +1,216 @@
+# Face-validity review: well-known places and what their scores should look like.
+#
+# `lix qa places` scores each place's neighbourhood (the MSOA its OS Open Names point
+# sits in, population-weighted, default preset) and writes docs/validation.md.
+# `anchor: true` checks are also run by `lix validate places` (part of `make validate`),
+# so a data or method change that silently inverts them fails the build.
+#
+# level: msoa (default) or lsoa for a small place its MSOA would dilute
+# lsoa: an exact LSOA, when the OS Open Names point isn't the part that's meant
+# checks: theme (0–100 theme score), overall (0–100), indicator (raw value of an
+# indicator, in its unit), flag (an indicator quality flag present in the area)
+# ops: ge (>=), le (<=)
+
+# What the review shows beyond the checks (written by hand; rendered into the page)
+observations:
+  - >-
+    **Density dominates the default overall score.** Theme scores behave as expected,
+    but deprived town centres (Middlesbrough Central 62, Blackpool North Shore 60) end
+    up close to affluent towns (Winchester East 66, Sidmouth 61), because five of the
+    eight themes measure access to places, which rises with density. Options: rank
+    within the same urban/rural class by default, let access measures saturate sooner,
+    or give community and safety more weight in the balanced preset.
+  - >-
+    **School access counts good schools nearby rather than the quality of the nearest.**
+    Rural towns score 16–19 on education (Chipping Campden, Holsworthy, Sidmouth) even
+    where the local primary is good. A measure based on the quality of the nearest two
+    or three schools would treat rural families more fairly.
+  - >-
+    **Place points aren't always the part people mean.** OS Open Names puts "Jaywick" in
+    a Clacton West LSOA, not the Jaywick Sands plotlands (England's most deprived LSOA),
+    so a place search shows the neighbourhood around the named point.
+
+places:
+  # ------------------------------------------------------------------ inner London
+  - name: Hampstead
+    local_authority: Camden
+    why: Affluent, expensive, well connected
+    checks:
+      - {theme: housing, op: le, value: 30, anchor: true}
+      - {theme: transport, op: ge, value: 75, anchor: true}
+      - {overall: true, op: ge, value: 55}
+
+  - name: Shoreditch
+    local_authority: Hackney
+    why: Nightlife hub with high crime per resident and expensive homes
+    checks:
+      - {theme: amenities, op: ge, value: 80, anchor: true}
+      - {theme: safety, op: le, value: 30, anchor: true}
+      - {theme: transport, op: ge, value: 85}
+
+  - name: Whitechapel
+    local_authority: Tower Hamlets
+    why: Dense, central, high income deprivation
+    checks:
+      - {theme: transport, op: ge, value: 85, anchor: true}
+      - {theme: community, op: le, value: 40}
+
+  - name: Kensington
+    local_authority: Kensington and Chelsea
+    why: Among the most expensive places in England
+    checks:
+      - {theme: housing, op: le, value: 25, anchor: true}
+      - {theme: amenities, op: ge, value: 70}
+
+  # ----------------------------------------------------------- big-city centres
+  - name: Manchester
+    local_authority: Manchester
+    why: City centre; Greater Manchester crime is estimated (no police.uk data)
+    checks:
+      - {flag: imputed, anchor: true}
+      - {theme: safety, op: le, value: 25, anchor: true}
+      - {theme: transport, op: ge, value: 85}
+
+  - name: Salford
+    local_authority: Salford
+    why: Greater Manchester, so crime is estimated
+    checks:
+      - {flag: imputed, anchor: true}
+
+  - name: Jesmond
+    local_authority: Newcastle upon Tyne
+    why: Popular inner suburb with bars and restaurants
+    checks:
+      - {theme: amenities, op: ge, value: 70}
+      - {overall: true, op: ge, value: 50}
+
+  - name: Headingley
+    local_authority: Leeds
+    why: "Student suburb: lively, but high burglary and theft"
+    checks:
+      - {theme: amenities, op: ge, value: 70}
+      - {theme: safety, op: le, value: 45}
+
+  # ------------------------------------------------------- affluent towns and suburbs
+  - name: Harrogate
+    local_authority: North Yorkshire
+    why: Affluent spa town
+    checks:
+      - {overall: true, op: ge, value: 55, anchor: true}
+      - {theme: community, op: ge, value: 60}
+
+  - name: Winchester
+    local_authority: Winchester
+    why: Affluent cathedral city with strong schools
+    checks:
+      - {overall: true, op: ge, value: 55}
+      - {theme: education, op: ge, value: 55}
+
+  - name: St Albans
+    local_authority: St Albans
+    why: London commuter city, expensive
+    checks:
+      - {theme: housing, op: le, value: 35, anchor: true}
+      - {theme: community, op: ge, value: 65}
+
+  - name: Royal Sutton Coldfield
+    local_authority: Birmingham
+    why: Affluent suburb of Birmingham
+    checks:
+      - {theme: community, op: ge, value: 55}
+      - {overall: true, op: ge, value: 50}
+
+  - name: Cambridge
+    local_authority: Cambridge
+    why: Expensive university city, cycling and rail
+    checks:
+      - {theme: housing, op: le, value: 30, anchor: true}
+      - {indicator: gigabit_broadband, op: ge, value: 80}
+
+  # --------------------------------------------------------- rural and remote
+  - name: Chipping Campden
+    local_authority: Cotswold
+    why: "Cotswolds market town: green, remote from rail"
+    checks:
+      - {theme: transport, op: le, value: 45, anchor: true}
+      - {indicator: station_distance, op: ge, value: 5000, anchor: true}
+      - {indicator: no2, op: le, value: 8}
+
+  - name: Holsworthy
+    local_authority: Torridge
+    why: "Remote north Devon town: no railway, patchy broadband"
+    checks:
+      - {indicator: station_distance, op: ge, value: 15000, anchor: true}
+      - {theme: transport, op: le, value: 35, anchor: true}
+      - {indicator: gigabit_broadband, op: le, value: 85}
+
+  - name: Sidmouth
+    local_authority: East Devon
+    why: Seaside retirement town
+    checks:
+      - {indicator: aged_65_plus, op: ge, value: 35, anchor: true}
+      - {indicator: no2, op: le, value: 8}
+
+  # -------------------------------------------------- deprived coastal and post-industrial
+  - name: Jaywick Sands
+    # The plotlands, England's most deprived LSOA in IoD 2025; OS Open Names puts
+    # "Jaywick" further north, in a Clacton West LSOA
+    lsoa: E01021988
+    level: lsoa
+    why: Among the most deprived neighbourhoods in England, with cheap homes
+    checks:
+      - {theme: community, op: le, value: 15, anchor: true}
+      - {theme: housing, op: ge, value: 60}
+
+  - name: Blackpool
+    local_authority: Blackpool
+    why: Deprived seaside town centre
+    checks:
+      - {theme: community, op: le, value: 15, anchor: true}
+      - {theme: housing, op: ge, value: 50}
+
+  - name: Middlesbrough
+    local_authority: Middlesbrough
+    why: Post-industrial town centre with high deprivation
+    checks:
+      - {theme: community, op: le, value: 20, anchor: true}
+
+  - name: Burnley
+    local_authority: Burnley
+    why: Among the cheapest homes in England
+    checks:
+      - {indicator: house_price, op: le, value: 150000, anchor: true}
+      - {theme: housing, op: ge, value: 55}
+
+  # ------------------------------------------------------------------ flood risk
+  - name: Spalding
+    local_authority: South Holland
+    why: Fenland town, much of it at risk from rivers and the sea
+    checks:
+      - {indicator: flood_risk, op: ge, value: 25, anchor: true}
+
+  - name: Wisbech
+    local_authority: Fenland
+    why: Fenland town on the tidal Nene
+    checks:
+      - {indicator: flood_risk, op: ge, value: 10}
+
+  # ------------------------------------------------------------------ other types
+  - name: Milton Keynes
+    local_authority: Milton Keynes
+    why: "New town: almost no homes from before 1919"
+    checks:
+      - {indicator: period_homes, op: le, value: 5, anchor: true}
+
+  - name: Clifton
+    local_authority: Bristol
+    why: Affluent inner suburb of Bristol, expensive, lots nearby
+    checks:
+      - {theme: amenities, op: ge, value: 70}
+      - {theme: housing, op: le, value: 40}
+
+  - name: Bexhill-on-Sea
+    local_authority: Rother
+    why: Older seaside town
+    checks:
+      - {indicator: aged_65_plus, op: ge, value: 30}

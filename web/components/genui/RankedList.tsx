@@ -4,6 +4,9 @@ import { useLiveability } from "@/components/AppData";
 import { Card, Muted, formatValue } from "@/components/ui";
 import type { RankResult } from "@/lib/contracts.gen";
 
+// Below this share of plausible weightings keeping it in the list, a result is a close call
+const CLOSE_CALL = 0.6;
+
 export function RankedList({ result }: { result: RankResult }) {
   const { update } = useLiveability();
   const where = result.within ? ` ${result.within.startsWith("within") ? "" : "in "}${result.within}` : " in England";
@@ -34,7 +37,17 @@ export function RankedList({ result }: { result: RankResult }) {
             >
               <span className="text-xs tabular-nums text-[var(--text-muted)]">{r.rank}</span>
               <span className="min-w-0">
-                <span className="block truncate font-medium">{r.name}</span>
+                <span className="flex items-baseline gap-1.5">
+                  <span className="truncate font-medium">{r.name}</span>
+                  {r.stability != null && r.stability < CLOSE_CALL && (
+                    <span
+                      className="shrink-0 rounded border border-[var(--border)] px-1 text-[10px] text-[var(--text-muted)]"
+                      title={`Stays in this top ${result.results.length} under ${Math.round(r.stability * 100)}% of plausible weightings`}
+                    >
+                      close call
+                    </span>
+                  )}
+                </span>
                 <span className="block truncate text-xs text-[var(--text-secondary)]">
                   {r.local_authority}
                   {r.median_price != null && ` · typical price ${formatValue(r.median_price, "£")}`}
@@ -50,7 +63,11 @@ export function RankedList({ result }: { result: RankResult }) {
           </li>
         ))}
       </ol>
-      <Muted>Click an area to show it on the map.</Muted>
+      <Muted>
+        Click an area to show it on the map.
+        {result.results.some((r) => r.stability != null && r.stability < CLOSE_CALL) &&
+          " “Close call”: small changes to the weights could swap it out of this list."}
+      </Muted>
     </Card>
   );
 }
