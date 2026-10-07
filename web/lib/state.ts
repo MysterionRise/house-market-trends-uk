@@ -1,0 +1,53 @@
+/**
+ * The state shared with the assistant (mirrors lix_api.agent.state.LiveabilityState).
+ * The page and the assistant both write it; AG-UI keeps them in sync.
+ */
+import type { LiveabilityState as WireState, MapView, Poi, ShortlistItem } from "./contracts.gen";
+import type { Manifest } from "./data";
+
+export type { Poi, ShortlistItem };
+
+/** The wire type has optional fields (they have defaults); the page always fills them in. */
+export type LiveabilityState = Omit<Required<WireState>, "map" | "theme_weights" | "indicator_weights"> & {
+  map: Required<MapView> & { pois: Poi[]; highlighted: string[] };
+  theme_weights: Record<string, number>;
+  indicator_weights: Record<string, number>;
+  shortlist: ShortlistItem[];
+};
+
+export type Bbox = [number, number, number, number];
+
+export const DEFAULT_STATE: LiveabilityState = {
+  preset: "balanced",
+  theme_weights: {},
+  indicator_weights: {},
+  compare_within_urban_rural: false,
+  mode: "consumer",
+  map: { bbox: null, layer: "overall", highlighted: [], selected: null, pois: [] },
+  shortlist: [],
+};
+
+/** The state with every field present (the assistant may send partial snapshots). */
+export function normaliseState(s: Partial<WireState> | undefined): LiveabilityState {
+  return {
+    ...DEFAULT_STATE,
+    ...(s ?? {}),
+    map: { ...DEFAULT_STATE.map, ...(s?.map ?? {}) },
+    theme_weights: s?.theme_weights ?? {},
+    indicator_weights: s?.indicator_weights ?? {},
+    shortlist: s?.shortlist ?? [],
+  } as LiveabilityState;
+}
+
+/** Preset weights with the user's overrides on top. */
+export function effectiveWeights(manifest: Manifest, state: LiveabilityState) {
+  const preset = manifest.presets[state.preset] ?? manifest.presets[manifest.default_preset];
+  return {
+    themes: { ...preset.themes, ...(state.theme_weights ?? {}) } as Record<string, number>,
+    indicators: { ...preset.indicators, ...(state.indicator_weights ?? {}) } as Record<string, number>,
+  };
+}
+
+export function bboxOf(b: unknown): Bbox | null {
+  return Array.isArray(b) && b.length === 4 ? (b.map(Number) as Bbox) : null;
+}

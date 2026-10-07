@@ -1,7 +1,7 @@
 # Local deployment: `docker compose up` after building data (`make build-data`).
 #   api     REST + assistant (AG-UI) + MCP          http://localhost:8000
 #   static  tiles and score files for the browser   http://localhost:8080
-#   web     the front end                           http://localhost:3000  (Phase 5)
+#   web     the front end                           http://localhost:3000
 # Profiles: `--profile build` for the pipeline, `--profile local-llm` for Ollama.
 
 services:
@@ -27,6 +27,19 @@ services:
       - ./data/serve:/srv:ro
       - ./docker/Caddyfile:/etc/caddy/Caddyfile:ro
     ports: ["8080:8080"]
+
+  web:
+    build:
+      context: .
+      dockerfile: docker/web.Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:8000
+        NEXT_PUBLIC_DATA_URL: http://localhost:8080
+    environment:
+      # Server-side relay from the CopilotKit runtime to the assistant
+      AGENT_URL: http://api:8000/agent
+    ports: ["3000:3000"]
+    depends_on: [api, static]
 
   pipeline:
     profiles: [build]

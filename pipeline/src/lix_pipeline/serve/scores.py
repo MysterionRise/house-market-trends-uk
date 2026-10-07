@@ -75,14 +75,18 @@ def compact_scores(features: pl.DataFrame) -> pl.DataFrame:
     """Browser copy: uint16 percentiles for scored indicators plus a quality bitmask."""
     catalogue = load_indicators()
     scored = [i.id for i in catalogue.scored()]
-    if len(scored) > 64:
-        raise ValueError("Quality bitmask holds at most 64 indicators")
+    # 32 bits keeps the mask a plain number in JavaScript (64-bit would be a BigInt)
+    if len(scored) > 32:
+        raise ValueError("Quality bitmask holds at most 32 scored indicators")
     flags = pl.sum_horizontal(
-        pl.when(pl.col(f"q__{iid}") != "ok").then(pl.lit(1 << bit, pl.UInt64)).otherwise(0)
+        pl.when(pl.col(f"q__{iid}") != "ok").then(pl.lit(1 << bit, pl.UInt32)).otherwise(0)
         for bit, iid in enumerate(scored)
     )
     return features.select(
         "lsoa21cd",
+        # For colouring the zoomed-out MSOA and local authority layers in the browser
+        "msoa21cd",
+        "lad_cd",
         "ruc21cd",
         "urban",
         pl.col("population").cast(pl.UInt32),
@@ -90,7 +94,7 @@ def compact_scores(features: pl.DataFrame) -> pl.DataFrame:
             (pl.col(f"n__{iid}") * 100).round().fill_null(MISSING_U16).cast(pl.UInt16).alias(iid)
             for iid in scored
         ],
-        flags.cast(pl.UInt64).alias("quality_flags"),
+        flags.cast(pl.UInt32).alias("quality_flags"),
     )
 
 
@@ -139,7 +143,8 @@ def build_serve() -> dict[str, Path]:
         "scores.parquet": out / "scores.parquet",
     }
     features.write_parquet(files["lsoa_features.parquet"])
-    compact_scores(features).write_parquet(files["scores.parquet"], compression="zstd")
+    # Snappy: the browser's parquet reader (hyparquet) decodes it without plugins
+    compact_scores(features).write_parquet(files["scores.parquet"], compression="snappy")
     from lix_pipeline.serve.lookups import build_lookups
 
     files.update(build_lookups(features))

@@ -1,0 +1,49 @@
+"use client";
+
+import { useEffect, useState } from "react";
+
+import { useLiveability } from "@/components/AppData";
+import { AreaProfileCard } from "@/components/genui/AreaProfileCard";
+import { fetchProfile } from "@/lib/api";
+import type { AreaProfile } from "@/lib/contracts.gen";
+
+interface Loaded {
+  key: string;
+  profile?: AreaProfile;
+  error?: string;
+}
+
+/** The area selected on the map (or by the assistant), fetched for the current preset. */
+export function AreaPanel() {
+  const { state } = useLiveability();
+  const [loaded, setLoaded] = useState<Loaded | null>(null);
+  const code = state.map.selected;
+  const key = `${code}|${state.preset}`;
+
+  useEffect(() => {
+    if (!code) return;
+    let cancelled = false;
+    fetchProfile(code, state.preset)
+      .then((profile) => !cancelled && setLoaded({ key, profile }))
+      .catch((e) => !cancelled && setLoaded({ key, error: String(e.message ?? e) }));
+    return () => {
+      cancelled = true;
+    };
+  }, [code, state.preset, key]);
+
+  if (!code) {
+    return (
+      <p className="p-4 text-sm text-[var(--text-secondary)]">
+        Click an area on the map (zoom in to see neighbourhoods) or ask the assistant about a place.
+      </p>
+    );
+  }
+  // Results for a previous selection are ignored until the new one arrives
+  if (!loaded || loaded.key !== key) return <p className="p-4 text-sm text-[var(--text-muted)]">Loading…</p>;
+  if (loaded.error) return <p className="p-4 text-sm text-[var(--text-secondary)]">Couldn&apos;t load this area: {loaded.error}</p>;
+  return (
+    <div className="p-2">
+      <AreaProfileCard profile={loaded.profile!} />
+    </div>
+  );
+}

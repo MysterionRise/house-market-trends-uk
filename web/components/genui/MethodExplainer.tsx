@@ -1,0 +1,64 @@
+"use client";
+
+import { useState } from "react";
+
+import { Card, Muted, formatValue } from "@/components/ui";
+import type { Explanation } from "@/lib/contracts.gen";
+
+export function MethodExplainer({ explanation }: { explanation: Explanation }) {
+  const [open, setOpen] = useState<string | null>(explanation.contributions.length === 1 ? explanation.contributions[0].theme : null);
+  const maxContribution = Math.max(...explanation.contributions.map((c) => c.contribution ?? 0), 1);
+
+  return (
+    <Card
+      testId="explainer"
+      title={`Why ${explanation.name} scores ${explanation.overall?.toFixed(0) ?? "–"}`}
+      subtitle={`Each theme adds its share of the weight × its score (weighting: ${explanation.preset})`}
+    >
+      <ul>
+        {explanation.contributions.map((c) => (
+          <li key={c.theme} className="border-t border-[var(--border)] first:border-t-0">
+            <button
+              className="grid w-full grid-cols-[minmax(0,8rem)_1fr_4.5rem] items-center gap-2 py-1 text-left hover:bg-[var(--hover)]"
+              onClick={() => setOpen(open === c.theme ? null : c.theme)}
+              aria-expanded={open === c.theme}
+            >
+              <span className="truncate text-xs">{c.label}</span>
+              <span className="h-2 rounded-r-[4px] bg-[var(--track)]">
+                <span className="block h-2 rounded-r-[4px] bg-[var(--series-1)]" style={{ width: `${((c.contribution ?? 0) / maxContribution) * 100}%` }} />
+              </span>
+              <span className="text-right text-xs tabular-nums text-[var(--text-secondary)]">
+                {c.score?.toFixed(0) ?? "–"} × {(c.weight_share * 100).toFixed(0)}%
+              </span>
+            </button>
+            {open === c.theme && (
+              <table className="mb-2 w-full text-xs">
+                <tbody className="tabular-nums">
+                  {c.indicators.map((i) => (
+                    <tr key={i.id} className={i.role === "context" ? "text-[var(--text-muted)]" : ""}>
+                      <td className="py-0.5 pr-2">{i.label}{i.role === "context" && " (not scored)"}</td>
+                      <td className="py-0.5 pr-2 text-right">{formatValue(i.value, i.unit)}</td>
+                      <td className="py-0.5 text-right">{i.score?.toFixed(0) ?? "–"}</td>
+                      <td className="py-0.5 pl-1 text-[var(--text-muted)]">{i.quality !== "ok" ? i.quality : ""}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </li>
+        ))}
+      </ul>
+      {explanation.caveats.length > 0 && (
+        <details className="mt-2 text-xs text-[var(--text-secondary)]">
+          <summary className="cursor-pointer">Caveats ({explanation.caveats.length})</summary>
+          <ul className="mt-1 list-disc pl-4">{explanation.caveats.map((c) => <li key={c}>{c}</li>)}</ul>
+        </details>
+      )}
+      <details className="mt-1 text-xs text-[var(--text-muted)]">
+        <summary className="cursor-pointer">Sources</summary>
+        <ul className="mt-1 list-disc pl-4">{explanation.sources.map((s) => <li key={s}>{s}</li>)}</ul>
+      </details>
+      <Muted>Scores per indicator are 0–100 (higher is better).</Muted>
+    </Card>
+  );
+}

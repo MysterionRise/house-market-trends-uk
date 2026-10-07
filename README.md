@@ -1,10 +1,9 @@
 # UK Liveability Index
 
 > **Being restructured.** This repo started in 2020 as a plan to analyse UK house price trends.
-> It is now being rebuilt as a data platform that scores **English** neighbourhoods on safety,
-> environment, health access, schools, transport, amenities, affordability and community, using
-> open data only. The data pipeline, scoring model and API (with an AI assistant) work; the
-> front end is next.
+> It is now a data platform that scores **English** neighbourhoods on safety, environment,
+> health access, schools, transport, amenities, affordability and community, using open data
+> only, with a map and an AI assistant that answers by building the interface it needs.
 
 Everything is computed at **LSOA** level (Lower Layer Super Output Area, 1,000 to 3,000 residents
 each; 33,755 in England).
@@ -64,14 +63,36 @@ The model is set with `LIX_MODEL` (default `anthropic:claude-opus-5-5`; also `op
 See [.env.example](.env.example). `docker compose up` runs the API plus a static server for the
 map tiles (`make tiles` builds them).
 
+### Front end
+
+`web/` is a Next.js app (Node 24, see `.nvmrc`):
+
+- a MapLibre map of every England neighbourhood from static PMTiles, coloured by England
+  percentile; weights are recomputed in the browser, so moving a slider recolours all 33,755
+  areas in about 100 ms
+- an assistant chat ([CopilotKit](https://copilotkit.ai) over AG-UI) whose tool calls render as
+  components: ranked lists, area profiles, side-by-side comparisons, nearby places, score
+  explanations and SQL results. The assistant and the page share state, so it can move the map,
+  outline areas, set the weight sliders and save a shortlist, and it sees what you change
+- presets (family, young professional, retired, commuter), a "compare like with like" switch for
+  urban/rural fairness, a shortlist, shareable URLs, light and dark mode, and an analyst mode with
+  a distribution chart, read-only SQL and CSV export
+
+```bash
+make web-install   # npm ci (Node 24)
+make dev           # API with the scripted assistant + front end on http://localhost:3000
+make web-test      # typecheck, lint, unit tests (incl. scoring parity with Python)
+make e2e           # browser tests (Playwright) against the local build
+```
+
+With a model key in `.env`, `LIX_MODEL=anthropic:claude-opus-5-5 make dev` uses a real LLM.
+
 ## Planned
 
-- More open datasets: broadband, flood risk, green space, nurseries, pharmacies, collisions,
-  council tax, income, life expectancy, public transport stops, supermarkets and more
-- The generative-UI front end: a map that recolours as weights change, and a chat where the
-  assistant answers with ranked lists, area cards, comparisons and explanations
-- A generative-UI front end where an AI assistant answers questions with maps, area cards and comparisons
-  (Pydantic AI + AG-UI + CopilotKit, any LLM provider)
+- More open datasets: broadband, flood risk, green space and tree cover, nurseries (Ofsted),
+  pharmacies, road collisions, council tax, income, life expectancy, public transport stops,
+  supermarkets, noise and more
+- Walking-network travel times instead of straight-line distances
 
 ## Running it
 
@@ -106,14 +127,16 @@ config/datasets.yaml    dataset URLs, formats, licences
 core/                   lix_core: paths, config, logging, shared code patterns
 api/                    lix_api: FastAPI, the AI assistant (AG-UI) and the MCP server
 pipeline/               lix_pipeline and the `lix` CLI
+web/                    Next.js front end: map, chat and generative UI components
+contracts/              JSON Schema of the API models and the scoring golden cases
   fetch/http.py         download engine with caching and resume
   geo/                  NSPL postcode lookup, LSOA boundaries
   stage/                one stager per dataset (nspl, price_paid, iod)
 data/                   raw/, staged/, ... (gitignored; rebuilt by the pipeline)
 ```
 
-The repo is a [uv workspace](https://docs.astral.sh/uv/concepts/projects/workspaces/); `api/`
-(FastAPI + AI agent) and `web/` (Next.js front end) will join it.
+The Python side is a [uv workspace](https://docs.astral.sh/uv/concepts/projects/workspaces/)
+(`core`, `pipeline`, `api`).
 
 ## Licence
 

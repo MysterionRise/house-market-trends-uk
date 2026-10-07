@@ -34,3 +34,29 @@ jobs:
         run: |
           uv run python -m lix_api.schemas
           git diff --exit-code contracts/
+
+  web:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - run: npm ci
+
+      - name: Generated types match the API contracts
+        run: |
+          npm run types
+          git diff --exit-code lib/contracts.gen.ts
+
+      - run: npm run typecheck
+      - run: npm run lint
+      - name: Unit tests (incl. scoring parity with Python)
+        run: npm test

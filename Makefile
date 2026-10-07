@@ -1,4 +1,4 @@
-.PHONY: install resolve fetch stage indicators score tiles build-data validate docs schemas api test lint format
+.PHONY: install resolve fetch stage indicators score tiles build-data validate docs schemas api web-install web web-test e2e dev test lint format
 
 PY_DIRS := core pipeline api
 
@@ -35,10 +35,30 @@ build-data: fetch stage indicators score tiles validate
 # JSON Schema of the API models (contracts/schemas.json) for the front end's types
 schemas:
 	uv run python -m lix_api.schemas
+	cd web && npm run types
 
 # Run the API on :8000 (set LIX_MODEL, e.g. anthropic:claude-opus-5-5, or "test")
 api:
 	LIX_RELOAD=1 uv run lix-api
+
+# Front end (Node 24, see .nvmrc) on :3000
+web-install:
+	cd web && npm ci
+
+web:
+	cd web && npm run dev
+
+# Typecheck, lint and unit tests (incl. the scoring parity test against Python)
+web-test:
+	cd web && npm run typecheck && npm run lint && npm test
+
+# Browser tests against the local build with the scripted assistant (needs make score tiles)
+e2e:
+	cd web && npx playwright test
+
+# API (scripted assistant unless LIX_MODEL is set) and front end together
+dev:
+	(LIX_MODEL=$${LIX_MODEL:-test} uv run lix-api &) && cd web && npm run dev
 
 validate:
 	uv run lix validate geo
