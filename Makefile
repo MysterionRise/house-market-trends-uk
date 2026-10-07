@@ -1,6 +1,8 @@
 .PHONY: up down up-demo data-pack data-unpack eval install resolve fetch stage indicators score tiles build-data validate demo-data docs schemas api web-install web web-test e2e dev test lint format
 
 PY_DIRS := core pipeline api
+# Local runs read model keys from .env when it exists (see .env.example)
+ENV_FILE := $(if $(wildcard .env),--env-file $(CURDIR)/.env,)
 
 install:
 	uv sync
@@ -39,7 +41,7 @@ schemas:
 
 # Run the API on :8000 (set LIX_MODEL, e.g. anthropic:claude-opus-5-5, or "test")
 api:
-	LIX_RELOAD=1 uv run lix-api
+	LIX_RELOAD=1 uv run $(ENV_FILE) lix-api
 
 # Front end (Node 24, see .nvmrc) on :3000
 web-install:
@@ -58,7 +60,7 @@ e2e:
 
 # API (scripted assistant unless LIX_MODEL is set) and front end together
 dev:
-	(LIX_MODEL=$${LIX_MODEL:-test} uv run lix-api &) && cd web && npm run dev
+	($(if $(ENV_FILE),,LIX_MODEL=test) uv run $(ENV_FILE) lix-api &) && cd web && npm run dev
 
 validate:
 	uv run lix validate geo
@@ -115,5 +117,5 @@ data-unpack:
 # Assistant eval on the full build (api/evals/cases.yaml). Real models cost money:
 #   make eval MODEL=openrouter:anthropic/claude-opus-5.5 CASES=family_leeds_budget,compare_two
 eval:
-	cd api && uv run python -m evals.run --model $(MODEL) $(if $(CASES),--cases $(CASES),)
+	cd api && uv run $(ENV_FILE) python -m evals.run --model $(MODEL) $(if $(CASES),--cases $(CASES),)
 

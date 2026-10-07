@@ -104,7 +104,7 @@ validates it here. `make demo-data` re-cuts the demo dataset from a full build, 
 
 ```bash
 make web-install   # npm ci (Node 24)
-make dev           # API with the scripted assistant + front end on http://localhost:3000
+make dev           # API (model from .env, else the scripted assistant) + front end on :3000
 make web-test      # typecheck, lint, unit tests (incl. scoring parity with Python)
 make e2e           # browser tests (Playwright) against the local build
 ```
