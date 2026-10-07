@@ -1,0 +1,67 @@
+"""Vector map tiles (PMTiles) for the browser map, written with GDAL's PMTiles driver.
+
+    data/serve/tiles/lsoa.pmtiles   England LSOAs, zoom 8–14   (property: lsoa21cd)
+    data/serve/tiles/msoa.pmtiles   England MSOAs, zoom 6–12   (property: msoa21cd)
+    data/serve/tiles/lad.pmtiles    local authorities, zoom 4–10 (lad_cd, name)
+
+Polygons carry only their code (and a name for labels): the browser colours them from
+scores.parquet via feature-state, so reweighting never needs new tiles. PMTiles is a
+single static file read with HTTP range requests; no tile server is needed.
+"""
+
+from pathlib import Path
+
+import geopandas as gpd
+import pyogrio
+from lix_core.codes import ENGLAND_LSOA21
+from lix_core.log import setup_logging
+from lix_core.paths import data_dir
+
+logger = setup_logging("serve.tiles")
+
+
+def _read(slug: str) -> gpd.GeoDataFrame:
+    path = data_dir("raw") / slug / f"{slug}.gpkg"
+    return gpd.read_file(path)
+
+
+def write_layer(gdf: gpd.GeoDataFrame, out: Path, layer: str, minzoom: int, maxzoom: int) -> Path:
+    if out.exists():
+        out.unlink()
+    pyogrio.write_dataframe(
+        gdf.to_crs(4326),
+        out,
+        driver="PMTiles",
+        layer=layer,
+        dataset_options={
+            "NAME": layer,
+            "MINZOOM": str(minzoom),
+            "MAXZOOM": str(maxzoom),
+            # Simplify more at low zooms; keep shapes faithful when zoomed in
+            "SIMPLIFICATION": "1",
+            "SIMPLIFICATION_MAX_ZOOM": "2",
+        },
+    )
+    logger.info(f"{out.name}: {len(gdf):,} features, {out.stat().st_size / 1e6:.1f} MB")
+    return out
+
+
+def build_tiles() -> list[Path]:
+    out_dir = data_dir("serve") / "tiles"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    outputs = []
+
+    lsoa = _read("lsoa_boundaries").rename(columns={"LSOA21CD": "lsoa21cd"})
+    lsoa = lsoa[lsoa["lsoa21cd"].str.match(ENGLAND_LSOA21)][["lsoa21cd", "geometry"]]
+    outputs.append(write_layer(lsoa, out_dir / "lsoa.pmtiles", "lsoa", 8, 14))
+
+    msoa = _read("msoa_boundaries").rename(columns={"MSOA21CD": "msoa21cd"})
+    msoa = msoa[msoa["msoa21cd"].str.startswith("E02")][["msoa21cd", "geometry"]]
+    outputs.append(write_layer(msoa, out_dir / "msoa.pmtiles", "msoa", 6, 12))
+
+    lad = _read("lad_boundaries")
+    code = next(c for c in lad.columns if c.upper().startswith("LAD") and c.upper().endswith("CD"))
+    lad = lad.rename(columns={code: "lad_cd", code[:-2] + "NM": "name"})
+    lad = lad[lad["lad_cd"].str.startswith("E")][["lad_cd", "name", "geometry"]]
+    outputs.append(write_layer(lad, out_dir / "lad.pmtiles", "lad", 4, 10))
+    return outputs

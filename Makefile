@@ -1,6 +1,6 @@
-.PHONY: install resolve fetch stage indicators score build-data validate docs test lint format
+.PHONY: install resolve fetch stage indicators score tiles build-data validate docs schemas api test lint format
 
-PY_DIRS := core pipeline
+PY_DIRS := core pipeline api
 
 install:
 	uv sync
@@ -25,8 +25,20 @@ indicators:
 score:
 	uv run lix score
 
-# Everything from download to scores
-build-data: fetch stage indicators score validate
+# Vector map tiles (PMTiles) for the browser
+tiles:
+	uv run lix tiles
+
+# Everything from download to scores and tiles
+build-data: fetch stage indicators score tiles validate
+
+# JSON Schema of the API models (contracts/schemas.json) for the front end's types
+schemas:
+	uv run python -m lix_api.schemas
+
+# Run the API on :8000 (set LIX_MODEL, e.g. anthropic:claude-opus-5-5, or "test")
+api:
+	LIX_RELOAD=1 uv run lix-api
 
 validate:
 	uv run lix validate geo

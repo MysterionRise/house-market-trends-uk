@@ -1,0 +1,13 @@
+# Static files for the browser: map tiles (PMTiles), scores.parquet and manifest.json.
+# PMTiles is read with HTTP range requests, which file_server supports.
+:8080 {
+	root * /srv
+	encode zstd gzip
+	header {
+		Access-Control-Allow-Origin *
+		Access-Control-Allow-Headers Range
+		Access-Control-Expose-Headers "Content-Length, Content-Range, ETag"
+		Cache-Control "public, max-age=3600"
+	}
+	file_server
+}

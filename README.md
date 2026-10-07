@@ -3,7 +3,8 @@
 > **Being restructured.** This repo started in 2020 as a plan to analyse UK house price trends.
 > It is now being rebuilt as a data platform that scores **English** neighbourhoods on safety,
 > environment, health access, schools, transport, amenities, affordability and community, using
-> open data only. The data pipeline and scoring model work; the API and front end are next.
+> open data only. The data pipeline, scoring model and API (with an AI assistant) work; the
+> front end is next.
 
 Everything is computed at **LSOA** level (Lower Layer Super Output Area, 1,000 to 3,000 residents
 each; 33,755 in England).
@@ -45,11 +46,30 @@ Datasets ingested so far (full list with licences: [docs/data-sources.md](docs/d
 | Transport | DfT Transport Connectivity Metric |
 | Amenities | OpenStreetMap points of interest; Food Standards Agency hygiene ratings |
 
+### API and assistant
+
+`make api` (or `uv run lix-api`) serves, on http://localhost:8000:
+
+- a REST API under `/api/v1`: place search, area profiles, rankings with any weights and
+  filters, comparisons, nearest places (GPs, schools, well-run pubs, ...), score explanations,
+  the indicator catalogue and read-only SQL (docs at `/docs`)
+- an AI assistant at `/agent` speaking [AG-UI](https://docs.ag-ui.com), built with
+  [Pydantic AI](https://ai.pydantic.dev): its tools return typed results the front end renders as
+  maps, cards and tables, and it moves the map and weight sliders through shared state
+- an [MCP](https://modelcontextprotocol.io) server at `/mcp` with the same tools, for Claude
+  Desktop and other MCP clients
+
+The model is set with `LIX_MODEL` (default `anthropic:claude-opus-5-5`; also `openai:...`,
+`google:...`, `ollama:...`). `LIX_MODEL=test` runs a scripted assistant that needs no API key.
+See [.env.example](.env.example). `docker compose up` runs the API plus a static server for the
+map tiles (`make tiles` builds them).
+
 ## Planned
 
 - More open datasets: broadband, flood risk, green space, nurseries, pharmacies, collisions,
   council tax, income, life expectancy, public transport stops, supermarkets and more
-- Map tiles, an API and an AI assistant that can rank, compare and explain areas
+- The generative-UI front end: a map that recolours as weights change, and a chat where the
+  assistant answers with ranked lists, area cards, comparisons and explanations
 - A generative-UI front end where an AI assistant answers questions with maps, area cards and comparisons
   (Pydantic AI + AG-UI + CopilotKit, any LLM provider)
 
@@ -84,6 +104,7 @@ Set `LIX_DATA_DIR` to keep data somewhere other than `./data`.
 ```
 config/datasets.yaml    dataset URLs, formats, licences
 core/                   lix_core: paths, config, logging, shared code patterns
+api/                    lix_api: FastAPI, the AI assistant (AG-UI) and the MCP server
 pipeline/               lix_pipeline and the `lix` CLI
   fetch/http.py         download engine with caching and resume
   geo/                  NSPL postcode lookup, LSOA boundaries

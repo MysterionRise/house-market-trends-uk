@@ -119,6 +119,13 @@ def _score(args: argparse.Namespace) -> int:
     return 0
 
 
+def _tiles(args: argparse.Namespace) -> int:
+    from lix_pipeline.serve.tiles import build_tiles
+
+    build_tiles()
+    return 0
+
+
 def _docs(args: argparse.Namespace) -> int:
     from lix_pipeline.docs import write_docs
 
@@ -170,6 +177,9 @@ def main(argv: list[str] | None = None) -> None:
 
     score = sub.add_parser("score", help="Write data/serve/ (features, scores, manifest)")
     score.set_defaults(func=_score)
+
+    tiles = sub.add_parser("tiles", help="Write map tiles to data/serve/tiles/*.pmtiles")
+    tiles.set_defaults(func=_tiles)
 
     docs = sub.add_parser("docs", help="Regenerate docs/data-sources.md and ATTRIBUTION.md")
     docs.set_defaults(func=_docs)

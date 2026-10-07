@@ -29,3 +29,8 @@ jobs:
 
       - name: Test
         run: uv run pytest -v
+
+      - name: API contracts are up to date
+        run: |
+          uv run python -m lix_api.schemas
+          git diff --exit-code contracts/

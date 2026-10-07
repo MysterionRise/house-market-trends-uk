@@ -140,6 +140,9 @@ def build_serve() -> dict[str, Path]:
     }
     features.write_parquet(files["lsoa_features.parquet"])
     compact_scores(features).write_parquet(files["scores.parquet"], compression="zstd")
+    from lix_pipeline.serve.lookups import build_lookups
+
+    files.update(build_lookups(features))
     (out / "manifest.json").write_text(json.dumps(manifest(files), indent=2, default=str))
     files["manifest.json"] = out / "manifest.json"
     for name, path in files.items():

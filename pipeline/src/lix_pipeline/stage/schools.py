@@ -45,6 +45,18 @@ OEIF_SUB = {
     "Latest OEIF personal development": "oeif_personal_development",
     "Latest OEIF effectiveness of leadership and management": "oeif_leadership",
 }
+# Ungraded inspections only visit schools previously judged Good or Outstanding, so
+# their outcome implies a grade; used when no graded result is on record
+UNGRADED_IMPLIED = {
+    "School remains Outstanding": 0.95,
+    "School remains Outstanding (Concerns) - S5 Next": 0.85,
+    "School remains Good (Improving) - S5 Next": 0.75,
+    "School remains Good": 0.7,
+    "Standards maintained": 0.7,
+    "Improved significantly": 0.7,
+    "School remains Good (Concerns) - S5 Next": 0.6,
+    "Some aspects not as strong": 0.6,
+}
 # Later ungraded inspections nudge the last graded result
 UNGRADED_ADJUSTMENT = {
     "Improved significantly": 0.1,
@@ -54,6 +66,7 @@ UNGRADED_ADJUSTMENT = {
     "Standards maintained": 0.0,
     "School remains Good": 0.0,
     "School remains Outstanding": 0.0,
+    "Some aspects not as strong": -0.1,
 }
 NEUTRAL = 0.6  # "expected standard"
 HALF_LIFE_YEARS = 6.0
@@ -110,6 +123,7 @@ def school_quality(df: pl.DataFrame, as_of: date) -> pl.DataFrame:
         pl.mean_horizontal(rc_cols).alias("_rc"),
         pl.mean_horizontal(sub_cols).alias("_sub"),
     )
+    implied = pl.col("ungraded_outcome").replace_strict(UNGRADED_IMPLIED, default=None)
     base = (
         pl.when(pl.col("_rc").is_not_null())
         .then(
@@ -120,7 +134,9 @@ def school_quality(df: pl.DataFrame, as_of: date) -> pl.DataFrame:
         )
         .when(pl.col("oeif_overall").is_not_null())
         .then(pl.col("oeif_overall"))
-        .otherwise(pl.col("_sub"))
+        .when(pl.col("_sub").is_not_null())
+        .then(pl.col("_sub"))
+        .otherwise(implied)
     )
     framework = (
         pl.when(pl.col("_rc").is_not_null())
@@ -129,12 +145,17 @@ def school_quality(df: pl.DataFrame, as_of: date) -> pl.DataFrame:
         .then(pl.lit("oeif"))
         .when(pl.col("_sub").is_not_null())
         .then(pl.lit("oeif_not_judged"))
+        .when(implied.is_not_null())
+        .then(pl.lit("ungraded_only"))
     )
     graded_date = pl.when(pl.col("_rc").is_not_null()).then("rc_date").otherwise("oeif_date")
-    # An ungraded inspection only counts if it came after the graded one
-    later_ungraded = pl.col("ungraded_date") > graded_date
+    # An ungraded inspection adjusts a graded one only if it came after it; with no
+    # graded result on record it is the evidence itself (and has no adjustment)
+    later_ungraded = (pl.col("ungraded_date") > graded_date) | (
+        graded_date.is_null() & pl.col("ungraded_date").is_not_null()
+    )
     adjust = (
-        pl.when(later_ungraded & pl.col("_rc").is_null())
+        pl.when(later_ungraded & pl.col("_rc").is_null() & graded_date.is_not_null())
         .then(pl.col("ungraded_outcome").replace_strict(UNGRADED_ADJUSTMENT, default=0.0))
         .otherwise(0.0)
     )

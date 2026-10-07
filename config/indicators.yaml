@@ -373,13 +373,14 @@ indicators:
 
   - id: leisure
     theme: amenities
-    label: Gyms, sports centres and pools
-    description: Fitness centres, sports centres and swimming pools within 2km.
+    label: Gyms and sports centres
+    description: Fitness centres and sports centres within 2km.
     unit: index 0–1
     direction: higher_better
     sources: [osm_england, nspl]
     builder: amenities:osm_access
-    params: {values: [fitness_centre, sports_centre, swimming_pool], radius_m: 2000, cap: 6}
+    # Not swimming_pool: in OpenStreetMap most are private garden pools
+    params: {values: [fitness_centre, sports_centre], radius_m: 2000, cap: 6}
     normalise: scale
     weight: 0.75
 

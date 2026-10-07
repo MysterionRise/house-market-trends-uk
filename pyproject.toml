@@ -8,12 +8,14 @@ requires-python = ">=3.11"
 dependencies = [
     "lix-core",
     "lix-pipeline",
+    "lix-api",
 ]
 
 [dependency-groups]
 dev = [
     "hypothesis>=6.100",
     "pytest>=8.0",
+    "pytest-asyncio>=0.24",
     "pytest-httpserver>=1.1",
     "pytest-socket>=0.7",
     "ruff>=0.4",
@@ -23,11 +25,12 @@ dev = [
 package = false
 
 [tool.uv.workspace]
-members = ["core", "pipeline"]
+members = ["core", "pipeline", "api"]
 
 [tool.uv.sources]
 lix-core = { workspace = true }
 lix-pipeline = { workspace = true }
+lix-api = { workspace = true }
 
 [tool.ruff]
 line-length = 100
@@ -37,9 +40,10 @@ target-version = "py311"
 select = ["E", "F", "I", "W"]
 
 [tool.ruff.lint.isort]
-known-first-party = ["lix_core", "lix_pipeline"]
+known-first-party = ["lix_core", "lix_pipeline", "lix_api"]
 
 [tool.pytest.ini_options]
-testpaths = ["core/tests", "pipeline/tests"]
+testpaths = ["core/tests", "pipeline/tests", "api/tests"]
 # Test files share basenames across packages; importlib mode avoids module clashes
 addopts = "--import-mode=importlib --allow-hosts=127.0.0.1"
+asyncio_mode = "auto"

@@ -1,0 +1,1159 @@
+{
+  "$defs": {
+    "AreaProfile": {
+      "properties": {
+        "band": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "1 (bottom fifth of England) \u2026 5 (top fifth)",
+          "title": "Band"
+        },
+        "bbox": {
+          "maxItems": 4,
+          "minItems": 4,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "Bbox",
+          "type": "array"
+        },
+        "centre": {
+          "$ref": "#/$defs/Point"
+        },
+        "coverage": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Coverage"
+        },
+        "flags": {
+          "description": "Caveats that apply to this area",
+          "items": {
+            "type": "string"
+          },
+          "title": "Flags",
+          "type": "array"
+        },
+        "key_facts": {
+          "items": {
+            "$ref": "#/$defs/IndicatorValue"
+          },
+          "title": "Key Facts",
+          "type": "array"
+        },
+        "local_authority": {
+          "title": "Local Authority",
+          "type": "string"
+        },
+        "lsoa21cd": {
+          "title": "Lsoa21Cd",
+          "type": "string"
+        },
+        "lsoa_name": {
+          "title": "Lsoa Name",
+          "type": "string"
+        },
+        "msoa21cd": {
+          "title": "Msoa21Cd",
+          "type": "string"
+        },
+        "neighbourhood": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Friendly MSOA name",
+          "title": "Neighbourhood"
+        },
+        "overall": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Overall"
+        },
+        "overall_percentile": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Overall Percentile"
+        },
+        "population": {
+          "title": "Population",
+          "type": "integer"
+        },
+        "preset": {
+          "title": "Preset",
+          "type": "string"
+        },
+        "region": {
+          "title": "Region",
+          "type": "string"
+        },
+        "strengths": {
+          "items": {
+            "$ref": "#/$defs/IndicatorValue"
+          },
+          "title": "Strengths",
+          "type": "array"
+        },
+        "themes": {
+          "items": {
+            "$ref": "#/$defs/ThemeScore"
+          },
+          "title": "Themes",
+          "type": "array"
+        },
+        "urban_rural": {
+          "title": "Urban Rural",
+          "type": "string"
+        },
+        "weaknesses": {
+          "items": {
+            "$ref": "#/$defs/IndicatorValue"
+          },
+          "title": "Weaknesses",
+          "type": "array"
+        }
+      },
+      "required": [
+        "lsoa21cd",
+        "lsoa_name",
+        "msoa21cd",
+        "local_authority",
+        "region",
+        "urban_rural",
+        "population",
+        "overall",
+        "overall_percentile",
+        "coverage",
+        "preset",
+        "themes",
+        "strengths",
+        "weaknesses",
+        "key_facts",
+        "centre",
+        "bbox"
+      ],
+      "title": "AreaProfile",
+      "type": "object"
+    },
+    "ComparedArea": {
+      "properties": {
+        "code": {
+          "title": "Code",
+          "type": "string"
+        },
+        "indicators": {
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "description": "Raw indicator values",
+          "title": "Indicators",
+          "type": "object"
+        },
+        "level": {
+          "enum": [
+            "lsoa",
+            "msoa",
+            "lad",
+            "region"
+          ],
+          "title": "Level",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "overall": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Overall"
+        },
+        "overall_percentile": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Overall Percentile"
+        },
+        "themes": {
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "title": "Themes",
+          "type": "object"
+        }
+      },
+      "required": [
+        "code",
+        "name",
+        "level",
+        "overall",
+        "overall_percentile",
+        "themes",
+        "indicators"
+      ],
+      "title": "ComparedArea",
+      "type": "object"
+    },
+    "Comparison": {
+      "properties": {
+        "areas": {
+          "items": {
+            "$ref": "#/$defs/ComparedArea"
+          },
+          "title": "Areas",
+          "type": "array"
+        },
+        "indicator_labels": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Indicator Labels",
+          "type": "object"
+        },
+        "preset": {
+          "title": "Preset",
+          "type": "string"
+        },
+        "theme_labels": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Theme Labels",
+          "type": "object"
+        }
+      },
+      "required": [
+        "preset",
+        "areas",
+        "indicator_labels",
+        "theme_labels"
+      ],
+      "title": "Comparison",
+      "type": "object"
+    },
+    "Contribution": {
+      "properties": {
+        "contribution": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "weight_share \u00d7 score",
+          "title": "Contribution"
+        },
+        "indicators": {
+          "items": {
+            "$ref": "#/$defs/IndicatorValue"
+          },
+          "title": "Indicators",
+          "type": "array"
+        },
+        "label": {
+          "title": "Label",
+          "type": "string"
+        },
+        "score": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Score"
+        },
+        "theme": {
+          "title": "Theme",
+          "type": "string"
+        },
+        "weight_share": {
+          "description": "Share of the overall weight, 0\u20131",
+          "title": "Weight Share",
+          "type": "number"
+        }
+      },
+      "required": [
+        "theme",
+        "label",
+        "weight_share",
+        "score",
+        "indicators"
+      ],
+      "title": "Contribution",
+      "type": "object"
+    },
+    "Explanation": {
+      "properties": {
+        "caveats": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Caveats",
+          "type": "array"
+        },
+        "contributions": {
+          "items": {
+            "$ref": "#/$defs/Contribution"
+          },
+          "title": "Contributions",
+          "type": "array"
+        },
+        "lsoa21cd": {
+          "title": "Lsoa21Cd",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "overall": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Overall"
+        },
+        "overall_percentile": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Overall Percentile"
+        },
+        "preset": {
+          "title": "Preset",
+          "type": "string"
+        },
+        "sources": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Sources",
+          "type": "array"
+        }
+      },
+      "required": [
+        "lsoa21cd",
+        "name",
+        "preset",
+        "overall",
+        "overall_percentile",
+        "contributions",
+        "caveats",
+        "sources"
+      ],
+      "title": "Explanation",
+      "type": "object"
+    },
+    "IndicatorInfo": {
+      "properties": {
+        "caveats": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Caveats"
+        },
+        "description": {
+          "title": "Description",
+          "type": "string"
+        },
+        "direction": {
+          "title": "Direction",
+          "type": "string"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "label": {
+          "title": "Label",
+          "type": "string"
+        },
+        "normalise": {
+          "title": "Normalise",
+          "type": "string"
+        },
+        "role": {
+          "title": "Role",
+          "type": "string"
+        },
+        "sources": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Sources",
+          "type": "array"
+        },
+        "theme": {
+          "title": "Theme",
+          "type": "string"
+        },
+        "unit": {
+          "title": "Unit",
+          "type": "string"
+        },
+        "weight": {
+          "title": "Weight",
+          "type": "number"
+        }
+      },
+      "required": [
+        "id",
+        "theme",
+        "label",
+        "description",
+        "unit",
+        "direction",
+        "role",
+        "normalise",
+        "weight",
+        "sources"
+      ],
+      "title": "IndicatorInfo",
+      "type": "object"
+    },
+    "IndicatorValue": {
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "label": {
+          "title": "Label",
+          "type": "string"
+        },
+        "quality": {
+          "default": "ok",
+          "title": "Quality",
+          "type": "string"
+        },
+        "role": {
+          "default": "scored",
+          "title": "Role",
+          "type": "string"
+        },
+        "score": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "0\u2013100, higher is better",
+          "title": "Score"
+        },
+        "theme": {
+          "title": "Theme",
+          "type": "string"
+        },
+        "unit": {
+          "title": "Unit",
+          "type": "string"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Raw value in `unit`",
+          "title": "Value"
+        }
+      },
+      "required": [
+        "id",
+        "label",
+        "theme",
+        "unit"
+      ],
+      "title": "IndicatorValue",
+      "type": "object"
+    },
+    "LiveabilityState": {
+      "properties": {
+        "compare_within_urban_rural": {
+          "default": false,
+          "title": "Compare Within Urban Rural",
+          "type": "boolean"
+        },
+        "indicator_weights": {
+          "additionalProperties": {
+            "type": "number"
+          },
+          "description": "Multipliers on individual indicators",
+          "title": "Indicator Weights",
+          "type": "object"
+        },
+        "map": {
+          "$ref": "#/$defs/MapView"
+        },
+        "mode": {
+          "default": "consumer",
+          "enum": [
+            "consumer",
+            "analyst"
+          ],
+          "title": "Mode",
+          "type": "string"
+        },
+        "preset": {
+          "default": "balanced",
+          "title": "Preset",
+          "type": "string"
+        },
+        "shortlist": {
+          "items": {
+            "$ref": "#/$defs/ShortlistItem"
+          },
+          "title": "Shortlist",
+          "type": "array"
+        },
+        "theme_weights": {
+          "additionalProperties": {
+            "type": "number"
+          },
+          "description": "Overrides on top of the preset's theme weights",
+          "title": "Theme Weights",
+          "type": "object"
+        }
+      },
+      "title": "LiveabilityState",
+      "type": "object"
+    },
+    "MapView": {
+      "properties": {
+        "bbox": {
+          "anyOf": [
+            {
+              "maxItems": 4,
+              "minItems": 4,
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "west, south, east, north",
+          "title": "Bbox"
+        },
+        "highlighted": {
+          "description": "LSOA/MSOA codes to outline",
+          "items": {
+            "type": "string"
+          },
+          "title": "Highlighted",
+          "type": "array"
+        },
+        "layer": {
+          "default": "overall",
+          "description": "\"overall\", \"theme:<theme>\" or \"indicator:<id>\"",
+          "title": "Layer",
+          "type": "string"
+        },
+        "pois": {
+          "description": "Markers to show",
+          "items": {
+            "$ref": "#/$defs/Poi"
+          },
+          "title": "Pois",
+          "type": "array"
+        },
+        "selected": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "LSOA code of the open area profile",
+          "title": "Selected"
+        }
+      },
+      "title": "MapView",
+      "type": "object"
+    },
+    "Place": {
+      "description": "A search result: something a user might mean by a name, postcode or code.",
+      "properties": {
+        "bbox": {
+          "anyOf": [
+            {
+              "maxItems": 4,
+              "minItems": 4,
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "west, south, east, north",
+          "title": "Bbox"
+        },
+        "centre": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Point"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "code": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Code"
+        },
+        "detail": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Disambiguation, e.g. the local authority",
+          "title": "Detail"
+        },
+        "kind": {
+          "enum": [
+            "postcode",
+            "place",
+            "lsoa",
+            "msoa",
+            "lad",
+            "region"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "lsoa21cd": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Lsoa21Cd"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "name"
+      ],
+      "title": "Place",
+      "type": "object"
+    },
+    "Poi": {
+      "properties": {
+        "category": {
+          "title": "Category",
+          "type": "string"
+        },
+        "detail": {
+          "additionalProperties": true,
+          "title": "Detail",
+          "type": "object"
+        },
+        "distance_m": {
+          "title": "Distance M",
+          "type": "number"
+        },
+        "licence": {
+          "title": "Licence",
+          "type": "string"
+        },
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Name"
+        },
+        "point": {
+          "$ref": "#/$defs/Point"
+        },
+        "source": {
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "category",
+        "name",
+        "distance_m",
+        "point",
+        "source",
+        "licence"
+      ],
+      "title": "Poi",
+      "type": "object"
+    },
+    "PoiResult": {
+      "properties": {
+        "category": {
+          "title": "Category",
+          "type": "string"
+        },
+        "origin": {
+          "$ref": "#/$defs/Point"
+        },
+        "origin_label": {
+          "title": "Origin Label",
+          "type": "string"
+        },
+        "pois": {
+          "items": {
+            "$ref": "#/$defs/Poi"
+          },
+          "title": "Pois",
+          "type": "array"
+        }
+      },
+      "required": [
+        "category",
+        "origin",
+        "origin_label",
+        "pois"
+      ],
+      "title": "PoiResult",
+      "type": "object"
+    },
+    "Point": {
+      "properties": {
+        "lat": {
+          "title": "Lat",
+          "type": "number"
+        },
+        "lon": {
+          "title": "Lon",
+          "type": "number"
+        }
+      },
+      "required": [
+        "lat",
+        "lon"
+      ],
+      "title": "Point",
+      "type": "object"
+    },
+    "RankResult": {
+      "properties": {
+        "bbox": {
+          "anyOf": [
+            {
+              "maxItems": 4,
+              "minItems": 4,
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Bbox"
+        },
+        "candidates": {
+          "description": "Areas that passed the filters",
+          "title": "Candidates",
+          "type": "integer"
+        },
+        "level": {
+          "enum": [
+            "lsoa",
+            "msoa",
+            "lad",
+            "region"
+          ],
+          "title": "Level",
+          "type": "string"
+        },
+        "preset": {
+          "title": "Preset",
+          "type": "string"
+        },
+        "results": {
+          "items": {
+            "$ref": "#/$defs/RankedArea"
+          },
+          "title": "Results",
+          "type": "array"
+        },
+        "theme_weights": {
+          "additionalProperties": {
+            "type": "number"
+          },
+          "title": "Theme Weights",
+          "type": "object"
+        },
+        "within": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The area or place the ranking was limited to",
+          "title": "Within"
+        }
+      },
+      "required": [
+        "level",
+        "preset",
+        "theme_weights",
+        "candidates",
+        "results"
+      ],
+      "title": "RankResult",
+      "type": "object"
+    },
+    "RankedArea": {
+      "properties": {
+        "centre": {
+          "$ref": "#/$defs/Point"
+        },
+        "code": {
+          "title": "Code",
+          "type": "string"
+        },
+        "level": {
+          "enum": [
+            "lsoa",
+            "msoa",
+            "lad",
+            "region"
+          ],
+          "title": "Level",
+          "type": "string"
+        },
+        "local_authority": {
+          "title": "Local Authority",
+          "type": "string"
+        },
+        "median_price": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Median Price"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "overall": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Overall"
+        },
+        "overall_percentile": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Overall Percentile"
+        },
+        "population": {
+          "title": "Population",
+          "type": "integer"
+        },
+        "rank": {
+          "title": "Rank",
+          "type": "integer"
+        },
+        "themes": {
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "title": "Themes",
+          "type": "object"
+        }
+      },
+      "required": [
+        "rank",
+        "level",
+        "code",
+        "name",
+        "local_authority",
+        "overall",
+        "overall_percentile",
+        "themes",
+        "population",
+        "centre"
+      ],
+      "title": "RankedArea",
+      "type": "object"
+    },
+    "ShortlistItem": {
+      "properties": {
+        "centre": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Point"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "code": {
+          "title": "Code",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "note": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Note"
+        }
+      },
+      "required": [
+        "code",
+        "name"
+      ],
+      "title": "ShortlistItem",
+      "type": "object"
+    },
+    "ThemeScore": {
+      "properties": {
+        "label": {
+          "title": "Label",
+          "type": "string"
+        },
+        "percentile": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Better than this % of England's LSOAs",
+          "title": "Percentile"
+        },
+        "score": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "0\u2013100, higher is better",
+          "title": "Score"
+        },
+        "theme": {
+          "title": "Theme",
+          "type": "string"
+        }
+      },
+      "required": [
+        "theme",
+        "label"
+      ],
+      "title": "ThemeScore",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema"
+}

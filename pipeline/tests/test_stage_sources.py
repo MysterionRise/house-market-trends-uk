@@ -216,3 +216,11 @@ def test_tcm_column_names():
     assert tcm_column("Employment (walking)") == "tcm_employment_walking"
     assert tcm_column("Leisure and Community (overall)") == "tcm_leisure_and_community_overall"
     assert tcm_column("Overall") == "tcm_overall"
+
+
+def test_school_with_only_an_ungraded_inspection_gets_a_score():
+    tq = TestSchoolQuality()
+    r = tq._q(ungraded_outcome="School remains Good", ungraded_date=date(2026, 10, 1))
+    assert r["framework"] == "ungraded_only"
+    assert r["quality"] == pytest.approx(0.7)
+    assert r["inspection_date"] == date(2026, 10, 1)
