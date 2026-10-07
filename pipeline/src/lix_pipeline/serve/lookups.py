@@ -63,8 +63,8 @@ def build_pois() -> pl.DataFrame:
             "y",
             "lon",
             "lat",
-            pl.lit("OpenStreetMap + Food Standards Agency").alias("source"),
-            pl.lit(ODBL).alias("licence"),
+            pl.col("source_name").alias("source"),
+            "licence",
             _detail(
                 [
                     "well_run",

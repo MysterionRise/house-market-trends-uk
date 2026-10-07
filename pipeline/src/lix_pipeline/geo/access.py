@@ -102,3 +102,69 @@ def residential_postcodes() -> pl.DataFrame:
         .select("postcode", "lsoa21cd", "east1m", "north1m")
         .collect()
     )
+
+
+def nearby_mean(
+    origins: pl.DataFrame,
+    pois: pl.DataFrame,
+    value: str,
+    radius_m: float,
+    sigma_m: float | None = None,
+    origin_xy: tuple[str, str] = ("east1m", "north1m"),
+    poi_xy: tuple[str, str] = ("x", "y"),
+    by: str = "lsoa21cd",
+) -> pl.DataFrame:
+    """Per-``by`` mean of a POI attribute (e.g. schools' results) near each origin.
+
+    Each origin averages ``value`` over the POIs within ``radius_m``, weighted by a
+    Gaussian decay with distance (``sigma_m``, default half the radius); with none in
+    range it takes the nearest POI's value. Origins are then averaged per ``by``.
+    """
+    sigma = sigma_m if sigma_m is not None else radius_m / 2
+    ox, oy = origin_xy
+    px, py = poi_xy
+    pois = pois.filter(
+        pl.col(px).is_not_null() & pl.col(py).is_not_null() & pl.col(value).is_not_null()
+    )
+    origins = origins.filter(pl.col(ox).is_not_null() & pl.col(oy).is_not_null())
+    o_xy = np.column_stack([origins[ox].to_numpy(), origins[oy].to_numpy()]).astype(float)
+    p_xy = np.column_stack([pois[px].to_numpy(), pois[py].to_numpy()]).astype(float)
+    v = pois[value].to_numpy().astype(float)
+    tree = cKDTree(p_xy)
+    pairs = cKDTree(o_xy).sparse_distance_matrix(
+        tree, max_distance=radius_m, output_type="coo_matrix"
+    )
+    w = np.exp(-(pairs.data**2) / (2 * sigma**2))
+    num = np.bincount(pairs.row, weights=w * v[pairs.col], minlength=len(o_xy))
+    den = np.bincount(pairs.row, weights=w, minlength=len(o_xy))
+    _, nearest = tree.query(o_xy, k=1)
+    mean = np.where(den > 0, num / np.where(den > 0, den, 1), v[nearest])
+    per_origin = pl.DataFrame({by: origins[by], "mean": mean}, nan_to_null=True)
+    return per_origin.group_by(by).agg(pl.col("mean").mean().alias("value")).sort(by)
+
+
+def nearby_max(
+    origins: pl.DataFrame,
+    pois: pl.DataFrame,
+    value: str,
+    radius_m: float,
+    origin_xy: tuple[str, str] = ("east1m", "north1m"),
+    poi_xy: tuple[str, str] = ("x", "y"),
+    by: str = "lsoa21cd",
+) -> pl.DataFrame:
+    """Per-``by`` mean of the largest ``value`` among POIs within ``radius_m`` of each
+    origin (0 with none in range): e.g. departures an hour at the busiest stop nearby."""
+    ox, oy = origin_xy
+    px, py = poi_xy
+    pois = pois.filter(pl.col(px).is_not_null() & pl.col(value).is_not_null())
+    origins = origins.filter(pl.col(ox).is_not_null() & pl.col(oy).is_not_null())
+    o_xy = np.column_stack([origins[ox].to_numpy(), origins[oy].to_numpy()]).astype(float)
+    p_xy = np.column_stack([pois[px].to_numpy(), pois[py].to_numpy()]).astype(float)
+    v = pois[value].to_numpy().astype(float)
+    pairs = cKDTree(o_xy).sparse_distance_matrix(
+        cKDTree(p_xy), max_distance=radius_m, output_type="coo_matrix"
+    )
+    best = np.zeros(len(o_xy))
+    np.maximum.at(best, pairs.row, v[pairs.col])
+    per_origin = pl.DataFrame({by: origins[by], "best": best})
+    return per_origin.group_by(by).agg(pl.col("best").mean().alias("value")).sort(by)

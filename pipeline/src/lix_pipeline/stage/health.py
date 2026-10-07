@@ -144,3 +144,49 @@ def stage_nhsbsa_pharmacies() -> pl.LazyFrame:
     df = geocode_postcodes(df).filter(pl.col("lsoa21cd").str.contains(ENGLAND_LSOA21))
     logger.info(f"{df.height:,} community pharmacies in England")
     return df.lazy()
+
+
+# CQC overall ratings on a 0–1 scale (as for schools: an "expected" rating is mid-high)
+CQC_SCALE = {"Outstanding": 1.0, "Good": 0.75, "Requires improvement": 0.4, "Inadequate": 0.1}
+
+
+def stage_cqc_locations() -> pl.LazyFrame:
+    """Active CQC locations with their latest overall rating and location.
+
+    GP practices carry their ODS code (the practice code in GP registrations), so a
+    practice's rating can be weighted by where its patients live. Ratings published
+    before a location changed provider can be "inherited"; they are kept.
+    """
+    import fastexcel
+
+    from lix_pipeline.stage.geo import lonlat_to_bng
+
+    reader = fastexcel.read_excel(data_dir("raw") / "cqc_locations" / "cqc_locations.ods")
+    raw = reader.load_sheet_by_name(
+        "HSCA_Active_Locations", header_row=0, dtypes="string"
+    ).to_polars()
+    df = raw.filter(pl.col("Dormant (Y/N)") != "Y").select(
+        pl.col("Location ID").alias("location_id"),
+        pl.col("Location Name").alias("name"),
+        pl.col("Location ODS Code").alias("ods_code"),
+        pl.col("Location Primary Inspection Category").alias("category"),
+        (pl.col("Care home?") == "Y").alias("care_home"),
+        pl.col("Care homes beds").cast(pl.Float64, strict=False).cast(pl.Int32).alias("beds"),
+        pl.col("Location Latest Overall Rating").alias("rating"),
+        pl.col("Location Latest Overall Rating")
+        .replace_strict(CQC_SCALE, default=None, return_dtype=pl.Float64)
+        .alias("rating_score"),
+        pl.col("Publication Date").str.slice(0, 10).alias("rated_on"),
+        pl.col("Location Postal Code").alias("postcode"),
+        pl.col("Location Latitude").cast(pl.Float64, strict=False).alias("lat"),
+        pl.col("Location Longitude").cast(pl.Float64, strict=False).alias("lon"),
+    )
+    x, y = lonlat_to_bng(df["lon"], df["lat"])
+    df = df.with_columns(x=x, y=y)
+    gps = df.filter(pl.col("category") == "GP Practices")
+    logger.info(
+        f"{df.height:,} active CQC locations; {gps.height:,} GP practices, "
+        f"{gps['rating_score'].is_not_null().mean():.0%} with a rating; "
+        f"{df['care_home'].sum():,} care homes"
+    )
+    return df.lazy()

@@ -43,3 +43,43 @@ def patients_per_gp(ctx) -> pl.DataFrame:
         .then(pl.col("num") / pl.col("covered"))
         .alias("value"),
     )
+
+
+def gp_quality(ctx) -> pl.DataFrame:
+    """CQC rating (0–1) of the practices residents use, weighted by registered patients.
+
+    Null if less than half an LSOA's patients are at a practice with a rating.
+    """
+    cqc = (
+        ctx.staged("cqc_locations")
+        .filter((pl.col("category") == "GP Practices") & pl.col("rating_score").is_not_null())
+        .select(pl.col("ods_code").alias("practice_code"), "rating_score")
+        .unique("practice_code")
+    )
+    per_lsoa = (
+        ctx.staged("gp_registrations")
+        .join(cqc, on="practice_code", how="left")
+        .group_by("lsoa21cd")
+        .agg(
+            (pl.col("rating_score") * pl.col("patients")).sum().alias("num"),
+            pl.col("patients").filter(pl.col("rating_score").is_not_null()).sum().alias("rated"),
+            pl.col("patients").sum().alias("total"),
+        )
+    )
+    return per_lsoa.select(
+        "lsoa21cd",
+        pl.when(pl.col("rated") / pl.col("total") >= MIN_PATIENT_COVERAGE)
+        .then(pl.col("num") / pl.col("rated"))
+        .alias("value"),
+    )
+
+
+def care_homes(ctx, radius_m: float, cap: float) -> pl.DataFrame:
+    """Beds in care homes rated Good or Outstanding near homes (distance-decayed, 0–1)."""
+    homes = (
+        ctx.staged("cqc_locations")
+        .filter(pl.col("care_home") & (pl.col("rating_score") >= 0.75) & (pl.col("beds") > 0))
+        .with_columns((pl.col("beds") / 40).alias("weight"))
+    )
+    access = ctx.access(homes, radius_m=radius_m, cap=cap, weight="weight")
+    return access.select("lsoa21cd", pl.col("score").alias("value"))

@@ -30,6 +30,7 @@ STAGE_INPUTS: dict[str, list[str]] = {
     "ods_gp": ["ods_gp", "nspl"],
     "gias": ["gias", "lsoa_boundaries"],
     "fsa_fhrs": ["fsa_fhrs", "nspl", "lsoa_boundaries"],
+    "overture_pubs": ["overture_pubs", "lsoa_boundaries"],
     "osm_pois": ["osm_england"],
     "ods_dentists": ["ods_dentists", "nspl"],
     "nhsbsa_pharmacies": ["nhsbsa_pharmacies", "nspl"],
@@ -70,7 +71,7 @@ def stagers() -> dict[str, Callable[[], pl.LazyFrame]]:
         transport,
     )
     from lix_pipeline.stage.census import stage_census_table
-    from lix_pipeline.stage.fsa import stage_fsa
+    from lix_pipeline.stage.fsa import stage_active_places, stage_fsa, stage_overture_pubs
     from lix_pipeline.stage.iod import stage_iod
     from lix_pipeline.stage.nspl import stage_nspl
     from lix_pipeline.stage.osm import stage_osm
@@ -98,19 +99,26 @@ def stagers() -> dict[str, Callable[[], pl.LazyFrame]]:
         "gp_workforce": health.stage_gp_workforce,
         "gias": schools.stage_gias,
         "ofsted_schools": schools.stage_ofsted_schools,
+        "ks2_results": schools.stage_ks2_results,
+        "ks4_results": schools.stage_ks4_results,
         "dft_connectivity": transport.stage_dft_connectivity,
         "fsa_fhrs": stage_fsa,
+        "overture_pubs": stage_overture_pubs,
+        "active_places": stage_active_places,
         "osm_pois": stage_osm,
         "stats19": safety.stage_stats19,
         "ods_dentists": health.stage_ods_dentists,
         "nhsbsa_pharmacies": health.stage_nhsbsa_pharmacies,
+        "cqc_locations": health.stage_cqc_locations,
         "ofsted_childcare": childcare.stage_ofsted_childcare,
         "os_greenspace": environment.stage_os_greenspace,
         "ea_flood_postcodes": environment.stage_ea_flood_postcodes,
         "naptan": transport.stage_naptan,
+        "bods_gtfs": transport.stage_bods_gtfs,
         "ofcom_broadband": transport.stage_ofcom_broadband,  # needs staged oa_lookup
         "msoa_income": housing.stage_msoa_income,
         "council_tax": housing.stage_council_tax,
         "voa_ctsop": housing.stage_voa_ctsop,
         "claimant_count": community.stage_claimant_count,
+        "life_expectancy": community.stage_life_expectancy,
     }

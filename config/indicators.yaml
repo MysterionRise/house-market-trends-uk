@@ -230,6 +230,32 @@ indicators:
     bad: 3500
     caveats: Excludes GPs in training; practices reporting under one full-time GP are left out of the average.
 
+  - id: gp_quality
+    theme: health
+    label: GP practice ratings
+    description: CQC ratings of the GP practices residents are registered with, weighted by how many use each.
+    unit: rating 0–1 (Good = 0.75)
+    direction: higher_better
+    sources: [cqc_locations, gp_registrations]
+    builder: health:gp_quality
+    normalise: threshold
+    good: 0.9
+    bad: 0.4
+    weight: 0.75
+    caveats: Most practices are rated Good, and some ratings are several years old.
+
+  - id: care_homes
+    theme: health
+    label: Well-rated care homes nearby
+    description: Beds in care homes rated Good or Outstanding by CQC within 5km, weighted by distance.
+    unit: index 0–1
+    direction: higher_better
+    sources: [cqc_locations, nspl]
+    builder: health:care_homes
+    params: {radius_m: 5000, cap: 10}
+    normalise: scale
+    role: context
+
   - id: pharmacy_distance
     theme: health
     label: Distance to nearest pharmacy
@@ -287,6 +313,30 @@ indicators:
     params: {phases: [Secondary, All-through, Middle deemed secondary], radius_m: 5000, cap: 4}
     normalise: scale
     weight: 1.5
+
+  - id: primary_results
+    theme: education
+    label: Primary school results nearby
+    description: Share of pupils meeting the expected standard in reading, writing and maths at state primaries within 2km (3-year average), weighted by distance.
+    unit: "% of pupils"
+    direction: higher_better
+    sources: [ks2_results, gias, nspl]
+    builder: education:school_results
+    params: {slug: ks2_results, column: ks2_rwm_pct, phases: [Primary, All-through, Middle deemed primary], radius_m: 2000}
+    role: context
+    caveats: Results reflect pupils' backgrounds as well as teaching; progress measures aren't published for 2024/25.
+
+  - id: secondary_results
+    theme: education
+    label: Secondary school results nearby
+    description: Average Attainment 8 score at state secondaries within 5km, weighted by distance.
+    unit: Attainment 8
+    direction: higher_better
+    sources: [ks4_results, gias, nspl]
+    builder: education:school_results
+    params: {slug: ks4_results, column: attainment8, phases: [Secondary, All-through, Middle deemed secondary], radius_m: 5000}
+    role: context
+    caveats: Results reflect pupils' backgrounds as well as teaching; Progress 8 isn't published for 2024/25 and 2025/26.
 
   - id: nursery_access
     theme: education
@@ -373,17 +423,22 @@ indicators:
     log1p: true
     weight: 0.75
 
-  - id: bus_stops
+  - id: bus_frequency
     theme: transport
-    label: Bus stops nearby
-    description: Bus stops within 400m of homes, on average.
-    unit: stops within 400m
+    label: Bus frequency
+    description: Buses an hour (weekdays, 07:00–19:00) at the busiest stop within 400m of homes.
+    unit: buses an hour
     direction: higher_better
-    sources: [naptan, nspl]
-    builder: common:count_within
-    params: {slug: naptan, column: mode, values: [bus], radius_m: 400}
+    sources: [bods_gtfs, nspl]
+    builder: common:nearby_max
+    params: {slug: bods_gtfs, column: per_hour, radius_m: 400}
+    normalise: threshold
+    good: 12
+    bad: 0
+    log1p: true
     role: context
-    caveats: Stops, not services; how often buses run isn't counted yet.
+    overlap_group: connectivity
+    caveats: Timetabled buses on a normal Tuesday. Shown, not scored, because DfT's connectivity score (scored) already covers bus access (ρ ≈ 0.82).
 
   - id: gigabit_broadband
     theme: transport
@@ -464,16 +519,27 @@ indicators:
 
   - id: leisure
     theme: amenities
-    label: Gyms and sports centres
-    description: Fitness centres and sports centres within 2km.
+    label: Sports and fitness facilities
+    description: Sports halls, gyms, pools, studios, courts and pitches open to the public within 2km, weighted by distance.
     unit: index 0–1
     direction: higher_better
-    sources: [osm_england, nspl]
-    builder: amenities:osm_access
-    # Not swimming_pool: in OpenStreetMap most are private garden pools
-    params: {values: [fitness_centre, sports_centre], radius_m: 2000, cap: 6}
+    sources: [active_places, nspl]
+    builder: common:access
+    # Sites rather than facilities would favour big centres less; facilities count choice
+    params: {slug: active_places, radius_m: 2000, cap: 25}
     normalise: scale
     weight: 0.75
+
+  - id: swimming_pool_distance
+    theme: amenities
+    label: Distance to nearest public pool
+    description: Average straight-line distance from homes to the nearest swimming pool open to the public.
+    unit: metres
+    direction: lower_better
+    sources: [active_places, nspl]
+    builder: common:nearest
+    params: {slug: active_places, column: type, values: [Swimming Pool]}
+    role: context
 
   - id: culture
     theme: amenities
@@ -661,6 +727,19 @@ indicators:
     params: {column: health_score}
     overlap_group: population_health
     caveats: Built to account for age, unlike self-reported health, which flatters areas of young adults.
+
+  - id: life_expectancy
+    theme: community
+    label: Life expectancy
+    description: Life expectancy at birth in the wider area (MSOA), the mean of men and women, 2019–23.
+    unit: years
+    direction: higher_better
+    sources: [life_expectancy]
+    builder: common:msoa
+    params: {slug: life_expectancy, column: le_mean}
+    role: context
+    overlap_group: population_health
+    caveats: Shown, not scored, because IoD's health domain (scored) measures much the same at a finer scale.
 
   - id: good_health
     theme: community

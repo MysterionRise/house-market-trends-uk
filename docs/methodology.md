@@ -44,6 +44,16 @@ may be scored. The build's QA report lists scored indicators that correlate abov
   as its nearest gate, and a large park with many gates counts for more.
 - **Road danger** counts collisions in which someone was killed or seriously injured
   within 500m of homes, averaged over five years.
+- **GP ratings** are the CQC ratings of the practices residents are registered with,
+  weighted by how many of the LSOA's patients use each (as for patients per GP).
+- **Bus frequency** is the number of buses an hour (weekdays 07:00–19:00, on a normal
+  Tuesday from the national timetable) at the busiest stop within 400m of each home;
+  the busiest stop, not the sum, so one bus calling at two nearby stops isn't counted
+  twice.
+- **School results** average the results of nearby schools (key stage 2 within 2km,
+  Attainment 8 within 5km), weighted by distance. They are shown, not scored: raw
+  results reflect pupils' backgrounds as well as teaching, and progress measures aren't
+  published for 2024/25.
 - **Area-level values** are copied to each LSOA where a source isn't published for
   smaller areas: council tax per billing authority (`broadcast_lad`) and household
   income per MSOA (`broadcast_msoa`).
@@ -115,11 +125,15 @@ since. Each school's latest inspection is put on one 0–1 scale:
 
 A pub counts when it is mapped in OpenStreetMap as a pub (which excludes nightclubs and
 bars) and matches a Food Standards Agency record rated 4 or 5 at an inspection in the
-last three years. Matching uses the `fhrs:id` tag OpenStreetMap mappers added to 63% of
-pubs, and otherwise the nearest pub, restaurant or hotel within 75m whose name is
-similar enough. 18,193 of England's 33,188 mapped pubs qualify. Pubs tagged with real
-ale, food, outdoor seating or a microbrewery count up to 30% more. Hygiene ratings say
-how well a pub is run, not how good the beer is, hence the name.
+last three years. Pubs OpenStreetMap lacks are added from Overture Maps Places
+(confidence at least 0.8, no OpenStreetMap pub of the same name within 60m) and must
+match an FSA record in the same way, so every pub counted rests on two sources.
+Matching uses the `fhrs:id` tag OpenStreetMap mappers added to 63% of pubs, and
+otherwise the nearest pub, restaurant or hotel within 75m whose name is similar enough.
+19,959 pubs qualify: 18,193 of the 33,188 in OpenStreetMap and 1,766 of the 7,809 that
+only Overture lists. Pubs tagged with real ale, food, outdoor seating or a microbrewery
+count up to 30% more. Hygiene ratings say how well a pub is run, not how good the beer
+is, hence the name.
 
 ## 6. Known limitations
 

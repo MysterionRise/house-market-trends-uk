@@ -88,6 +88,9 @@ def validate_geo() -> list[str]:
 
 # Scored indicators must have a value for at least this share of LSOAs
 MIN_SCORED_COVERAGE = 0.99
+# ...except where the gaps are understood: GP ratings need at least half an LSOA's
+# patients at a rated practice (new and unrated practices leave about 1% short)
+COVERAGE_EXCEPTIONS = {"gp_quality": 0.98}
 MISSING_U16 = 65535
 SERVE_FILES = [
     "lsoa_features.parquet",
@@ -134,8 +137,9 @@ def validate_serve(serve_dir: Path | None = None) -> list[str]:
             problems.append(f"scored indicator {iid} is missing from lsoa_features")
             continue
         coverage = features[col].is_not_null().mean()
-        if coverage < MIN_SCORED_COVERAGE:
-            problems.append(f"{iid} covers {coverage:.1%} of LSOAs (< {MIN_SCORED_COVERAGE:.0%})")
+        minimum = COVERAGE_EXCEPTIONS.get(iid, MIN_SCORED_COVERAGE)
+        if coverage < minimum:
+            problems.append(f"{iid} covers {coverage:.1%} of LSOAs (< {minimum:.0%})")
     overall = features["overall"]
     if overall.null_count() or not overall.is_between(0, 100).all():
         problems.append("overall score has nulls or values outside 0–100")

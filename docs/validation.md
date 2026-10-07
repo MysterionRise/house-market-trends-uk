@@ -12,31 +12,31 @@ page with `uv run lix qa places`. Checks marked ⚓ also run in `make validate`.
 
 | Place | Neighbourhood | Overall | Amenities | Community | Education | Environment | Health | Housing | Safety | Transport |
 |---|---|---|---|---|---|---|---|---|---|---|
-| Hampstead | Hampstead Town, Camden | 73 | 98 | 88 | 95 | 71 | 90 | 17 | 30 | 94 |
+| Hampstead | Hampstead Town, Camden | 72 | 98 | 88 | 95 | 71 | 86 | 17 | 30 | 94 |
 | Shoreditch | Shoreditch, Hackney | 63 | 100 | 44 | 99 | 57 | 71 | 28 | 9 | 95 |
-| Whitechapel | Spitalfields, Tower Hamlets | 61 | 100 | 27 | 100 | 53 | 71 | 35 | 8 | 90 |
+| Whitechapel | Spitalfields, Tower Hamlets | 60 | 100 | 27 | 100 | 53 | 71 | 35 | 8 | 90 |
 | Kensington | Kensington Abingdon, Kensington and Chelsea | 70 | 100 | 91 | 100 | 64 | 71 | 18 | 24 | 95 |
-| Manchester | Castlefield & Deansgate, Manchester | 70 | 100 | 63 | 89 | 71 | 72 | 57 | 19 | 90 |
-| Salford | Weaste & Seedley, Salford | 61 | 50 | 22 | 84 | 75 | 87 | 54 | 31 | 87 |
-| Jesmond | South Jesmond & Sandyford, Newcastle upon Tyne | 76 | 96 | 70 | 89 | 87 | 89 | 46 | 43 | 87 |
-| Headingley | Headingley, Leeds | 73 | 92 | 62 | 90 | 81 | 88 | 49 | 30 | 89 |
-| Harrogate | Central Harrogate, North Yorkshire | 72 | 93 | 67 | 76 | 97 | 80 | 34 | 42 | 86 |
-| Winchester | Winchester East, Winchester | 66 | 82 | 42 | 58 | 92 | 95 | 41 | 45 | 76 |
-| St Albans | St Albans Central, St Albans | 74 | 99 | 73 | 99 | 88 | 87 | 30 | 29 | 90 |
-| Royal Sutton Coldfield | Sutton Coldfield South & Central, Birmingham | 69 | 71 | 62 | 80 | 76 | 85 | 44 | 43 | 88 |
-| Cambridge | Central & West Cambridge, Cambridge | 69 | 88 | 95 | 72 | 86 | 88 | 13 | 34 | 75 |
-| Chipping Campden | Willersey, Chipping Campden & Blockley, Cotswold | 50 | 20 | 78 | 17 | 82 | 67 | 29 | 60 | 43 |
-| Holsworthy | Holsworthy, Bradworthy & Welcombe, Torridge | 47 | 25 | 53 | 16 | 88 | 60 | 34 | 76 | 23 |
-| Sidmouth | Sidmouth Town, East Devon | 61 | 64 | 78 | 19 | 88 | 93 | 26 | 71 | 45 |
-| Jaywick Sands | Tendring 018A (Jaywick & St Osyth), Tendring | 42 | 29 | 0 | 17 | 64 | 81 | 67 | 21 | 57 |
-| Blackpool | North Shore, Blackpool | 60 | 78 | 5 | 63 | 97 | 87 | 59 | 8 | 85 |
-| Middlesbrough | Middlesbrough Central, Middlesbrough | 62 | 81 | 8 | 80 | 83 | 85 | 66 | 7 | 85 |
-| Burnley | Central Burnley & Daneshouse, Burnley | 59 | 51 | 8 | 75 | 95 | 69 | 60 | 31 | 84 |
-| Spalding | Spalding North, South Holland | 66 | 65 | 59 | 63 | 61 | 66 | 76 | 57 | 79 |
-| Wisbech | Wisbech South & Peckover, Fenland | 54 | 58 | 25 | 55 | 73 | 67 | 65 | 29 | 56 |
-| Milton Keynes | Central Milton Keynes & Newlands, Milton Keynes | 66 | 79 | 29 | 76 | 90 | 79 | 74 | 19 | 78 |
-| Clifton | Clifton East, Bristol, City of | 76 | 100 | 90 | 91 | 90 | 90 | 18 | 38 | 92 |
-| Bexhill-on-Sea | Bexhill Central, Rother | 64 | 96 | 25 | 57 | 89 | 78 | 50 | 30 | 84 |
+| Manchester | Castlefield & Deansgate, Manchester | 70 | 100 | 63 | 89 | 71 | 74 | 57 | 19 | 90 |
+| Salford | Weaste & Seedley, Salford | 61 | 54 | 22 | 84 | 75 | 85 | 54 | 31 | 87 |
+| Jesmond | South Jesmond & Sandyford, Newcastle upon Tyne | 76 | 96 | 70 | 89 | 87 | 87 | 46 | 43 | 87 |
+| Headingley | Headingley, Leeds | 73 | 94 | 62 | 90 | 81 | 87 | 49 | 30 | 89 |
+| Harrogate | Central Harrogate, North Yorkshire | 72 | 95 | 67 | 76 | 97 | 79 | 34 | 42 | 86 |
+| Winchester | Winchester East, Winchester | 67 | 86 | 42 | 58 | 92 | 93 | 41 | 45 | 76 |
+| St Albans | St Albans Central, St Albans | 74 | 99 | 73 | 99 | 88 | 84 | 30 | 29 | 90 |
+| Royal Sutton Coldfield | Sutton Coldfield South & Central, Birmingham | 69 | 73 | 62 | 80 | 76 | 82 | 44 | 43 | 88 |
+| Cambridge | Central & West Cambridge, Cambridge | 69 | 89 | 95 | 72 | 86 | 85 | 13 | 34 | 75 |
+| Chipping Campden | Willersey, Chipping Campden & Blockley, Cotswold | 51 | 27 | 78 | 17 | 82 | 68 | 29 | 60 | 43 |
+| Holsworthy | Holsworthy, Bradworthy & Welcombe, Torridge | 48 | 29 | 53 | 16 | 88 | 62 | 34 | 76 | 23 |
+| Sidmouth | Sidmouth Town, East Devon | 61 | 71 | 78 | 19 | 88 | 89 | 26 | 71 | 45 |
+| Jaywick Sands | Tendring 018A (Jaywick & St Osyth), Tendring | 41 | 30 | 0 | 17 | 64 | 68 | 67 | 21 | 57 |
+| Blackpool | North Shore, Blackpool | 60 | 79 | 5 | 63 | 97 | 83 | 59 | 8 | 85 |
+| Middlesbrough | Middlesbrough Central, Middlesbrough | 62 | 89 | 8 | 80 | 83 | 82 | 66 | 7 | 85 |
+| Burnley | Central Burnley & Daneshouse, Burnley | 60 | 57 | 8 | 75 | 95 | 68 | 60 | 31 | 84 |
+| Spalding | Spalding North, South Holland | 66 | 65 | 59 | 63 | 61 | 67 | 76 | 57 | 79 |
+| Wisbech | Wisbech South & Peckover, Fenland | 54 | 62 | 25 | 55 | 73 | 68 | 65 | 29 | 56 |
+| Milton Keynes | Central Milton Keynes & Newlands, Milton Keynes | 66 | 82 | 29 | 76 | 90 | 77 | 74 | 19 | 78 |
+| Clifton | Clifton East, Bristol, City of | 76 | 100 | 90 | 91 | 90 | 86 | 18 | 38 | 92 |
+| Bexhill-on-Sea | Bexhill Central, Rother | 62 | 95 | 25 | 57 | 89 | 69 | 50 | 30 | 84 |
 
 ## Observations
 
@@ -50,7 +50,7 @@ page with `uv run lix qa places`. Checks marked ⚓ also run in `make validate`.
 
 - ✅ housing score ≤ 30: 16.6 ⚓
 - ✅ transport score ≥ 75: 93.8 ⚓
-- ✅ overall score ≥ 55: 72.8
+- ✅ overall score ≥ 55: 72.4
 
 **Shoreditch** (Shoreditch). Nightlife hub with high crime per resident and expensive homes. Flags: broadcast_lad, broadcast_msoa.
 
@@ -80,22 +80,22 @@ page with `uv run lix qa places`. Checks marked ⚓ also run in `make validate`.
 
 **Jesmond** (South Jesmond & Sandyford). Popular inner suburb with bars and restaurants. Flags: broadcast_lad, broadcast_msoa.
 
-- ✅ amenities score ≥ 70: 95.6
-- ✅ overall score ≥ 50: 75.9
+- ✅ amenities score ≥ 70: 95.8
+- ✅ overall score ≥ 50: 75.6
 
 **Headingley** (Headingley). Student suburb: lively, but high burglary and theft. Flags: broadcast_lad, broadcast_msoa, low_n.
 
-- ✅ amenities score ≥ 70: 92.0
+- ✅ amenities score ≥ 70: 93.7
 - ✅ safety score ≤ 45: 29.6
 
 **Harrogate** (Central Harrogate). Affluent spa town. Flags: broadcast_lad, broadcast_msoa.
 
-- ✅ overall score ≥ 55: 72.0 ⚓
+- ✅ overall score ≥ 55: 72.1 ⚓
 - ✅ community score ≥ 60: 67.1
 
 **Winchester** (Winchester East). Affluent cathedral city with strong schools. Flags: broadcast_lad, broadcast_msoa.
 
-- ✅ overall score ≥ 55: 66.4
+- ✅ overall score ≥ 55: 66.6
 - ✅ education score ≥ 55: 58.0
 
 **St Albans** (St Albans Central). London commuter city, expensive. Flags: broadcast_lad, broadcast_msoa.
@@ -106,7 +106,7 @@ page with `uv run lix qa places`. Checks marked ⚓ also run in `make validate`.
 **Royal Sutton Coldfield** (Sutton Coldfield South & Central). Affluent suburb of Birmingham. Flags: broadcast_lad, broadcast_msoa.
 
 - ✅ community score ≥ 55: 62.3
-- ✅ overall score ≥ 50: 68.7
+- ✅ overall score ≥ 50: 68.5
 
 **Cambridge** (Central & West Cambridge). Expensive university city, cycling and rail. Flags: broadcast_lad, broadcast_msoa, low_n.
 

@@ -1,0 +1,143 @@
+"""Phase 9 sources: school results, life expectancy, bus timetables, sports facilities."""
+
+from datetime import date
+from pathlib import Path
+
+import polars as pl
+import pytest
+
+from lix_pipeline.geo.access import nearby_max, nearby_mean
+from lix_pipeline.stage.community import stage_life_expectancy
+from lix_pipeline.stage.fsa import stage_active_places
+from lix_pipeline.stage.schools import stage_ks2_results, stage_ks4_results
+from lix_pipeline.stage.transport import reference_tuesday, stage_bods_gtfs
+
+
+@pytest.fixture
+def data(tmp_path: Path, monkeypatch) -> Path:
+    monkeypatch.setenv("LIX_DATA_DIR", str(tmp_path))
+    return tmp_path
+
+
+def _write(path: Path, text: str) -> Path:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(text)
+    return path
+
+
+def test_ks2_prefers_the_three_year_average(data):
+    header = "time_period,school_urn,breakdown,subject,expected_standard_pupil_percent\n"
+    _write(
+        data / "raw" / "ks2_results" / "ks2_results.csv",
+        header
+        + '202425,1001,Total,"Reading, writing and maths",70\n'
+        + '202425,1001,3 year average,"Reading, writing and maths",64\n'
+        + '202425,1002,Total,"Reading, writing and maths",55\n'
+        + '202425,1003,Total,"Reading, writing and maths",x\n'
+        + "202425,1002,Total,Reading,80\n",
+    )
+    df = stage_ks2_results().collect().sort("urn")
+    assert df.select("urn", "ks2_rwm_pct").rows() == [(1001, 64.0), (1002, 55.0)]
+
+
+def test_ks4_keeps_state_mainstream_all_pupils(data):
+    cols = ["time_period", "school_urn", "establishment_type_group", "breakdown", "sex",
+            "disadvantage_status", "first_language", "prior_attainment", "mobility",
+            "attainment8_average", "pupil_count"]  # fmt: skip
+    rows = [
+        ["202425", "2001", "Academies", *["Total"] * 6, "48.2", "150"],
+        ["202425", "2002", "Independent schools", *["Total"] * 6, "60.0", "80"],
+        ["202425", "2003", "Academies", "Total", "Boys", *["Total"] * 4, "44.0", "75"],
+        ["202425", "2004", "Community school", *["Total"] * 6, "40.0", "5"],
+        ["202324", "2005", "Academies", *["Total"] * 6, "50.0", "120"],
+    ]
+    _write(
+        data / "raw" / "ks4_results" / "ks4_results.csv",
+        ",".join(cols) + "\n" + "".join(",".join(r) + "\n" for r in rows),
+    )
+    assert stage_ks4_results().collect().select("urn", "attainment8").rows() == [(2001, 48.2)]
+
+
+def test_life_expectancy_mean_of_men_and_women(data):
+    _write(
+        data / "raw" / "life_expectancy" / "life_expectancy.csv",
+        "Area Code,Sex,Category,Time period,Value\n"
+        "E02000001,Male,,2019 - 23,80\nE02000001,Female,,2019 - 23,84\n"
+        "E92000001,Male,,2019 - 23,79\n",
+    )
+    df = stage_life_expectancy().collect()
+    assert df.select("msoa21cd", "le_mean").rows() == [("E02000001", 82.0)]
+
+
+def test_active_places_public_and_operational(data):
+    path = data / "raw" / "active_places" / "active_places.parquet"
+    path.parent.mkdir(parents=True)
+    pl.DataFrame({
+        "facilityid": [1, 2, 3], "siteid": [10, 10, 11],
+        "facilitytype": ["Swimming Pool", "Sports Hall", "Health and Fitness Gym"],
+        "facilitysubtype": ["Main", "Main", "Gym"],
+        "facstatus": ["Operational", "Closed", "Operational"],
+        "accessibilitygroupstr": ["Public Access", "Public Access", "Private"],
+        "accessibilitytypestr": ["Pay and Play"] * 3, "managementgroupstr": ["Local Authority"] * 3,
+        "easting": [500000, 500100, 500200], "northing": [200000, 200000, 200000],
+    }).write_parquet(path)  # fmt: skip
+    assert stage_active_places().collect()["facilityid"].to_list() == [1]
+
+
+def test_reference_tuesday():
+    assert reference_tuesday(date(2026, 10, 7), date(2027, 7, 7)) == date(2026, 10, 27)
+    # Never past the end of the timetable
+    assert reference_tuesday(date(2026, 10, 7), date(2026, 10, 10)) == date(2026, 10, 10)
+
+
+def test_bus_departures_follow_the_calendar(data):
+    root = data / "raw" / "bods_gtfs"
+    # Feed starts Wed 7 Oct 2026 → reference day Tue 27 Oct 2026
+    _write(root / "calendar.txt",
+           "service_id,monday,tuesday,wednesday,thursday,friday,saturday,sunday,start_date,end_date\n"
+           "weekday,1,1,1,1,1,0,0,20261007,20270707\n"
+           "sunday,0,0,0,0,0,0,1,20261007,20270707\n"
+           "removed,1,1,1,1,1,0,0,20261007,20270707\n")  # fmt: skip
+    _write(
+        root / "calendar_dates.txt",
+        "service_id,date,exception_type\nremoved,20261027,2\nsunday,20261027,1\n",
+    )
+    _write(
+        root / "trips.txt",
+        "route_id,service_id,trip_id\nr,weekday,t1\nr,sunday,t2\nr,removed,t3\nr,weekday,t4\n",
+    )
+    _write(root / "stop_times.txt",
+           "trip_id,arrival_time,departure_time,stop_id,stop_sequence,pickup_type\n"
+           "t1,08:00:00,08:00:00,A,1,0\n"   # counts
+           "t2,09:00:00,09:00:00,A,1,0\n"   # added on the day: counts
+           "t3,09:30:00,09:30:00,A,1,0\n"   # removed on the day
+           "t4,06:30:00,06:30:00,A,1,0\n"   # before 07:00
+           "t4,10:00:00,10:00:00,B,2,1\n")  # no pickup  # fmt: skip
+    _write(
+        root / "stops.txt",
+        "stop_id,stop_name,stop_lat,stop_lon\nA,High St,53.8,-1.55\nB,Low St,53.81,-1.55\n",
+    )
+    df = stage_bods_gtfs().collect()
+    assert df.select("stop_id", "departures").rows() == [("A", 2)]
+    assert df["reference_day"][0] == date(2026, 10, 27)
+
+
+ORIGINS = pl.DataFrame({
+    "lsoa21cd": ["E01000001", "E01000001", "E01000002"],
+    "east1m": [500_000, 500_100, 520_000], "north1m": [200_000, 200_000, 200_000],
+})  # fmt: skip
+POIS = pl.DataFrame(
+    {"x": [500_050.0, 500_300.0, 530_000.0], "y": [200_000.0] * 3, "v": [80.0, 40.0, 10.0]}
+)
+
+
+def test_nearby_mean_weights_by_distance_and_falls_back_to_nearest():
+    df = nearby_mean(ORIGINS, POIS, "v", radius_m=1000).sort("lsoa21cd")
+    first, second = df["value"].to_list()
+    assert 40 < first < 80  # both schools in range, the nearer one counts more
+    assert second == pytest.approx(10.0)  # none within 1km: the nearest school's value
+
+
+def test_nearby_max_takes_the_busiest_stop_in_range():
+    df = nearby_max(ORIGINS, POIS, "v", radius_m=300).sort("lsoa21cd")
+    assert df["value"].to_list() == [80.0, 0.0]

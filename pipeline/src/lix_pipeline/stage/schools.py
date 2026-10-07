@@ -204,3 +204,65 @@ def stage_ofsted_schools(as_of: date | None = None) -> pl.LazyFrame:
     summary = df.group_by("framework").agg(pl.len(), pl.col("quality").mean().round(3))
     logger.info(f"{df.height:,} inspected schools; by framework: {summary.rows()}")
     return df.lazy()
+
+
+def stage_ks2_results() -> pl.LazyFrame:
+    """Share of pupils meeting the expected standard in reading, writing and maths.
+
+    The three-year average (steadier for small primaries) where published, otherwise
+    the latest year. Special schools and suppressed results are left out downstream.
+    """
+    raw = pl.scan_csv(data_dir("raw") / "ks2_results" / "ks2_results.csv", infer_schema=False)
+    rwm = raw.filter(pl.col("subject") == "Reading, writing and maths").with_columns(
+        pl.col("expected_standard_pupil_percent").cast(pl.Float64, strict=False).alias("rwm_pct")
+    )
+    urn = pl.col("school_urn").cast(pl.Int64, strict=False).alias("urn")  # as in GIAS
+    three_year = rwm.filter(pl.col("breakdown") == "3 year average").select(
+        urn, pl.col("rwm_pct").alias("rwm_pct_3y")
+    )
+    latest = rwm.select(pl.col("time_period").max()).collect().item()
+    one_year = rwm.filter(
+        (pl.col("breakdown") == "Total") & (pl.col("time_period") == latest)
+    ).select(urn, "rwm_pct")
+    df = (
+        one_year.join(three_year, on="urn", how="full", coalesce=True)
+        .with_columns(
+            pl.coalesce("rwm_pct_3y", "rwm_pct").alias("ks2_rwm_pct"),
+            pl.lit(latest).alias("period"),
+        )
+        .filter(pl.col("ks2_rwm_pct").is_not_null())
+        .unique("urn")
+        .collect()
+    )
+    logger.info(
+        f"KS2: {df.height:,} primaries ({latest}); "
+        f"median {df['ks2_rwm_pct'].median():.0f}% meet the standard"
+    )
+    return df.lazy()
+
+
+def stage_ks4_results() -> pl.LazyFrame:
+    """Average Attainment 8 per state secondary school, all pupils, latest year."""
+    raw = pl.scan_csv(data_dir("raw") / "ks4_results" / "ks4_results.csv", infer_schema=False)
+    latest = raw.select(pl.col("time_period").max()).collect().item()
+    all_pupils = ("breakdown", "sex", "disadvantage_status", "first_language",
+                  "prior_attainment", "mobility")  # fmt: skip
+    totals = [pl.col(c) == "Total" for c in all_pupils]
+    df = (
+        raw.filter(pl.all_horizontal(totals) & (pl.col("time_period") == latest))
+        .filter(~pl.col("establishment_type_group").str.contains("(?i)independent|special"))
+        .select(
+            pl.col("school_urn").cast(pl.Int64, strict=False).alias("urn"),
+            pl.col("attainment8_average").cast(pl.Float64, strict=False).alias("attainment8"),
+            pl.col("pupil_count").cast(pl.Int32, strict=False).alias("pupils"),
+            pl.lit(latest).alias("period"),
+        )
+        .filter(pl.col("attainment8").is_not_null() & (pl.col("pupils") >= 10))
+        .unique("urn")
+        .collect()
+    )
+    logger.info(
+        f"KS4: {df.height:,} state secondaries ({latest}); "
+        f"median Attainment 8 {df['attainment8'].median():.1f}"
+    )
+    return df.lazy()

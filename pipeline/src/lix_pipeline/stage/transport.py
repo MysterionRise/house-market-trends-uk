@@ -6,6 +6,7 @@ travel times; DfT advises comparing places of the same urban/rural type.
 """
 
 import re
+from datetime import date, datetime, timedelta
 
 import fastexcel
 import polars as pl
@@ -111,3 +112,70 @@ def stage_ofcom_broadband() -> pl.LazyFrame:
         f"{per_lsoa['gigabit'].sum() / per_lsoa['premises'].sum():.1%} of homes"
     )
     return per_lsoa.lazy()
+
+
+DAYTIME = ("07:00:00", "19:00:00")  # 12 hours
+
+
+def reference_tuesday(start: date, end: date) -> date:
+    """A normal Tuesday about two weeks into the timetable (clear of bank holidays)."""
+    day = start + timedelta(days=14)
+    while day.weekday() != 1 or (day.month, day.day) in {(12, 25), (12, 26), (1, 1)}:
+        day += timedelta(days=1)
+    return min(day, end)
+
+
+def stage_bods_gtfs() -> pl.LazyFrame:
+    """Weekday daytime bus departures per stop from the national GTFS timetable.
+
+    Trips running on a reference Tuesday (calendar plus calendar_dates exceptions), with
+    departures between 07:00 and 19:00 where passengers can board.
+    """
+    import duckdb
+
+    from lix_pipeline.stage.geo import lonlat_to_bng
+
+    root = data_dir("raw") / "bods_gtfs"
+    con = duckdb.connect()
+    cal = f"read_csv('{root / 'calendar.txt'}', all_varchar=true)"
+    dates = f"read_csv('{root / 'calendar_dates.txt'}', all_varchar=true)"
+    start, end = con.execute(f"SELECT min(start_date), max(end_date) FROM {cal}").fetchone()
+    day = reference_tuesday(
+        datetime.strptime(start, "%Y%m%d").date(), datetime.strptime(end, "%Y%m%d").date()
+    )
+    d = day.strftime("%Y%m%d")
+    sql = f"""
+    WITH active AS (
+        SELECT service_id FROM {cal}
+        WHERE tuesday = '1' AND start_date <= '{d}' AND end_date >= '{d}'
+        UNION SELECT service_id FROM {dates} WHERE date = '{d}' AND exception_type = '1'
+        EXCEPT SELECT service_id FROM {dates} WHERE date = '{d}' AND exception_type = '2'
+    ),
+    trips AS (
+        SELECT trip_id FROM read_csv('{root / "trips.txt"}', all_varchar=true)
+        WHERE service_id IN (SELECT service_id FROM active)
+    )
+    SELECT st.stop_id, count(*) AS departures
+    FROM read_csv('{root / "stop_times.txt"}', all_varchar=true) st
+    JOIN trips USING (trip_id)
+    WHERE st.departure_time >= '{DAYTIME[0]}' AND st.departure_time < '{DAYTIME[1]}'
+      AND coalesce(st.pickup_type, '0') != '1'
+    GROUP BY st.stop_id
+    """
+    counts = con.execute(sql).pl()
+    stops = pl.read_csv(root / "stops.txt", infer_schema=False).select(
+        "stop_id",
+        pl.col("stop_name").alias("name"),
+        pl.col("stop_lon").cast(pl.Float64).alias("lon"),
+        pl.col("stop_lat").cast(pl.Float64).alias("lat"),
+    )
+    df = stops.join(counts, on="stop_id", how="inner").with_columns(
+        (pl.col("departures") / 12).alias("per_hour"), pl.lit(day).alias("reference_day")
+    )
+    x, y = lonlat_to_bng(df["lon"], df["lat"])
+    df = df.with_columns(x=x, y=y)
+    logger.info(
+        f"{df.height:,} stops served on {day:%a %d %b %Y}; "
+        f"median {df['per_hour'].median():.1f} departures an hour (07:00–19:00)"
+    )
+    return df.lazy()

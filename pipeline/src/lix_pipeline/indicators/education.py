@@ -38,3 +38,19 @@ def nursery_access(ctx, radius_m: float, cap: float) -> pl.DataFrame:
     pois = pl.concat([ofsted, gias], how="vertical_relaxed")
     access = ctx.access(pois, radius_m=radius_m, cap=cap, weight="quality")
     return access.select("lsoa21cd", pl.col("score").alias("value"))
+
+
+def school_results(ctx, slug: str, column: str, phases: list[str], radius_m: float) -> pl.DataFrame:
+    """Distance-weighted average result of the state mainstream schools near homes."""
+    from lix_pipeline.geo.access import nearby_mean
+
+    schools = (
+        ctx.staged("gias")
+        .filter(
+            pl.col("phase").is_in(phases)
+            & (pl.col("type_group") != "Independent schools")
+            & (pl.col("type_group") != "Special schools")
+        )
+        .join(ctx.staged(slug).select("urn", column), on="urn", how="inner")
+    )
+    return nearby_mean(ctx.origins, schools, column, radius_m=radius_m)

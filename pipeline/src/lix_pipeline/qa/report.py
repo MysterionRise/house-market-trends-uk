@@ -8,6 +8,7 @@ import polars as pl
 
 from lix_core.config import load_indicators
 from lix_core.paths import data_dir
+from lix_pipeline.qa.validate import COVERAGE_EXCEPTIONS, MIN_SCORED_COVERAGE
 
 MAX_CORRELATION = 0.8
 
@@ -36,7 +37,8 @@ def build_report() -> tuple[str, list[str]]:
             r[f"q__{ind.id}"]: r["count"] for r in flags.to_dicts() if r[f"q__{ind.id}"] != "ok"
         }
         coverage = raw.is_not_null().mean() * 100
-        if ind.role == "scored" and coverage < 99:
+        minimum = COVERAGE_EXCEPTIONS.get(ind.id, MIN_SCORED_COVERAGE) * 100
+        if ind.role == "scored" and coverage < minimum:
             problems.append(f"{ind.id} covers only {coverage:.1f}% of LSOAs")
         rows.append({
             "indicator": ind.id, "role": ind.role, "theme": ind.theme,

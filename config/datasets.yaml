@@ -212,6 +212,20 @@ os_open_names:
   cadence: quarterly
   size_hint: 103MB zipped
 
+life_expectancy:
+  title: Life expectancy at birth by MSOA (OHID Fingertips)
+  theme: community
+  access:
+    type: http
+    url: "https://fingertips.phe.org.uk/api/all_data/csv/by_indicator_id?indicator_ids=93283&child_area_type_id=3"
+  format: csv
+  landing_page: https://fingertips.phe.org.uk/profile/local-health
+  description: Life expectancy at birth for men and women in each MSOA, 2019–23.
+  licence: OGL-3.0
+  attribution: "Office for Health Improvement and Disparities, Local Health (Fingertips), based on ONS data, licensed under the Open Government Licence v3.0."
+  cadence: annual
+  size_hint: 3MB
+
 # ---------------------------------------------------------------------------------------
 # Housing & affordability
 # ---------------------------------------------------------------------------------------
@@ -446,6 +460,21 @@ ods_gp:
   cadence: daily
   size_hint: 3MB
 
+cqc_locations:
+  title: CQC registered locations with ratings (HSCA active locations)
+  theme: health
+  access:
+    type: html_link
+    page: https://www.cqc.org.uk/about-us/transparency/using-cqc-data
+    steps: [{pattern: 'href="([^"]*_HSCA_Active_Locations\.ods)"'}]
+  format: ods
+  landing_page: https://www.cqc.org.uk/about-us/transparency/using-cqc-data
+  description: Every active health and social care location CQC regulates (GP practices, care homes, hospitals, ...) with its ODS code, postcode and latest overall rating.
+  licence: OGL-3.0
+  attribution: "Contains Care Quality Commission information licensed under the Open Government Licence v3.0."
+  cadence: monthly
+  size_hint: 20MB
+
 ods_dentists:
   title: NHS ODS dental practices
   theme: health
@@ -545,6 +574,35 @@ ofsted_schools:
   cadence: monthly
   size_hint: 16MB
 
+ks2_results:
+  title: DfE key stage 2 results by school (Explore Education Statistics)
+  theme: education
+  access:
+    type: http
+    url: "https://api.education.gov.uk/statistics/v1/data-sets/019afee4-e5d0-72f9-9a8f-d7a1a56eac1d/csv"
+  format: csv
+  landing_page: https://explore-education-statistics.service.gov.uk/find-statistics/key-stage-2-attainment
+  description: Share of pupils at each state primary school meeting the expected standard in reading, writing and maths.
+  licence: OGL-3.0
+  attribution: "Department for Education, Key stage 2 attainment, licensed under the Open Government Licence v3.0."
+  cadence: annual
+  size_hint: 9MB gzipped
+
+ks4_results:
+  title: DfE key stage 4 results by school (Explore Education Statistics)
+  theme: education
+  access:
+    type: http
+    url: "https://api.education.gov.uk/statistics/v1/data-sets/19e39901-a96c-be76-b9c2-6af54ae076d2/csv"
+  format: csv
+  landing_page: https://explore-education-statistics.service.gov.uk/find-statistics/key-stage-4-performance
+  description: Average Attainment 8 score of pupils at each state secondary school.
+  licence: OGL-3.0
+  attribution: "Department for Education, Key stage 4 performance, licensed under the Open Government Licence v3.0."
+  cadence: annual
+  size_hint: 20MB gzipped
+  notes: Progress 8 isn't published for 2024/25 and 2025/26 (no key stage 2 baseline after COVID), so results reflect intake as well as teaching.
+
 ofsted_childcare:
   title: Ofsted childcare providers and inspections
   theme: education
@@ -592,6 +650,19 @@ naptan:
   cadence: daily
   size_hint: 100MB
 
+bods_gtfs:
+  title: Bus Open Data Service timetables (GTFS, England)
+  theme: transport
+  access: {type: http, url: "https://data.bus-data.dft.gov.uk/timetable/download/gtfs-file/all/"}
+  format: zip
+  extract: [stops.txt, stop_times.txt, trips.txt, calendar.txt, calendar_dates.txt, routes.txt, agency.txt]
+  landing_page: https://www.bus-data.dft.gov.uk/
+  description: Every registered local bus timetable in England, converted to GTFS by the DfT.
+  licence: OGL-3.0
+  attribution: "Department for Transport, Bus Open Data Service, licensed under the Open Government Licence v3.0."
+  cadence: daily
+  size_hint: 1GB zipped
+
 ofcom_broadband:
   title: Ofcom Connected Nations fixed broadband coverage (output areas)
   theme: transport
@@ -624,6 +695,52 @@ osm_england:
   attribution: "© OpenStreetMap contributors, available under the Open Database Licence (ODbL)."
   cadence: daily
   size_hint: 1.6GB
+
+overture_pubs:
+  title: Overture Maps places, bars and pubs (England area)
+  theme: amenities
+  access:
+    type: overture
+    theme: places
+    kind: place
+    bbox: [-6.5, 49.8, 1.9, 55.9]
+    where: "basic_category = 'bar'"
+    select:
+      - id
+      - names.primary AS name
+      - taxonomy.primary AS category
+      - confidence
+      - operating_status
+      - (bbox.xmin + bbox.xmax) / 2 AS lon
+      - (bbox.ymin + bbox.ymax) / 2 AS lat
+  format: parquet
+  landing_page: https://docs.overturemaps.org/guides/places/
+  description: Bars and pubs from Overture Maps Places (Meta, Microsoft, Foursquare, AllThePlaces), with a confidence that each still exists.
+  licence: CDLA-Permissive-2.0
+  attribution: "Overture Maps Foundation, Places (CDLA-Permissive-2.0; includes Foursquare data under Apache-2.0 and AllThePlaces data under CC0)."
+  cadence: monthly
+  size_hint: 5MB
+  notes: The bounding box also covers Wales, southern Scotland and a corner of France; staging keeps England.
+
+active_places:
+  title: Sport England Active Places (sports facilities)
+  theme: amenities
+  access:
+    type: arcgis_item
+    query: 'title:"GIS Active Places Power Facility" AND owner:SportEngland_ActivePlaces'
+    title_regex: '^GIS Active Places Power Facility$'
+    item_type: Feature Service
+    pin: 1e189022e7064e0e9b1bdaadef6d3b78
+    mode: featureserver
+    layer: 1
+    fields: [facilityid, siteid, facilitytype, facilitysubtype, facstatus, accessibilitygroupstr, accessibilitytypestr, managementgroupstr, easting, northing]
+  format: parquet
+  landing_page: https://www.activeplacespower.com/
+  description: Every sports facility in England (pools, sports halls, gyms, pitches, courts, studios, ...) with its status and who can use it.
+  licence: CC-BY-4.0
+  attribution: "Contains Data © Sport England (Active Places), licensed under CC BY 4.0."
+  cadence: monthly
+  size_hint: 10MB
 
 fsa_fhrs:
   title: Food Standards Agency food hygiene ratings (all establishments)

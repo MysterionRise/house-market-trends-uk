@@ -107,3 +107,18 @@ def share(ctx, slug: str, numerator: list[str], denominator: str) -> pl.DataFram
         "lsoa21cd",
         (pl.sum_horizontal(numerator) / pl.col(denominator) * 100).alias("value"),
     )
+
+
+def msoa(ctx, slug: str, column: str) -> pl.DataFrame:
+    """A column of a staged MSOA-level table, copied to each LSOA in the MSOA."""
+    from lix_pipeline.geo.joins import broadcast
+
+    df = broadcast(ctx.staged(slug), [column], "msoa", "msoa21cd", geo=ctx.geo)
+    return df.rename({column: "value"})
+
+
+def nearby_max(ctx, slug: str, column: str, radius_m: float) -> pl.DataFrame:
+    """Mean over homes of the largest ``column`` among a staged table's points nearby."""
+    from lix_pipeline.geo.access import nearby_max as _nearby_max
+
+    return _nearby_max(ctx.origins, ctx.staged(slug), column, radius_m=radius_m)

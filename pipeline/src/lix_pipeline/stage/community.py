@@ -18,3 +18,31 @@ def stage_claimant_count() -> pl.LazyFrame:
     ).filter(pl.col("lsoa21cd").str.contains(ENGLAND_LSOA21))
     logger.info(f"{df.height:,} LSOAs, {df['period'][0]}: {df['claimants'].sum():,} claimants")
     return df.lazy()
+
+
+def stage_life_expectancy() -> pl.LazyFrame:
+    """Life expectancy at birth per MSOA (2021 codes), men, women and their mean."""
+    raw = pl.read_csv(
+        data_dir("raw") / "life_expectancy" / "life_expectancy.csv", infer_schema=False
+    )
+    msoa = raw.filter(
+        pl.col("Area Code").str.starts_with("E02") & pl.col("Category").is_null()
+    ).with_columns(pl.col("Value").cast(pl.Float64, strict=False))
+    df = (
+        msoa.pivot(
+            on="Sex", index=["Area Code", "Time period"], values="Value", aggregate_function="first"
+        )
+        .rename(
+            {
+                "Area Code": "msoa21cd",
+                "Time period": "period",
+                "Male": "le_male",
+                "Female": "le_female",
+            }
+        )
+        .with_columns(((pl.col("le_male") + pl.col("le_female")) / 2).alias("le_mean"))
+    )
+    logger.info(
+        f"{df.height:,} MSOAs, {df['period'][0]}: median {df['le_mean'].median():.1f} years"
+    )
+    return df.lazy()

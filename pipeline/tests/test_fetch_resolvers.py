@@ -503,3 +503,36 @@ class TestNomis:
         assert read_lock()["cc"]["resolved"]["version"] == "August 2026"
         # Same period again: nothing is re-downloaded
         assert fetch("cc", registry=registry)["rows"] == 7
+
+
+class TestOverture:
+    def _access(self, **kw):
+        from lix_core.config import OvertureAccess
+
+        return OvertureAccess(
+            type="overture", theme="places", kind="place", bbox=(-6.5, 49.8, 1.9, 55.9),
+            select=["id", "names.primary AS name"], where="basic_category = 'bar'", **kw,
+        )  # fmt: skip
+
+    def test_latest_release_sorts_by_date_then_number(self, httpserver, monkeypatch):
+        from lix_pipeline.fetch import overture
+
+        monkeypatch.setattr(overture, "BUCKET_HTTPS", httpserver.url_for("/bucket"))
+        xml = "".join(
+            f"<CommonPrefixes><Prefix>release/{r}/</Prefix></CommonPrefixes>"
+            for r in ["2026-08-19.0", "2026-09-23.1", "2026-09-23.0"]
+        )
+        httpserver.expect_request("/bucket").respond_with_data(f"<x>{xml}</x>")
+        resolved = overture.resolve_query(self._access(), make_session())
+        assert resolved["version"] == "2026-09-23.1"
+        assert resolved["url"].endswith("/release/2026-09-23.1/theme=places/type=place/*")
+
+    def test_pinned_release_and_sql(self):
+        from lix_pipeline.fetch import overture
+
+        access = self._access(release="2026-08-19.0")
+        resolved = overture.resolve_query(access, make_session())
+        sql = overture.build_sql(access, resolved["url"])
+        assert "release/2026-08-19.0/" in sql
+        assert "bbox.xmin BETWEEN -6.5 AND 1.9" in sql and "(basic_category = 'bar')" in sql
+        assert sql.startswith("SELECT id, names.primary AS name FROM read_parquet(")

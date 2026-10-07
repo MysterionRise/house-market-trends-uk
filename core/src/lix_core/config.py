@@ -121,6 +121,23 @@ class NomisAccess(_Strict):
     page_size: int = 25_000
 
 
+class OvertureAccess(_Strict):
+    """Overture Maps data queried in place with DuckDB over S3 (no full download).
+
+    ``bbox`` (min lon, min lat, max lon, max lat) and ``where`` (SQL on the release's
+    columns) pick the rows; ``select`` lists the output columns (SQL expressions with
+    ``AS`` names). ``release`` pins a release; by default the latest is used.
+    """
+
+    type: Literal["overture"]
+    theme: str
+    kind: str
+    bbox: tuple[float, float, float, float]
+    select: list[str]
+    where: str | None = None
+    release: str | None = None
+
+
 class ManualAccess(_Strict):
     """A file the user downloads by hand (e.g. behind a free login) into data/manual/{slug}/."""
 
@@ -136,6 +153,7 @@ Access = Annotated[
     | HtmlLinkAccess
     | CkanAccess
     | NomisAccess
+    | OvertureAccess
     | ManualAccess,
     Field(discriminator="type"),
 ]

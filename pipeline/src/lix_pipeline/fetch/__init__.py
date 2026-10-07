@@ -15,7 +15,7 @@ import requests
 from lix_core.config import DatasetSpec, HttpAccess, load_registry
 from lix_core.log import setup_logging
 from lix_core.paths import data_dir
-from lix_pipeline.fetch import arcgis, ckan, govuk, html, nomis
+from lix_pipeline.fetch import arcgis, ckan, govuk, html, nomis, overture
 from lix_pipeline.fetch.http import _read_meta, _write_meta, download
 from lix_pipeline.fetch.lock import read_lock, update_entry
 from lix_pipeline.fetch.session import make_session
@@ -99,6 +99,8 @@ def resolve(slug: str, spec: DatasetSpec, session: requests.Session) -> dict:
         resolved["version"] = resolved["url"]
     elif access.type == "nomis":
         resolved = nomis.resolve_query(access, session)
+    elif access.type == "overture":
+        resolved = overture.resolve_query(access, session)
     else:  # manual
         resolved = {"url": None, "version": None, "instructions": access.instructions}
     return {**resolved, "resolved_at": _now()}
@@ -200,6 +202,14 @@ def fetch(
     elif spec.access.type == "nomis":
         meta = _fetch_paged(
             slug, spec, resolved, force, lambda out: nomis.fetch_query(spec.access, out, session)
+        )
+    elif spec.access.type == "overture":
+        meta = _fetch_paged(
+            slug,
+            spec,
+            resolved,
+            force,
+            lambda out: overture.fetch_query(spec.access, resolved["url"], out),
         )
     else:
         meta = download(

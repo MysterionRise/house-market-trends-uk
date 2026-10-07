@@ -245,3 +245,37 @@ def test_council_tax_broadcast_from_billing_authority():
     df = council_tax(FakeContext(geo_lsoa=geo, council_tax=tax)).sort("lsoa21cd")
     assert df["value"].to_list() == [2100.0, None]
     assert set(df["quality"]) == {"broadcast_lad"}
+
+
+def test_overture_adds_only_pubs_osm_lacks():
+    from lix_pipeline.indicators.pubs import overture_additions
+
+    osm = pl.DataFrame({"name": ["The Red Lion"], "x": [500_000.0], "y": [200_000.0]})
+    overture = pl.DataFrame({
+        "id": ["a", "b", "c", "d"],
+        "name": ["Red Lion", "Kings Head", "Kings Head", "Swan"],
+        "x": [500_030.0, 500_010.0, 500_200.0, 500_300.0],
+        "y": [200_000.0] * 4,
+        "confidence": [0.95, 0.95, 0.95, 0.5],
+    })  # fmt: skip
+    # a: same name 30m away; b: 10m away (same building, other name); d: low confidence
+    assert overture_additions(osm, overture)["id"].to_list() == ["c"]
+
+
+def test_gp_quality_weights_ratings_by_where_patients_live():
+    from lix_pipeline.indicators.health import gp_quality
+
+    reg = pl.DataFrame({
+        "lsoa21cd": ["E01000001", "E01000001", "E01000002", "E01000002"],
+        "practice_code": ["A1", "B2", "B2", "C3"],
+        "patients": [300, 100, 100, 300],
+    })  # fmt: skip
+    cqc = pl.DataFrame({
+        "ods_code": ["A1", "B2", "C3"],
+        "category": ["GP Practices"] * 3,
+        "rating_score": [1.0, 0.4, None],  # C3 isn't rated yet
+    })  # fmt: skip
+    df = gp_quality(FakeContext(gp_registrations=reg, cqc_locations=cqc)).sort("lsoa21cd")
+    first, second = df["value"].to_list()
+    assert first == pytest.approx((300 * 1.0 + 100 * 0.4) / 400)
+    assert second is None  # only a quarter of its patients are at a rated practice

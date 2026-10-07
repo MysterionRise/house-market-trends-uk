@@ -55,3 +55,52 @@ def stage_fsa() -> pl.LazyFrame:
     pubs = df.filter(pl.col("business_type_id") == PUB_BAR_NIGHTCLUB).height
     logger.info(f"{df.height:,} England food businesses ({pubs:,} pubs, bars and nightclubs)")
     return df.lazy()
+
+
+# Overture's taxonomy for what the UK calls a pub
+OVERTURE_PUB_CATEGORIES = ("pub", "irish_pub", "sports_bar", "beer_bar", "gastropub")
+
+
+def stage_overture_pubs() -> pl.LazyFrame:
+    """Overture Maps pubs in England with BNG coordinates and their existence confidence."""
+    from lix_pipeline.geo.joins import points_to_lsoa
+    from lix_pipeline.stage.geo import lonlat_to_bng
+
+    raw = pl.read_parquet(data_dir("raw") / "overture_pubs" / "overture_pubs.parquet")
+    df = raw.filter(
+        pl.col("category").is_in(OVERTURE_PUB_CATEGORIES)
+        & (pl.col("operating_status").is_null() | (pl.col("operating_status") == "open"))
+    )
+    x, y = lonlat_to_bng(df["lon"], df["lat"])
+    df = points_to_lsoa(df.with_columns(x=x, y=y), x="x", y="y").filter(
+        pl.col("lsoa21cd").is_not_null()
+    )
+    logger.info(
+        f"Overture: {df.height:,} pubs in England; "
+        f"median confidence {df['confidence'].median():.2f}"
+    )
+    return df.select(
+        "id", "name", "category", "confidence", "lon", "lat", "x", "y", "lsoa21cd"
+    ).lazy()
+
+
+def stage_active_places() -> pl.LazyFrame:
+    """Operational sports facilities the public can use (pay and play, membership, clubs)."""
+    raw = pl.read_parquet(data_dir("raw") / "active_places" / "active_places.parquet")
+    df = raw.filter(
+        (pl.col("facstatus") == "Operational")
+        & (pl.col("accessibilitygroupstr") == "Public Access")
+    ).select(
+        "facilityid",
+        "siteid",
+        pl.col("facilitytype").alias("type"),
+        pl.col("facilitysubtype").alias("subtype"),
+        pl.col("accessibilitytypestr").alias("access"),
+        pl.col("easting").cast(pl.Float64).alias("x"),
+        pl.col("northing").cast(pl.Float64).alias("y"),
+    )
+    logger.info(
+        f"Active Places: {df.height:,} operational public facilities "
+        f"at {df['siteid'].n_unique():,} sites"
+    )
+    return df.lazy()

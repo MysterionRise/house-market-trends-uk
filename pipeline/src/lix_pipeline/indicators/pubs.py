@@ -13,6 +13,10 @@ similar enough. Requiring both
 sources also drops pubs that have closed but linger in one of them. Pubs advertising
 real ale, food, outdoor seating or a microbrewery count a little more (never less).
 
+Pubs that OpenStreetMap hasn't mapped are added from Overture Maps Places (confidence
+at least 0.8, no OSM pub within 60m by the same name); they still need an FSA match to
+count, so every well-run pub is backed by two independent sources.
+
 Hygiene ratings say how well a pub is run, not how good the beer is, so the UI calls
 these "well-run pubs".
 """
@@ -32,6 +36,13 @@ PUB_LIKE_TYPES = [PUB_BAR_NIGHTCLUB, 1, 7842]  # + Restaurant/Cafe/Canteen, Hote
 MATCH_RADIUS_M = 75
 NAME_SIMILARITY = 80
 RATING_MAX_AGE_DAYS = 3 * 365
+OVERTURE_MIN_CONFIDENCE = 0.8
+DUPLICATE_RADIUS_M = 60
+DUPLICATE_ANY_NAME_M = 20  # this close, a different name is still the same pub
+SOURCES = {
+    "osm": ("OpenStreetMap + Food Standards Agency", "ODbL-1.0"),
+    "overture": ("Overture Maps + Food Standards Agency", "CDLA-Permissive-2.0"),
+}
 CHARACTER_TAGS = ["real_ale", "food", "outdoor_seating", "beer_garden", "microbrewery"]
 CHARACTER_BONUS = 0.1  # per tag, up to MAX_BONUS
 MAX_BONUS = 0.3
@@ -114,34 +125,66 @@ def match_pubs(
     return matched
 
 
+def overture_additions(osm: pl.DataFrame, overture: pl.DataFrame) -> pl.DataFrame:
+    """Overture pubs that aren't already an OSM pub (by distance and name)."""
+    candidates = overture.filter(pl.col("confidence") >= OVERTURE_MIN_CONFIDENCE)
+    located = osm.filter(pl.col("x").is_not_null())
+    if candidates.is_empty() or located.is_empty():
+        return candidates
+    tree = cKDTree(np.column_stack([located["x"].to_numpy(), located["y"].to_numpy()]))
+    xy = np.column_stack([candidates["x"].to_numpy(), candidates["y"].to_numpy()])
+    near = tree.query_ball_point(xy, r=DUPLICATE_RADIUS_M)
+    dist, _ = tree.query(xy, k=1)
+    osm_names = located.select(normalise_name(pl.col("name").fill_null(""))).to_series().to_list()
+    ov_names = candidates.select(normalise_name(pl.col("name").fill_null(""))).to_series().to_list()
+    keep = []
+    for name, idx, d in zip(ov_names, near, dist):
+        if d <= DUPLICATE_ANY_NAME_M:
+            keep.append(False)
+            continue
+        same = any(fuzz.token_set_ratio(name, osm_names[i]) >= NAME_SIMILARITY for i in idx)
+        keep.append(not same)
+    return candidates.filter(pl.Series(keep))
+
+
 def build_pubs(ctx, as_of: date | None = None) -> pl.DataFrame:
-    """Every OSM pub in England with its FSA match and whether it counts as well run."""
+    """Every pub in England (OSM, plus Overture's that OSM lacks) with its FSA match."""
     as_of = as_of or date.today()
     osm = (
         ctx.staged("osm_pois")
         .filter(pl.col("value") == "pub")
         .select("osm_type", "osm_id", "name", "x", "y", "lon", "lat", "fhrs_id", *CHARACTER_TAGS)
-        .with_columns(pl.concat_str("osm_type", "osm_id").alias("pub_id"))
+        .with_columns(
+            pl.concat_str("osm_type", "osm_id").alias("pub_id"), pl.lit("osm").alias("source")
+        )
     )
-    # Ids are unique per OSM type only; key on the combined id while matching
-    osm_keyed = osm.with_row_index("_key").with_columns(pl.col("_key").cast(pl.Int64))
+    extra = overture_additions(osm, ctx.staged("overture_pubs")).select(
+        pl.concat_str(pl.lit("overture:"), "id").alias("pub_id"),
+        "name", "x", "y", "lon", "lat", pl.lit("overture").alias("source"),
+    )  # fmt: skip
+    candidates = pl.concat([osm, extra], how="diagonal_relaxed")
+    # Ids are unique per source only; key on a row number while matching
+    keyed = candidates.with_row_index("_key").with_columns(pl.col("_key").cast(pl.Int64))
     fsa = ctx.staged("fsa_fhrs").select(
         "fhrs_id", "name", "x", "y", "rating", "rating_date", "business_type_id"
     )
     matched = match_pubs(
-        osm_keyed.select(pl.col("_key").alias("osm_id"), "name", "x", "y", "fhrs_id"),
+        keyed.select(pl.col("_key").alias("osm_id"), "name", "x", "y", "fhrs_id"),
         fsa,
         spatial_fsa=fsa.filter(pl.col("business_type_id").is_in(PUB_LIKE_TYPES)),
     ).select(pl.col("osm_id").alias("_key"), "fsa_id", "rating", "rating_date", "match")
 
-    pubs = osm_keyed.join(matched, on="_key", how="left").drop("_key")
+    pubs = keyed.join(matched, on="_key", how="left").drop("_key")
     recent = pl.col("rating_date") >= pl.lit(as_of - timedelta(days=RATING_MAX_AGE_DAYS))
     character = pl.sum_horizontal(
-        pl.col(t).is_in(["yes", "only", "real_ale"]).cast(pl.Int8) for t in CHARACTER_TAGS
+        pl.col(t).is_in(["yes", "only", "real_ale"]).fill_null(False).cast(pl.Int8)
+        for t in CHARACTER_TAGS
     )
     pubs = pubs.with_columns(
         ((pl.col("rating") >= 4) & recent).fill_null(False).alias("well_run"),
         (1 + (character * CHARACTER_BONUS).clip(0, MAX_BONUS)).alias("weight"),
+        pl.col("source").replace_strict({k: v[0] for k, v in SOURCES.items()}).alias("source_name"),
+        pl.col("source").replace_strict({k: v[1] for k, v in SOURCES.items()}).alias("licence"),
     )
     return pubs
 

@@ -1,4 +1,41 @@
 {
+  "active_places": {
+    "fetched": {
+      "bytes": 1430925,
+      "fetched_at": "2026-10-07T22:55:01+00:00",
+      "rows": 126577,
+      "sha256": "425082247d434ff71b85d9f667dda16590aba1a72264a57d59bfdba975d9547b"
+    },
+    "resolved": {
+      "item_id": "1e189022e7064e0e9b1bdaadef6d3b78",
+      "modified": "2026-07-27T13:06:11+00:00",
+      "resolved_at": "2026-10-07T22:54:52+00:00",
+      "title": "GIS Active Places Power Facility",
+      "url": "https://services-eu1.arcgis.com/s9MgJChYyPlPX2Nk/arcgis/rest/services/GIS_Active_Places_Power_Facility/FeatureServer/1",
+      "version": "2026-07-27T13:06:11+00:00"
+    }
+  },
+  "bods_gtfs": {
+    "fetched": {
+      "bytes": 1807955781,
+      "extracted": [
+        "agency.txt",
+        "stops.txt",
+        "routes.txt",
+        "calendar.txt",
+        "calendar_dates.txt",
+        "trips.txt",
+        "stop_times.txt"
+      ],
+      "fetched_at": "2026-10-07T22:48:26.904062+00:00",
+      "sha256": "0a495ddf0e2bf13401f78f101fbcf34aaba8c23c5187f8264439ca132a927940"
+    },
+    "resolved": {
+      "resolved_at": "2026-10-07T22:47:23+00:00",
+      "url": "https://data.bus-data.dft.gov.uk/timetable/download/gtfs-file/all/",
+      "version": null
+    }
+  },
   "census_ts001": {
     "fetched": {
       "bytes": 1870128,
@@ -193,6 +230,20 @@
       "version": "https://assets.publishing.service.gov.uk/media/69de1fa63e81003ae0422508/Tables_1-9_2026-27.ods"
     }
   },
+  "cqc_locations": {
+    "fetched": {
+      "bytes": 24157514,
+      "fetched_at": "2026-10-07T22:41:32.809103+00:00",
+      "last_modified": "Fri, 02 Oct 2026 15:16:18 GMT",
+      "sha256": "4b6435b946696db2a71f42242548f9d89b0dc57663b32618b9a89544a42d1b59"
+    },
+    "resolved": {
+      "release": "2026-10-01",
+      "resolved_at": "2026-10-07T22:41:30+00:00",
+      "url": "https://www.cqc.org.uk/system/files/2026-10/01_October_2026_HSCA_Active_Locations.ods",
+      "version": "https://www.cqc.org.uk/system/files/2026-10/01_October_2026_HSCA_Active_Locations.ods"
+    }
+  },
   "defra_pcm_no2": {
     "fetched": {
       "bytes": 7900343,
@@ -351,6 +402,30 @@
       "version": "https://assets.publishing.service.gov.uk/media/691ded56d140bbbaa59a2a7d/File_7_IoD2025_All_Ranks_Scores_Deciles_Population_Denominators.csv"
     }
   },
+  "ks2_results": {
+    "fetched": {
+      "bytes": 266423068,
+      "fetched_at": "2026-10-07T22:46:00.601305+00:00",
+      "sha256": "af4bfa34b7aa504865c9149d71e71f7ee3c2f7a092fc5b25de886d5b0a56da21"
+    },
+    "resolved": {
+      "resolved_at": "2026-10-07T22:45:58+00:00",
+      "url": "https://api.education.gov.uk/statistics/v1/data-sets/019afee4-e5d0-72f9-9a8f-d7a1a56eac1d/csv",
+      "version": null
+    }
+  },
+  "ks4_results": {
+    "fetched": {
+      "bytes": 99926618,
+      "fetched_at": "2026-10-07T22:46:04.877670+00:00",
+      "sha256": "2f2850be340ab080a11d87ccb1846f03c4c83ce81b14ebfe9f4a88be110cc104"
+    },
+    "resolved": {
+      "resolved_at": "2026-10-07T22:46:01+00:00",
+      "url": "https://api.education.gov.uk/statistics/v1/data-sets/19e39901-a96c-be76-b9c2-6af54ae076d2/csv",
+      "version": null
+    }
+  },
   "lad_boundaries": {
     "fetched": {
       "bytes": 679936,
@@ -365,6 +440,18 @@
       "title": "Local Authority Districts (May 2026) Boundaries UK BUC",
       "url": "https://services1.arcgis.com/ESMARspQHYMw9BZ9/arcgis/rest/services/Local_Authority_Districts_May_2026_Boundaries_UK_BUC/FeatureServer/0",
       "version": "2026-09-09T17:10:07+00:00"
+    }
+  },
+  "life_expectancy": {
+    "fetched": {
+      "bytes": 3298222,
+      "fetched_at": "2026-10-07T22:44:56.545087+00:00",
+      "sha256": "0dd6173ae09db992d497cbd707803a23636a419396055a4f3a471b6b83ab4206"
+    },
+    "resolved": {
+      "resolved_at": "2026-10-07T22:44:55+00:00",
+      "url": "https://fingertips.phe.org.uk/api/all_data/csv/by_indicator_id?indicator_ids=93283&child_area_type_id=3",
+      "version": null
     }
   },
   "lsoa11_lsoa21": {
@@ -1508,6 +1595,19 @@
       "resolved_at": "2026-10-07T15:48:02+00:00",
       "url": "https://download.geofabrik.de/europe/united-kingdom/england-latest.osm.pbf",
       "version": "Wed, 07 Oct 2026 03:44:07 GMT"
+    }
+  },
+  "overture_pubs": {
+    "fetched": {
+      "bytes": 4253697,
+      "fetched_at": "2026-10-07T22:51:31+00:00",
+      "rows": 66711,
+      "sha256": "038d7c0bd83a21118baf341464edd8da04218a15f49d8007b7a6afebb46b0bfa"
+    },
+    "resolved": {
+      "resolved_at": "2026-10-07T22:50:56+00:00",
+      "url": "s3://overturemaps-us-west-2/release/2026-09-23.1/theme=places/type=place/*",
+      "version": "2026-09-23.1"
     }
   },
   "police_crime": {

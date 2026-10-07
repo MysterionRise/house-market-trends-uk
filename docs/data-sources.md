@@ -2,7 +2,7 @@
 
 # Data sources
 
-48 datasets, all under open licences. Each is pinned to a concrete file in `config/datasets.lock.json` by `lix resolve`.
+55 datasets, all under open licences. Each is pinned to a concrete file in `config/datasets.lock.json` by `lix resolve`.
 
 
 ## Geography
@@ -43,6 +43,7 @@
 | Slug | Dataset | What it gives us | Updated | Licence |
 |---|---|---|---|---|
 | `ods_gp` | [NHS ODS GP practices](https://www.odsdatasearchandexport.nhs.uk/) | Every GP practice with status, role and postcode (headerless CSV). | daily | OGL-3.0 |
+| `cqc_locations` | [CQC registered locations with ratings (HSCA active locations)](https://www.cqc.org.uk/about-us/transparency/using-cqc-data) | Every active health and social care location CQC regulates (GP practices, care homes, hospitals, ...) with its ODS code, postcode and latest overall rating. | monthly | OGL-3.0 |
 | `ods_dentists` | [NHS ODS dental practices](https://www.odsdatasearchandexport.nhs.uk/) | Every dental practice with an NHS contract, with status and postcode (headerless CSV). | daily | OGL-3.0 |
 | `nhsbsa_pharmacies` | [NHSBSA consolidated pharmaceutical list](https://opendata.nhsbsa.net/dataset/consolidated-pharmaceutical-list) | Every community pharmacy and appliance contractor in England with its address and opening hours. | quarterly | OGL-3.0 |
 | `gp_registrations` | [Patients registered at a GP practice, by LSOA](https://digital.nhs.uk/data-and-information/publications/statistical/patients-registered-at-a-gp-practice) | Patients of each practice by the LSOA they live in, i.e. each practice's real catchment. | quarterly | OGL-3.0 |
@@ -54,6 +55,8 @@
 |---|---|---|---|---|
 | `gias` | [Get Information About Schools (all establishments)](https://get-information-schools.service.gov.uk/Downloads) | Every school and college in England with phase, type, capacity, pupils and location (cp1252). | daily | OGL-3.0 |
 | `ofsted_schools` | Ofsted state-funded school inspections (latest per school) | Latest inspection outcome per school, including the report-card grades used since November 2025. | monthly | OGL-3.0 |
+| `ks2_results` | [DfE key stage 2 results by school (Explore Education Statistics)](https://explore-education-statistics.service.gov.uk/find-statistics/key-stage-2-attainment) | Share of pupils at each state primary school meeting the expected standard in reading, writing and maths. | annual | OGL-3.0 |
+| `ks4_results` | [DfE key stage 4 results by school (Explore Education Statistics)](https://explore-education-statistics.service.gov.uk/find-statistics/key-stage-4-performance) | Average Attainment 8 score of pupils at each state secondary school. | annual | OGL-3.0 |
 | `ofsted_childcare` | Ofsted childcare providers and inspections | Every registered childcare provider with its type, places and latest inspection grade; nurseries and other non-domestic settings have a postcode. | quarterly | OGL-3.0 |
 
 ## Transport & connectivity
@@ -62,6 +65,7 @@
 |---|---|---|---|---|
 | `dft_connectivity` | DfT Transport Connectivity Metric | 0–100 connectivity scores by mode (walk, cycle, public transport, car) and purpose, per LSOA. | annual | OGL-3.0 |
 | `naptan` | [NaPTAN public transport stops](https://www.data.gov.uk/dataset/ff93ffc1-6656-47d8-9155-85ea0b8f2251/national-public-transport-access-nodes-naptan) | Every bus stop, railway station, tram and metro stop, ferry terminal and coach station in Great Britain. | daily | OGL-3.0 |
+| `bods_gtfs` | [Bus Open Data Service timetables (GTFS, England)](https://www.bus-data.dft.gov.uk/) | Every registered local bus timetable in England, converted to GTFS by the DfT. | daily | OGL-3.0 |
 | `ofcom_broadband` | [Ofcom Connected Nations fixed broadband coverage (output areas)](https://www.ofcom.org.uk/phones-and-broadband/coverage-and-speeds/connected-nations-update-spring-2026) | Share of premises in each output area that can get gigabit, superfast or decent broadband, and those below the universal service obligation. | quarterly | OGL-3.0 |
 
 ## Amenities & nightlife
@@ -69,6 +73,8 @@
 | Slug | Dataset | What it gives us | Updated | Licence |
 |---|---|---|---|---|
 | `osm_england` | [OpenStreetMap England extract (Geofabrik)](https://download.geofabrik.de/europe/united-kingdom/england.html) | Pubs, cafés, restaurants, shops, libraries, leisure and other amenities mapped by OpenStreetMap contributors. | daily | ODbL-1.0 |
+| `overture_pubs` | [Overture Maps places, bars and pubs (England area)](https://docs.overturemaps.org/guides/places/) | Bars and pubs from Overture Maps Places (Meta, Microsoft, Foursquare, AllThePlaces), with a confidence that each still exists. | monthly | CDLA-Permissive-2.0 |
+| `active_places` | [Sport England Active Places (sports facilities)](https://www.activeplacespower.com/) | Every sports facility in England (pools, sports halls, gyms, pitches, courts, studios, ...) with its status and who can use it. | monthly | CC-BY-4.0 |
 | `fsa_fhrs` | [Food Standards Agency food hygiene ratings (all establishments)](https://ratings.food.gov.uk/open-data) | Every food business inspected in England, Wales and Northern Ireland with its 0–5 hygiene rating, type and location. | daily | OGL-3.0 |
 
 ## Housing & affordability
@@ -84,6 +90,7 @@
 
 | Slug | Dataset | What it gives us | Updated | Licence |
 |---|---|---|---|---|
+| `life_expectancy` | [Life expectancy at birth by MSOA (OHID Fingertips)](https://fingertips.phe.org.uk/profile/local-health) | Life expectancy at birth for men and women in each MSOA, 2019–23. | annual | OGL-3.0 |
 | `iod_2025` | [English Indices of Deprivation 2025 (File 7)](https://www.gov.uk/government/statistics/english-indices-of-deprivation-2025) | IMD 2025, its 7 domains, IDACI/IDAOPI and 6 sub-domains for 33,755 England LSOAs, plus mid-2022 population denominators. | static | OGL-3.0 |
 | `census_ts001` | [Census 2021 TS001 Number of usual residents](https://www.nomisweb.co.uk/sources/census_2021_bulk) | Usual residents, in households and communal establishments. | static | OGL-3.0 |
 | `census_ts003` | [Census 2021 TS003 Household composition](https://www.nomisweb.co.uk/sources/census_2021_bulk) | Households by composition, including those with dependent children. | static | OGL-3.0 |
