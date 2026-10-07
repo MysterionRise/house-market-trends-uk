@@ -9,7 +9,7 @@ from lix_api.store import Store
 
 COMPARE_INDICATORS = [
     "house_price", "crime_violence", "crime_burglary", "no2", "gp_distance",
-    "patients_per_gp", "primary_school_access", "well_run_pubs", "supermarket_distance",
+    "patients_per_gp", "primary_school_quality", "well_run_pubs", "supermarket_distance",
     "connectivity_overall", "income_deprivation", "population_density",
 ]  # fmt: skip
 

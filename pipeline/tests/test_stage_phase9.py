@@ -141,3 +141,18 @@ def test_nearby_mean_weights_by_distance_and_falls_back_to_nearest():
 def test_nearby_max_takes_the_busiest_stop_in_range():
     df = nearby_max(ORIGINS, POIS, "v", radius_m=300).sort("lsoa21cd")
     assert df["value"].to_list() == [80.0, 0.0]
+
+
+def test_nearest_k_mean_uses_the_nearest_few_and_falls_back():
+    from lix_pipeline.geo.access import nearest_k_mean
+
+    pois = pl.DataFrame({
+        "x": [500_050.0, 500_300.0, 501_000.0, 535_000.0],
+        "y": [200_000.0] * 4,
+        "q": [0.9, 0.5, 0.1, 0.7],
+    })  # fmt: skip
+    df = nearest_k_mean(ORIGINS, pois, "q", k=2, sigma_m=500, max_m=5000).sort("lsoa21cd")
+    near, remote = df["value"].to_list()
+    assert 0.5 < near < 0.9  # the two nearest only; the 0.1 school is third
+    # Nothing within 5km: the single nearest school (0.7, 15km away) counts
+    assert remote == pytest.approx(0.7)

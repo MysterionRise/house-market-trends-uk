@@ -34,6 +34,18 @@ may be scored. The build's QA report lists scored indicators that correlate abov
   are straight-line in British National Grid metres. Access indices count places within
   a radius, weighting each by a Gaussian decay with distance and capping with
   `log(1 + count) / log(1 + cap)`, so the second café matters more than the twentieth.
+- **Saturation.** Access measures reach full marks at a typical suburb's level of
+  provision rather than a city centre's (for example about six cafés and restaurants
+  within 800m, three well-run pubs within 1.2km, a DfT connectivity score of 75), so
+  density beyond "enough" doesn't keep adding points. Distances already work this way:
+  a GP within 1km scores full marks however much nearer it is.
+- **Schools** are judged by the quality of the three nearest state schools of each
+  phase, nearer ones counting more, rather than by how many are within reach: a home
+  with one good village school nearby scores as well as one with ten in a city. A
+  school's quality blends its Ofsted judgement (60%, see below) with its results as a
+  percentile among schools of its phase (40%: key stage 2 reading, writing and maths;
+  Attainment 8). Choice (good schools within 2km and 5km) is a separate, lighter
+  indicator.
 - **Gridded data** (Defra's 1km air-quality model) takes the value of the grid cell
   each residential postcode falls in, averaged per LSOA — close to a population-weighted
   mean.
@@ -50,10 +62,10 @@ may be scored. The build's QA report lists scored indicators that correlate abov
   Tuesday from the national timetable) at the busiest stop within 400m of each home;
   the busiest stop, not the sum, so one bus calling at two nearby stops isn't counted
   twice.
-- **School results** average the results of nearby schools (key stage 2 within 2km,
-  Attainment 8 within 5km), weighted by distance. They are shown, not scored: raw
-  results reflect pupils' backgrounds as well as teaching, and progress measures aren't
-  published for 2024/25.
+- **School results nearby** (shown on their own as context) average the results of
+  nearby schools (key stage 2 within 2km, Attainment 8 within 5km), weighted by
+  distance. Results reflect pupils' backgrounds as well as teaching, and progress
+  measures aren't published for 2024/25, so they make up only 40% of a school's quality.
 - **Area-level values** are copied to each LSOA where a source isn't published for
   smaller areas: council tax per billing authority (`broadcast_lad`) and household
   income per MSOA (`broadcast_msoa`).
@@ -137,21 +149,25 @@ is, hence the name.
 
 ## 6. Known limitations
 
-- **Urban bias in access measures.** Every access indicator rises with density, so
-  rural areas score lower on health services, schools, transport and amenities. That
-  reflects real travel distances, but rural strengths are under-measured: green space
-  counts public parks and playing fields, not open countryside or footpaths, and quiet
-  isn't measured yet. Compare within the same urban/rural class (an option in analyst
-  mode) for like-for-like rankings, as the DfT advises for its connectivity scores.
+- **Urban bias in access measures.** Access indicators rise with density, so rural
+  areas score lower on health services, transport and amenities. Saturation stops city
+  centres piling up points beyond a suburb's level, and schools are judged by the
+  nearest, but small villages still sit near the bottom of England overall (median 3rd–
+  6th percentile) because they genuinely lack nearby GPs, shops and buses. Rural
+  strengths are under-measured: green space counts public parks and playing fields, not
+  open countryside or footpaths, and quiet isn't measured yet. Compare within the same
+  urban/rural class for like-for-like rankings, as the DfT advises for its
+  connectivity scores.
 - **Flood risk** covers rivers and the sea only; surface water flooding, which affects
   more homes, isn't included yet.
 - **Crime rates per resident** overstate risk in town centres, where visitors
   outnumber residents.
-- **Correlated measures.** Three scored pairs within a theme correlate above ρ = 0.8
-  and are kept because they describe different things: income and health deprivation
-  (ρ ≈ 0.81), primary and secondary school access (ρ ≈ 0.84), and primary school and
-  nursery access (ρ ≈ 0.83), all of which rise with density. The claimant rate tracks
-  income deprivation at ρ ≈ 0.89, so it is shown as context rather than scored.
+- **Correlated measures.** Two scored pairs within a theme correlate at or above
+  ρ = 0.8 and are kept because they describe different things: income and health
+  deprivation (ρ ≈ 0.81), and school choice and nursery access (ρ ≈ 0.80), both of which
+  rise with density. The claimant rate tracks income deprivation at ρ ≈ 0.89, bus
+  frequency tracks DfT connectivity at ρ ≈ 0.82, and life expectancy tracks health
+  deprivation, so those are shown as context rather than scored.
 - **Mixed vintages.** Sources range from Census 2021 to data published this month; the
   manifest records each source's version.
 - **Ecological fallacy.** An LSOA's score describes the area, not every home in it.

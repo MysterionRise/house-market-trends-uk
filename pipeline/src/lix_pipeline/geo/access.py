@@ -168,3 +168,43 @@ def nearby_max(
     np.maximum.at(best, pairs.row, v[pairs.col])
     per_origin = pl.DataFrame({by: origins[by], "best": best})
     return per_origin.group_by(by).agg(pl.col("best").mean().alias("value")).sort(by)
+
+
+def nearest_k_mean(
+    origins: pl.DataFrame,
+    pois: pl.DataFrame,
+    value: str,
+    k: int,
+    sigma_m: float,
+    max_m: float,
+    origin_xy: tuple[str, str] = ("east1m", "north1m"),
+    poi_xy: tuple[str, str] = ("x", "y"),
+    by: str = "lsoa21cd",
+) -> pl.DataFrame:
+    """Per-``by`` mean of a POI attribute over each origin's ``k`` nearest POIs.
+
+    Nearer POIs count more (Gaussian weights with ``sigma_m``); POIs beyond ``max_m`` are
+    ignored unless none is that close, when the single nearest is used. Unlike counting
+    POIs in a radius, a remote home with one good school nearby scores as well as a
+    city home with ten.
+    """
+    ox, oy = origin_xy
+    px, py = poi_xy
+    pois = pois.filter(pl.col(px).is_not_null() & pl.col(value).is_not_null())
+    origins = origins.filter(pl.col(ox).is_not_null() & pl.col(oy).is_not_null())
+    o_xy = np.column_stack([origins[ox].to_numpy(), origins[oy].to_numpy()]).astype(float)
+    p_xy = np.column_stack([pois[px].to_numpy(), pois[py].to_numpy()]).astype(float)
+    v = pois[value].to_numpy().astype(float)
+    tree = cKDTree(p_xy)
+    k = min(k, len(p_xy))
+    dist, idx = tree.query(o_xy, k=k)
+    if k == 1:
+        dist, idx = dist[:, None], idx[:, None]
+    in_range = dist <= max_m
+    in_range[:, 0] |= ~in_range.any(axis=1)  # nothing close: use the nearest anyway
+    w = np.exp(-(dist**2) / (2 * sigma_m**2)) * in_range
+    # A nearest POI far beyond sigma would get ~0 weight; keep it counting on its own
+    w[:, 0] = np.where(w.sum(axis=1) == 0, 1.0, w[:, 0])
+    mean = (w * v[idx]).sum(axis=1) / w.sum(axis=1)
+    per_origin = pl.DataFrame({by: origins[by], "mean": mean})
+    return per_origin.group_by(by).agg(pl.col("mean").mean().alias("value")).sort(by)

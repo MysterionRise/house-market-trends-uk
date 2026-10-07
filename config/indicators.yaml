@@ -289,30 +289,47 @@ indicators:
     caveats: Whether a practice takes new NHS patients isn't published as open data.
 
   # -------------------------------------------------------------------- education
-  - id: primary_school_access
+  - id: primary_school_quality
     theme: education
     label: Good primary schools nearby
-    description: State primary schools within 2km, each weighted by its inspection quality and distance.
-    unit: index 0–1
+    description: Quality of the three nearest state primary schools (Ofsted and results), nearer ones counting more.
+    unit: quality 0–1
     direction: higher_better
-    sources: [gias, ofsted_schools, nspl]
-    builder: education:school_access
-    params: {phases: [Primary, All-through, Middle deemed primary], radius_m: 2000, cap: 4}
-    normalise: scale
+    sources: [gias, ofsted_schools, ks2_results, nspl]
+    builder: education:school_quality_nearby
+    params: {phases: [Primary, All-through, Middle deemed primary], results_slug: ks2_results, results_column: ks2_rwm_pct, k: 3, sigma_m: 1500, max_m: 5000}
+    normalise: threshold
+    good: 0.8
+    bad: 0.4
     weight: 1.5
-    caveats: Distance isn't admission; oversubscribed schools admit by catchment or faith criteria.
+    caveats: Quality blends Ofsted (60%) and key stage 2 results as a percentile (40%); results reflect intake as well as teaching. Distance isn't admission; oversubscribed schools admit by catchment or faith.
 
-  - id: secondary_school_access
+  - id: secondary_school_quality
     theme: education
     label: Good secondary schools nearby
-    description: State secondary schools within 5km, each weighted by its inspection quality and distance.
+    description: Quality of the three nearest state secondary schools (Ofsted and results), nearer ones counting more.
+    unit: quality 0–1
+    direction: higher_better
+    sources: [gias, ofsted_schools, ks4_results, nspl]
+    builder: education:school_quality_nearby
+    params: {phases: [Secondary, All-through, Middle deemed secondary], results_slug: ks4_results, results_column: attainment8, k: 3, sigma_m: 4000, max_m: 15000}
+    normalise: threshold
+    good: 0.8
+    bad: 0.4
+    weight: 1.5
+    caveats: Quality blends Ofsted (60%) and Attainment 8 as a percentile (40%); Progress 8 isn't published for 2024/25.
+
+  - id: school_choice
+    theme: education
+    label: Choice of good schools
+    description: Good state primaries within 2km and secondaries within 5km, weighted by quality and distance.
     unit: index 0–1
     direction: higher_better
     sources: [gias, ofsted_schools, nspl]
-    builder: education:school_access
-    params: {phases: [Secondary, All-through, Middle deemed secondary], radius_m: 5000, cap: 4}
+    builder: education:school_choice
+    params: {cap: 4}
     normalise: scale
-    weight: 1.5
+    weight: 0.5
 
   - id: primary_results
     theme: education
@@ -346,7 +363,7 @@ indicators:
     direction: higher_better
     sources: [ofsted_childcare, gias, nspl]
     builder: education:nursery_access
-    params: {radius_m: 1000, cap: 5}
+    params: {radius_m: 1000, cap: 3}
     normalise: scale
     caveats: Childminders aren't located (Ofsted withholds their addresses).
 
@@ -360,8 +377,10 @@ indicators:
     sources: [dft_connectivity]
     builder: common:column
     params: {slug: dft_connectivity, column: tcm_overall}
-    normalise: scale
-    scale_max: 100
+    # Full marks at a typical suburb's connectivity (75): beyond that, more doesn't count
+    normalise: threshold
+    good: 75
+    bad: 0
     weight: 1.5
     overlap_group: connectivity
 
@@ -473,7 +492,7 @@ indicators:
     direction: higher_better
     sources: [osm_england, fsa_fhrs, nspl]
     builder: pubs:well_run_pub_access
-    params: {radius_m: 1200, cap: 6}
+    params: {radius_m: 1200, cap: 3}
     normalise: scale
     caveats: Hygiene ratings measure how well a pub is run, not the beer or the atmosphere.
 
@@ -485,7 +504,7 @@ indicators:
     direction: higher_better
     sources: [osm_england, nspl]
     builder: amenities:osm_access
-    params: {values: [cafe, restaurant], radius_m: 800, cap: 15}
+    params: {values: [cafe, restaurant], radius_m: 800, cap: 6}
     normalise: scale
     overlap_group: high_street
 
@@ -526,7 +545,7 @@ indicators:
     sources: [active_places, nspl]
     builder: common:access
     # Sites rather than facilities would favour big centres less; facilities count choice
-    params: {slug: active_places, radius_m: 2000, cap: 25}
+    params: {slug: active_places, radius_m: 2000, cap: 10}
     normalise: scale
     weight: 0.75
 
@@ -549,7 +568,7 @@ indicators:
     direction: higher_better
     sources: [osm_england, nspl]
     builder: amenities:osm_access
-    params: {values: [library, cinema, theatre, arts_centre, museum, gallery], radius_m: 2000, cap: 6}
+    params: {values: [library, cinema, theatre, arts_centre, museum, gallery], radius_m: 2000, cap: 3}
     normalise: scale
     weight: 0.75
 

@@ -14,17 +14,19 @@
 # What the review shows beyond the checks (written by hand; rendered into the page)
 observations:
   - >-
-    **Density dominates the default overall score.** Theme scores behave as expected,
-    but deprived town centres (Middlesbrough Central 62, Blackpool North Shore 60) end
-    up close to affluent towns (Winchester East 66, Sidmouth 61), because five of the
-    eight themes measure access to places, which rises with density. Options: rank
-    within the same urban/rural class by default, let access measures saturate sooner,
-    or give community and safety more weight in the balanced preset.
+    **Density no longer piles up points (changed 8 Oct 2026).** Access measures now
+    saturate at a typical suburb's level (fewer cafés, pubs and venues needed for full
+    marks; DfT connectivity full at 75). Middlesbrough Central fell from 62 to 61 and
+    Winchester East rose from 67 to 71, and larger rural areas moved from the 19th to
+    the 34th percentile. Small villages still sit near the bottom (median 3rd–6th
+    percentile): they genuinely lack nearby GPs, shops and buses, which the balanced
+    preset weighs heavily; "compare like with like" ranks them against other villages.
   - >-
-    **School access counts good schools nearby rather than the quality of the nearest.**
-    Rural towns score 16–19 on education (Chipping Campden, Holsworthy, Sidmouth) even
-    where the local primary is good. A measure based on the quality of the nearest two
-    or three schools would treat rural families more fairly.
+    **Schools are judged by the quality of the nearest, not their number (changed 8 Oct
+    2026).** Each home gets the quality of its three nearest state schools (Ofsted 60%,
+    results 40%), plus a small "choice" indicator. Education rose in Sidmouth (19 → 40)
+    and Chipping Campden (17 → 41) and fell in Blackpool (63 → 29) and Middlesbrough
+    (80 → 49), where nearby schools are many but weaker.
   - >-
     **Place points aren't always the part people mean.** OS Open Names puts "Jaywick" in
     a Clacton West LSOA, not the Jaywick Sands plotlands (England's most deprived LSOA),
@@ -132,7 +134,7 @@ places:
     local_authority: Cotswold
     why: "Cotswolds market town: green, remote from rail"
     checks:
-      - {theme: transport, op: le, value: 45, anchor: true}
+      - {theme: transport, op: le, value: 55, anchor: true}
       - {indicator: station_distance, op: ge, value: 5000, anchor: true}
       - {indicator: no2, op: le, value: 8}
 
