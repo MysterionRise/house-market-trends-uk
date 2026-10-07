@@ -2,16 +2,16 @@
 
 import hashlib
 import io
+import json
 import socket
 import zipfile
 from pathlib import Path
-from unittest.mock import patch
 
 import pytest
 from pytest_socket import SocketConnectBlockedError
 from werkzeug import Request, Response
 
-from lix_pipeline.fetch.http import _read_meta, _safe_extract, _write_meta, download_dataset
+from lix_pipeline.fetch.http import _read_meta, _safe_extract, _write_meta, download
 
 
 def _zip_bytes(files: dict[str, str]) -> bytes:
@@ -24,11 +24,9 @@ def _zip_bytes(files: dict[str, str]) -> bytes:
 
 @pytest.fixture
 def project(tmp_path: Path, monkeypatch):
-    """Point data at tmp_path and let each test supply its own registry."""
+    """Point data at tmp_path."""
     monkeypatch.setenv("LIX_DATA_DIR", str(tmp_path))
-    registry: dict = {}
-    with patch("lix_pipeline.fetch.http.get_config", return_value=registry):
-        yield tmp_path, registry
+    return tmp_path
 
 
 class TestMetaRoundTrip:
@@ -105,22 +103,24 @@ class TestSafeExtract:
 
 class TestDownloadDataset:
     def test_skips_cached(self, project):
-        root, registry = project
-        registry["cached"] = {"download_url": "http://127.0.0.1:1/never", "format": "csv"}
+        root = project
+        url, fmt = "http://127.0.0.1:1/never", "csv"
         dest = root / "raw" / "cached"
-        _write_meta(dest, {"completed": True})
+        _write_meta(dest, {"completed": True, "url": url})
 
-        assert download_dataset("cached") == dest
+        # Port 1 is closed: any request would fail, so success proves the cache was used
+        assert download("cached", url, fmt)["completed"] is True
 
     def test_downloads_csv_and_records_checksum(self, project, httpserver):
-        root, registry = project
+        root = project
         body = b"col1,col2\nval1,val2\n"
         httpserver.expect_request("/test.csv").respond_with_data(
             body, headers={"Last-Modified": "Mon, 01 Jan 2024 00:00:00 GMT", "ETag": '"abc"'}
         )
-        registry["test_csv"] = {"download_url": httpserver.url_for("/test.csv"), "format": "csv"}
+        url, fmt = httpserver.url_for("/test.csv"), "csv"
 
-        dest = download_dataset("test_csv")
+        download("test_csv", url, fmt)
+        dest = root / "raw" / "test_csv"
 
         assert (dest / "test_csv.csv").read_bytes() == body
         meta = _read_meta(dest)
@@ -131,13 +131,14 @@ class TestDownloadDataset:
         assert meta["etag"] == '"abc"'
 
     def test_downloads_and_extracts_zip(self, project, httpserver):
-        root, registry = project
+        root = project
         httpserver.expect_request("/test.zip").respond_with_data(
             _zip_bytes({"data.csv": "a,b\n1,2\n"}), content_type="application/zip"
         )
-        registry["test_zip"] = {"download_url": httpserver.url_for("/test.zip"), "format": "zip"}
+        url, fmt = httpserver.url_for("/test.zip"), "zip"
 
-        dest = download_dataset("test_zip")
+        download("test_zip", url, fmt)
+        dest = root / "raw" / "test_zip"
 
         # ZIP should be extracted and deleted
         assert not (dest / "test_zip.zip").exists()
@@ -146,26 +147,27 @@ class TestDownloadDataset:
 
     def test_follows_redirects(self, project, httpserver):
         """ONS Geoportal downloads redirect twice to a signed blob URL."""
-        root, registry = project
+        root = project
         httpserver.expect_request("/start").respond_with_response(
             Response(status=302, headers={"Location": httpserver.url_for("/blob.gpkg")})
         )
         httpserver.expect_request("/blob.gpkg").respond_with_data(b"SQLite format 3\x00rest")
-        registry["geo"] = {"download_url": httpserver.url_for("/start"), "format": "gpkg"}
+        url, fmt = httpserver.url_for("/start"), "gpkg"
 
-        dest = download_dataset("geo")
+        download("geo", url, fmt)
+        dest = root / "raw" / "geo"
         assert (dest / "geo.gpkg").read_bytes().startswith(b"SQLite format 3")
 
     def test_rejects_error_body_served_as_zip(self, project, httpserver):
         """ArcGIS answers deleted items with HTTP 200 and a JSON error body."""
-        root, registry = project
+        root = project
         httpserver.expect_request("/gone").respond_with_json(
             {"error": {"code": 400, "message": "Item does not exist or is inaccessible."}}
         )
-        registry["gone"] = {"download_url": httpserver.url_for("/gone"), "format": "zip"}
+        url, fmt = httpserver.url_for("/gone"), "zip"
 
         with pytest.raises(ValueError, match="not a valid zip"):
-            download_dataset("gone")
+            download("gone", url, fmt)
 
         dest = root / "raw" / "gone"
         # Neither the error body nor a .part file is kept; only the (incomplete) metadata
@@ -173,31 +175,26 @@ class TestDownloadDataset:
         assert not _read_meta(dest).get("completed")
 
     def test_rejects_html_error_page_served_as_csv(self, project, httpserver):
-        root, registry = project
         httpserver.expect_request("/page").respond_with_data(
             b"<!DOCTYPE html><html>Not found</html>", content_type="text/html"
         )
-        registry["page"] = {"download_url": httpserver.url_for("/page"), "format": "csv"}
+        url, fmt = httpserver.url_for("/page"), "csv"
 
         with pytest.raises(ValueError, match="error page"):
-            download_dataset("page")
-
-    def test_unknown_slug_raises(self, project):
-        with pytest.raises(ValueError, match="Unknown dataset slug"):
-            download_dataset("nonexistent_dataset")
+            download("page", url, fmt)
 
     def test_304_not_modified_updates_meta(self, project, httpserver):
         """HTTP 304 should skip download and mark as completed."""
-        root, registry = project
+        root = project
         last_modified = "Mon, 01 Jan 2024 00:00:00 GMT"
         httpserver.expect_request(
             "/test.csv", headers={"If-Modified-Since": last_modified}
         ).respond_with_data(b"", status=304)
-        registry["test_csv"] = {"download_url": httpserver.url_for("/test.csv"), "format": "csv"}
+        url, fmt = httpserver.url_for("/test.csv"), "csv"
         dest = root / "raw" / "test_csv"
-        _write_meta(dest, {"last_modified": last_modified})
+        _write_meta(dest, {"last_modified": last_modified, "url": url})
 
-        assert download_dataset("test_csv") == dest
+        download("test_csv", url, fmt)
         assert _read_meta(dest)["completed"] is True
 
     @staticmethod
@@ -230,15 +227,15 @@ class TestDownloadDataset:
         return dest
 
     def test_resumes_interrupted_download_with_range(self, project, httpserver):
-        root, registry = project
+        root = project
         body = b"0123456789" * 1000
         seen = []
         handler = self._versioned_handler(body, '"v1"', seen)
         httpserver.expect_request("/big.csv").respond_with_handler(handler)
-        registry["big"] = {"download_url": httpserver.url_for("/big.csv"), "format": "csv"}
+        url, fmt = httpserver.url_for("/big.csv"), "csv"
         dest = self._interrupted(root, "big", body[:4000], {"partial_etag": '"v1"'})
 
-        download_dataset("big")
+        download("big", url, fmt)
 
         assert seen == [("bytes=4000-", '"v1"')]
         assert (dest / "big.csv").read_bytes() == body
@@ -247,36 +244,36 @@ class TestDownloadDataset:
 
     def test_restarts_when_remote_file_changed(self, project, httpserver):
         """Appending a new version's bytes to an old partial would corrupt the file."""
-        root, registry = project
+        root = project
         new_body = b"new,version\n" * 100
         seen = []
         handler = self._versioned_handler(new_body, '"v2"', seen)
         httpserver.expect_request("/f.csv").respond_with_handler(handler)
-        registry["f"] = {"download_url": httpserver.url_for("/f.csv"), "format": "csv"}
+        url, fmt = httpserver.url_for("/f.csv"), "csv"
         dest = self._interrupted(root, "f", b"old,version\n" * 50, {"partial_etag": '"v1"'})
 
-        download_dataset("f")
+        download("f", url, fmt)
 
         assert seen == [("bytes=600-", '"v1"')]
         assert (dest / "f.csv").read_bytes() == new_body
 
     def test_does_not_resume_without_validator(self, project, httpserver):
-        root, registry = project
+        root = project
         body = b"a,b\n1,2\n"
         seen = []
         handler = self._versioned_handler(body, '"v1"', seen)
         httpserver.expect_request("/n.csv").respond_with_handler(handler)
-        registry["n"] = {"download_url": httpserver.url_for("/n.csv"), "format": "csv"}
+        url, fmt = httpserver.url_for("/n.csv"), "csv"
         dest = self._interrupted(root, "n", b"a,b\n", {})
 
-        download_dataset("n")
+        download("n", url, fmt)
 
         assert seen == [(None, None)]
         assert (dest / "n.csv").read_bytes() == body
 
     def test_interrupted_download_keeps_part_file_only(self, project, httpserver):
         """A failed transfer leaves a resumable .part file but nothing at the final path."""
-        root, registry = project
+        root = project
 
         def handler(request: Request) -> Response:
             def stream():
@@ -286,10 +283,10 @@ class TestDownloadDataset:
             return Response(stream(), headers={"Content-Length": "1000000", "ETag": '"v1"'})
 
         httpserver.expect_request("/broken.csv").respond_with_handler(handler)
-        registry["broken"] = {"download_url": httpserver.url_for("/broken.csv"), "format": "csv"}
+        url, fmt = httpserver.url_for("/broken.csv"), "csv"
 
         with pytest.raises(Exception):
-            download_dataset("broken")
+            download("broken", url, fmt)
 
         dest = root / "raw" / "broken"
         assert not (dest / "broken.csv").exists()
@@ -304,3 +301,51 @@ def test_real_network_is_blocked():
     """Guard: pytest-socket must stop tests reaching the internet."""
     with pytest.raises(SocketConnectBlockedError):
         socket.create_connection(("1.1.1.1", 443), timeout=2)
+
+
+class TestVersionsAndExports:
+    def test_new_version_triggers_download(self, project, httpserver):
+        root = project
+        httpserver.expect_request("/v.csv").respond_with_data(b"v2\n")
+        url = httpserver.url_for("/v.csv")
+        dest = root / "raw" / "v"
+        _write_meta(dest, {"completed": True, "url": url, "version": "2026-01"})
+
+        download("v", url, "csv", version="2026-01")  # same version: cached
+        assert not (dest / "v.csv").exists()
+
+        meta = download("v", url, "csv", version="2026-02")
+        assert (dest / "v.csv").read_bytes() == b"v2\n"
+        assert meta["version"] == "2026-02"
+
+    def test_new_url_triggers_download(self, project, httpserver):
+        root = project
+        httpserver.expect_request("/new.csv").respond_with_data(b"new\n")
+        dest = root / "raw" / "u"
+        _write_meta(dest, {"completed": True, "url": "https://old.example/file.csv"})
+
+        download("u", httpserver.url_for("/new.csv"), "csv")
+        assert (dest / "u.csv").read_bytes() == b"new\n"
+
+    def test_waits_for_hub_export_to_be_generated(self, project, httpserver):
+        """ArcGIS Hub answers 202 while it builds a download, then serves the file."""
+        root = project
+        calls = []
+
+        def handler(request: Request) -> Response:
+            calls.append(1)
+            if len(calls) < 3:
+                body = {"status": "InProgress", "message": "Download file is being generated."}
+                return Response(json.dumps(body), status=202, content_type="application/json")
+            return Response(b"SQLite format 3\x00data")
+
+        httpserver.expect_request("/export").respond_with_handler(handler)
+        download("g", httpserver.url_for("/export"), "gpkg", poll_s=0)
+
+        assert len(calls) == 3
+        assert (root / "raw" / "g" / "g.gpkg").read_bytes().startswith(b"SQLite format 3")
+
+    def test_gives_up_on_export_that_never_finishes(self, project, httpserver):
+        httpserver.expect_request("/export").respond_with_data("{}", status=202)
+        with pytest.raises(TimeoutError, match="still being generated"):
+            download("g", httpserver.url_for("/export"), "gpkg", export_wait_s=0, poll_s=0)

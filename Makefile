@@ -1,17 +1,24 @@
-.PHONY: install fetch stage test lint format
+.PHONY: install resolve fetch stage validate test lint format
 
 PY_DIRS := core pipeline
 
 install:
 	uv sync
 
-# Download every dataset in config/datasets.yaml into data/raw/ (Price Paid alone is 5.5 GB)
+# Re-resolve every source to its current upstream file (updates config/datasets.lock.json)
+resolve:
+	uv run lix resolve --all
+
+# Download every dataset pinned in the lockfile into data/raw/ (Price Paid alone is 5.5 GB)
 fetch:
 	uv run lix fetch --all
 
 # Stage every downloaded dataset to data/staged/*.parquet; nspl runs first (price_paid needs it)
 stage:
 	uv run lix stage --all
+
+validate:
+	uv run lix validate geo
 
 test:
 	uv run pytest

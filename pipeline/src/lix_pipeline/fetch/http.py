@@ -1,24 +1,20 @@
-"""HTTP download engine: cached, resumable, checksummed downloads into data/raw/{slug}/.
-
-Run via the CLI: ``lix fetch --slug nspl`` / ``lix fetch --all``.
-"""
+"""HTTP download engine: cached, resumable, checksummed downloads into data/raw/{slug}/."""
 
 import fnmatch
 import hashlib
 import json
 import os
+import time
 import zipfile
 from datetime import datetime, timezone
 from pathlib import Path
 
 import requests
-from requests.adapters import HTTPAdapter
 from tqdm import tqdm
-from urllib3.util.retry import Retry
 
-from lix_core.config import get_config
 from lix_core.log import setup_logging
 from lix_core.paths import data_dir
+from lix_pipeline.fetch.session import make_session
 
 logger = setup_logging("download")
 
@@ -80,21 +76,6 @@ def _safe_extract(
     return [m.filename for m in members]
 
 
-def _session() -> requests.Session:
-    """HTTP session that retries transient failures with exponential backoff."""
-    retry = Retry(
-        total=5,
-        backoff_factor=2,
-        status_forcelist=(429, 500, 502, 503, 504),
-        allowed_methods=("GET", "HEAD"),
-    )
-    session = requests.Session()
-    session.mount("https://", HTTPAdapter(max_retries=retry))
-    session.mount("http://", HTTPAdapter(max_retries=retry))
-    session.headers["User-Agent"] = "uk-liveability-index/0.1"
-    return session
-
-
 def _check_payload(path: Path, fmt: str) -> None:
     """Raise if the downloaded file is an error page instead of the expected format."""
     with open(path, "rb") as f:
@@ -111,28 +92,52 @@ def _check_payload(path: Path, fmt: str) -> None:
         raise ValueError(f"Downloaded {fmt} looks like an error page: {head[:32]!r}")
 
 
-def download_dataset(slug: str, force: bool = False) -> Path:
-    """Download a single dataset by its slug from datasets.yaml.
+def _get(
+    session: requests.Session, url: str, headers: dict, export_wait_s: float, poll_s: float
+) -> requests.Response:
+    """GET that waits out ArcGIS Hub's "202: download file is being generated" replies."""
+    deadline = time.monotonic() + export_wait_s
+    while True:
+        # (connect, read) timeout; large files like price_paid (5.5GB) need generous reads
+        resp = session.get(url, headers=headers, stream=True, timeout=(30, 300))
+        if resp.status_code != 202:
+            return resp
+        resp.close()
+        if time.monotonic() > deadline:
+            raise TimeoutError(f"Export still being generated after {export_wait_s:.0f}s: {url}")
+        logger.info(f"Server is still generating the file; retrying in {poll_s:.0f}s")
+        time.sleep(poll_s)
 
-    Downloads stream to ``{file}.part`` and resume with an HTTP Range request if a
-    previous attempt was interrupted. The finished file is moved into place atomically.
 
-    Returns the path to the downloaded (and possibly extracted) directory.
+def download(
+    slug: str,
+    url: str,
+    fmt: str,
+    extract: list[str] | None = None,
+    force: bool = False,
+    version: str | None = None,
+    session: requests.Session | None = None,
+    export_wait_s: float = 900,
+    poll_s: float = 15,
+) -> dict:
+    """Download ``url`` into data/raw/{slug}/{slug}.{fmt} (extracting zips) and return its meta.
+
+    Skips the download if the same URL (and ``version``, when the resolver knows one) was
+    already fetched completely. Downloads stream
+    to ``{file}.part`` and resume with an HTTP Range request if a previous attempt was
+    interrupted. The finished file is moved into place atomically.
     """
-    datasets = get_config("datasets")
-    if slug not in datasets:
-        raise ValueError(f"Unknown dataset slug: {slug!r}. Available: {list(datasets.keys())}")
-
-    ds = datasets[slug]
-    url = ds["download_url"]
-    fmt = ds.get("format", "csv")
     dest_dir = data_dir("raw") / slug
+    session = session or make_session()
 
-    # Check cache
+    # Check cache: a different URL or version means a new upstream release
     meta = _read_meta(dest_dir)
-    if not force and meta.get("completed"):
+    # Plain HTTP sources are versioned by Last-Modified, which older metas recorded alone
+    meta_version = meta.get("version") or meta.get("last_modified")
+    same_source = meta.get("url") == url and (version is None or meta_version == version)
+    if not force and meta.get("completed") and same_source:
         logger.info(f"[{slug}] Already downloaded — skipping (use --force to re-download)")
-        return dest_dir
+        return meta
 
     dest_dir.mkdir(parents=True, exist_ok=True)
     out_file = dest_dir / f"{slug}.{fmt}"
@@ -150,19 +155,18 @@ def download_dataset(slug: str, force: bool = False) -> Path:
         headers["If-Range"] = partial_validator
     elif resume_from:
         resume_from = 0
-    if not resume_from and not force and meta.get("last_modified"):
+    if not resume_from and not force and meta.get("last_modified") and same_source:
         headers["If-Modified-Since"] = meta["last_modified"]
 
     logger.info(f"[{slug}] Downloading from {url}")
-    # (connect, read) timeout; large files like price_paid (5.5GB) need generous reads
-    resp = _session().get(url, headers=headers, stream=True, timeout=(30, 300))
+    resp = _get(session, url, headers, export_wait_s, poll_s)
 
     if resp.status_code == 304:
         logger.info(f"[{slug}] Not modified since last download — skipping")
         # Mark as completed since server confirms data hasn't changed
         meta["completed"] = True
         _write_meta(dest_dir, meta)
-        return dest_dir
+        return meta
 
     resp.raise_for_status()
 
@@ -229,13 +233,14 @@ def download_dataset(slug: str, force: bool = False) -> Path:
     if fmt == "zip":
         logger.info(f"[{slug}] Extracting ZIP archive...")
         with zipfile.ZipFile(out_file) as zf:
-            extracted = _safe_extract(zf, dest_dir, ds.get("extract"))
+            extracted = _safe_extract(zf, dest_dir, extract)
         out_file.unlink()
         logger.info(f"[{slug}] Extracted {len(extracted)} file(s) to {dest_dir}")
 
     new_meta = {
         "slug": slug,
         "url": url,
+        "version": version,
         "downloaded_at": datetime.now(timezone.utc).isoformat(),
         "last_modified": resp.headers.get("Last-Modified"),
         "etag": resp.headers.get("ETag"),
@@ -246,20 +251,4 @@ def download_dataset(slug: str, force: bool = False) -> Path:
     }
     _write_meta(dest_dir, new_meta)
 
-    return dest_dir
-
-
-def download_all(phase: int | None = None, force: bool = False) -> dict[str, Path]:
-    """Download all datasets, optionally filtered by phase."""
-    datasets = get_config("datasets")
-    results = {}
-
-    for slug, ds in datasets.items():
-        if phase is not None and ds.get("phase") != phase:
-            continue
-        try:
-            results[slug] = download_dataset(slug, force=force)
-        except Exception:
-            logger.exception(f"[{slug}] Download failed")
-
-    return results
+    return new_meta

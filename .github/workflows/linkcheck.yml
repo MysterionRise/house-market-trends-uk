@@ -1,0 +1,30 @@
+name: Source link check
+
+# Upstream publishers move and delete files without notice (ONS deletes Open Geography
+# items on every version bump). Re-resolve every source nightly so breakage shows up
+# here rather than in the middle of a data build.
+on:
+  schedule:
+    - cron: "17 4 * * *"
+  workflow_dispatch:
+
+jobs:
+  linkcheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v4
+        with:
+          version: "latest"
+          enable-cache: true
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: uv sync --locked
+
+      - name: Check every source resolves and is reachable
+        run: uv run lix resolve --check --all

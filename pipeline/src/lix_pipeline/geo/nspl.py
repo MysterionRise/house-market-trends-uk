@@ -16,6 +16,7 @@ logger = setup_logging("geocode")
 NSPL_FIXED_COLUMNS = [
     "pcds",
     "doterm",
+    "usrtypind",  # 0 = small user (mostly homes), 1 = large user (businesses)
     "oa21cd",
     "lsoa21cd",
     "msoa21cd",

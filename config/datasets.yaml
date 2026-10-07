@@ -1,59 +1,251 @@
-# Dataset registry. Each slug downloads to data/raw/{slug}/.
-# ONS Open Geography items are deleted when a new version is published; if a download
-# returns HTTP 400 "Item does not exist", look up the newest item on the ONS Geoportal.
-# (Phase 1 replaces these pinned URLs with resolvers and a lockfile.)
+# Dataset registry: one entry per source, validated by lix_core.config.DatasetSpec.
+#
+# `lix resolve` turns each `access` block into a concrete URL and records it in
+# config/datasets.lock.json; `lix fetch` downloads what the lockfile says into
+# data/raw/{slug}/. ONS Open Geography items are deleted when a new version is
+# published, so they are found by search (query + title_regex), with `pin` as fallback.
+#
+# Licences: only open licences are allowed (OGL, ODbL, CC-BY, CDLA, Apache, CC0).
+# Set licence_verified: false until the licence has been checked against the source.
+
+x-ons-attribution: &ons
+  "Source: Office for National Statistics licensed under the Open Government Licence v3.0. Contains OS data © Crown copyright and database right 2026."
+
+# ---------------------------------------------------------------------------------------
+# Geography backbone
+# ---------------------------------------------------------------------------------------
 
 nspl:
-  name: "National Statistics Postcode Lookup (August 2026)"
-  phase: 1
-  url: "https://geoportal.statistics.gov.uk/search?q=PRD_NSPL"
-  download_url: "https://www.arcgis.com/sharing/rest/content/items/9d8364ebae8b4439aa66cda440e54fc8/data"
+  title: National Statistics Postcode Lookup (latest)
+  theme: geography
+  access:
+    type: arcgis_item
+    query: 'title:"National Statistics Postcode Lookup" AND owner:ONSGeography_data'
+    title_regex: '^National Statistics Postcode Lookup \([A-Z][a-z]+ \d{4}\)$'
+    item_type: CSV Collection
+    pin: 9d8364ebae8b4439aa66cda440e54fc8
+    mode: data
   format: zip
   # The zip also holds a .txt copy and per-area CSVs (2.7 GB unpacked); take only these
-  extract:
-    - "Data/NSPL_*_UK.csv"
-    - "Documents/*.csv"
-  size_hint: "185MB zipped, 1GB extracted"
-  description: "Postcode to OA/LSOA/MSOA 2021, LAD, region, police force area, coordinates."
-  licence: "OGL v3.0 — Contains OS data, Royal Mail data and GeoPlace data © Crown copyright and database right."
+  extract: ["Data/NSPL_*_UK.csv", "Documents/*.csv"]
+  landing_page: https://geoportal.statistics.gov.uk/search?q=PRD_NSPL
+  description: Postcode to OA/LSOA/MSOA 2021, LAD, region, police force area and coordinates.
+  licence: OGL-3.0
+  attribution: "Source: Office for National Statistics licensed under the Open Government Licence v3.0. Contains OS data © Crown copyright and database right 2026. Contains Royal Mail data © Royal Mail copyright and database right 2026. Contains GeoPlace data © Local Government Information House Limited copyright and database right 2026."
+  cadence: quarterly
+  size_hint: 185MB zipped, 1GB extracted
 
 lsoa_boundaries:
-  name: "LSOA 2021 Boundaries (BGC V5, generalised 20m, clipped)"
-  phase: 1
-  url: "https://geoportal.statistics.gov.uk/datasets/ons::lower-layer-super-output-areas-december-2021-boundaries-ew-bgc-v5"
-  download_url: "https://geoportal.statistics.gov.uk/api/download/v1/items/68515293204e43ca8ab56fa13ae8a547/geoPackage?layers=0"
+  title: LSOA 2021 boundaries (BGC, generalised 20m, clipped)
+  theme: geography
+  access:
+    type: arcgis_item
+    query: 'title:"Lower layer Super Output Areas (December 2021) Boundaries EW BGC" AND owner:ONSGeography_data'
+    title_regex: '^Lower layer Super Output Areas \(December 2021\) Boundaries EW BGC \(V\d+\)$'
+    item_type: Feature Service
+    pin: 68515293204e43ca8ab56fa13ae8a547
+    mode: hub_export
+    export_format: geoPackage
   format: gpkg
-  size_hint: "50MB"
-  description: "LSOA 2021 polygons for England and Wales; source for map tiles and point-in-polygon."
-  licence: "OGL v3.0 — Source: Office for National Statistics licensed under the Open Government Licence v3.0. Contains OS data © Crown copyright and database right."
+  description: LSOA 2021 polygons for England and Wales; source for map tiles and point-in-polygon.
+  licence: OGL-3.0
+  attribution: *ons
+  cadence: static
+  size_hint: 50MB
 
 lsoa_boundaries_bsc:
-  name: "LSOA 2021 Boundaries (BSC V4, super generalised 200m, clipped)"
-  phase: 1
-  url: "https://geoportal.statistics.gov.uk/datasets/ons::lower-layer-super-output-areas-december-2021-boundaries-ew-bsc-v4"
-  download_url: "https://geoportal.statistics.gov.uk/api/download/v1/items/04c65a08ecff4858bffc16e9ca9356f4/geoPackage?layers=0"
+  title: LSOA 2021 boundaries (BSC, super generalised 200m, clipped)
+  theme: geography
+  priority: P1
+  access:
+    type: arcgis_item
+    query: 'title:"Lower layer Super Output Areas (December 2021) Boundaries EW BSC" AND owner:ONSGeography_data'
+    title_regex: '^Lower layer Super Output Areas \(December 2021\) Boundaries EW BSC \(V\d+\)$'
+    item_type: Feature Service
+    pin: 04c65a08ecff4858bffc16e9ca9356f4
+    mode: hub_export
+    export_format: geoPackage
   format: gpkg
-  size_hint: "16MB"
-  description: "Lightweight LSOA 2021 polygons for quick plots."
-  licence: "OGL v3.0 — Source: Office for National Statistics licensed under the Open Government Licence v3.0. Contains OS data © Crown copyright and database right."
+  description: Lightweight LSOA 2021 polygons for quick plots.
+  licence: OGL-3.0
+  attribution: *ons
+  cadence: static
+  size_hint: 16MB
+
+msoa_boundaries:
+  title: MSOA 2021 boundaries (BGC, generalised 20m, clipped)
+  theme: geography
+  access:
+    type: arcgis_item
+    query: 'title:"Middle layer Super Output Areas (December 2021) Boundaries EW BGC" AND owner:ONSGeography_data'
+    title_regex: '^Middle layer Super Output Areas \(December 2021\) Boundaries EW BGC \(V\d+\)$'
+    item_type: Feature Service
+    pin: 6b282db29762450881ed5159259a6e4e
+    mode: featureserver
+    fields: [MSOA21CD]
+    geometry: polygon
+  format: gpkg
+  description: MSOA 2021 polygons; the map's middle zoom level.
+  licence: OGL-3.0
+  attribution: *ons
+  cadence: static
+  size_hint: 22MB
+
+lad_boundaries:
+  title: Local Authority District boundaries (latest, BUC)
+  theme: geography
+  access:
+    type: arcgis_item
+    query: 'title:"Local Authority Districts" AND title:"Boundaries UK BUC" AND owner:ONSGeography_data'
+    title_regex: '^Local Authority Districts \([A-Z][a-z]+ \d{4}\) Boundaries UK BUC$'
+    item_type: Feature Service
+    pin: fe180cafba734c6c8c5ad41ee960d30b
+    mode: featureserver
+    geometry: polygon
+  format: gpkg
+  description: Local authority polygons (ultra generalised); the map's outer zoom level.
+  licence: OGL-3.0
+  attribution: *ons
+  cadence: annual
+  size_hint: 1MB
+
+lsoa_centroids:
+  title: LSOA 2021 population-weighted centroids
+  theme: geography
+  access:
+    type: arcgis_item
+    query: 'title:"Lower layer Super Output Areas (December 2021) EW Population Weighted Centroids" AND owner:ONSGeography_data'
+    title_regex: '^Lower layer Super Output Areas \(December 2021\) EW Population Weighted Centroids$'
+    item_type: Feature Service
+    pin: 32729e42d05e4e23bc7e43a36aa4ae8b
+    mode: featureserver
+    fields: [LSOA21CD]
+    geometry: point
+  format: parquet
+  description: Where each LSOA's residents live on average; origin point for access metrics.
+  licence: OGL-3.0
+  attribution: *ons
+  cadence: static
+  size_hint: 1MB
+
+oa_lookup:
+  title: Output Area 2021 to LSOA to MSOA to LAD exact-fit lookup
+  theme: geography
+  access:
+    type: arcgis_item
+    query: 'title:"Output Area (2021) to LSOA to MSOA to LAD (December 2021) Exact Fit Lookup" AND owner:ONSGeography_data'
+    title_regex: '^Output Area \(2021\) to LSOA to MSOA to LAD \(December 2021\) Exact Fit Lookup in EW \(V\d+\)$'
+    item_type: Feature Service
+    pin: b9ca90c10aaa4b8d9791e9859a38ca67
+    mode: featureserver
+    fields: [OA21CD, LSOA21CD, LSOA21NM, MSOA21CD, MSOA21NM, LAD22CD, LAD22NM]
+  format: parquet
+  description: Census geography hierarchy; maps OA-level data (e.g. Ofcom broadband) to LSOAs.
+  licence: OGL-3.0
+  attribution: *ons
+  cadence: static
+  size_hint: 10MB
+
+lsoa11_lsoa21:
+  title: LSOA 2011 to LSOA 2021 exact-fit lookup
+  theme: geography
+  access:
+    type: arcgis_item
+    query: 'title:"LSOA (2011) to LSOA (2021) to Local Authority District (2022) Exact Fit Lookup" AND owner:ONSGeography_data'
+    title_regex: '^LSOA \(2011\) to LSOA \(2021\) to Local Authority District \(2022\) Exact Fit Lookup for EW \(V\d+\)$'
+    item_type: Feature Service
+    pin: cbfe64cc03d74af982c1afec639bafd1
+    mode: featureserver
+    fields: [LSOA11CD, LSOA21CD, CHGIND]
+  format: parquet
+  description: Converts data published on 2011 LSOAs (U unchanged, S split, M merged, X irregular).
+  licence: OGL-3.0
+  attribution: *ons
+  cadence: static
+  size_hint: 2MB
+
+ruc_2021:
+  title: Rural Urban Classification (2021) of LSOAs
+  theme: geography
+  access:
+    type: arcgis_item
+    query: 'title:"Rural Urban Classification (2021) of LSOAs in EW" AND owner:ONSGeography_data'
+    title_regex: '^Rural Urban Classification \(2021\) of LSOAs in EW$'
+    item_type: Feature Service
+    pin: 9dbf7613cbb147b8bb8627ddb3568cff
+    mode: featureserver
+    fields: [LSOA21CD, RUC21CD, RUC21NM, Urban_rural_flag]
+  format: parquet
+  description: Urban/rural class per LSOA; lets scores compare like with like.
+  licence: OGL-3.0
+  attribution: *ons
+  cadence: static
+  size_hint: 2MB
+
+msoa_names:
+  title: House of Commons Library MSOA names
+  theme: geography
+  access:
+    type: http
+    url: https://houseofcommonslibrary.github.io/msoanames/MSOA-Names-Latest2.csv
+  format: csv
+  landing_page: https://houseofcommonslibrary.github.io/msoanames/
+  description: Human-friendly neighbourhood names for each MSOA (e.g. "Hillside" for Adur 001).
+  licence: OGL-3.0
+  attribution: "House of Commons Library MSOA Names, licensed under the Open Parliament Licence v3.0. Contains OS data © Crown copyright and database right 2026."
+  cadence: adhoc
+  size_hint: 1MB
+  notes: Published under the Open Parliament Licence, which mirrors OGL v3.0.
+
+os_open_names:
+  title: OS Open Names
+  theme: geography
+  access:
+    type: http
+    url: https://api.os.uk/downloads/v1/products/OpenNames/downloads?area=GB&format=CSV&redirect
+  format: zip
+  extract: ["Data/*.csv", "Doc/*.csv"]
+  landing_page: https://www.ordnancesurvey.co.uk/products/os-open-names
+  description: Gazetteer of places, roads and postcodes; powers place search ("near Leeds").
+  licence: OGL-3.0
+  attribution: "Contains OS data © Crown copyright and database right 2026."
+  cadence: quarterly
+  size_hint: 103MB zipped
+
+# ---------------------------------------------------------------------------------------
+# Housing & affordability
+# ---------------------------------------------------------------------------------------
 
 price_paid:
-  name: "HM Land Registry Price Paid Data (Complete)"
-  phase: 1
-  url: "https://www.gov.uk/government/statistical-data-sets/price-paid-data-downloads"
-  # Path-style S3 URL: the virtual-hosted form fails TLS because the bucket name has dots
-  download_url: "https://s3.eu-west-1.amazonaws.com/prod1.publicdata.landregistry.gov.uk/pp-complete.csv"
+  title: HM Land Registry Price Paid Data (complete)
+  theme: housing
+  access:
+    type: http
+    # Path-style S3 URL: the virtual-hosted form fails TLS because the bucket name has dots
+    url: https://s3.eu-west-1.amazonaws.com/prod1.publicdata.landregistry.gov.uk/pp-complete.csv
   format: csv
-  size_hint: "5.5GB"
-  description: "All residential property transactions in England and Wales since 1995."
-  licence: "OGL v3.0 — Contains HM Land Registry data © Crown copyright and database right 2026."
+  landing_page: https://www.gov.uk/government/statistical-data-sets/price-paid-data-downloads
+  description: All residential property sales in England and Wales since 1995.
+  licence: OGL-3.0
+  attribution: "Contains HM Land Registry data © Crown copyright and database right 2026. This data is licensed under the Open Government Licence v3.0."
+  cadence: monthly
+  size_hint: 5.5GB
+
+# ---------------------------------------------------------------------------------------
+# Community & socio-economic
+# ---------------------------------------------------------------------------------------
 
 iod_2025:
-  name: "English Indices of Deprivation 2025 (File 7: all ranks, scores, deciles and denominators)"
-  phase: 1
-  url: "https://www.gov.uk/government/statistics/english-indices-of-deprivation-2025"
-  download_url: "https://assets.publishing.service.gov.uk/media/691ded56d140bbbaa59a2a7d/File_7_IoD2025_All_Ranks_Scores_Deciles_Population_Denominators.csv"
+  title: English Indices of Deprivation 2025 (File 7)
+  theme: community
+  access:
+    type: govuk_attachment
+    path: government/statistics/english-indices-of-deprivation-2025
+    attachment_regex: 'File_7_IoD2025_.*\.csv$'
   format: csv
-  size_hint: "9.4MB"
-  description: "IMD 2025, its 7 domains, IDACI/IDAOPI and 6 sub-domains for 33,755 England LSOAs (2021)."
-  licence: "OGL v3.0 — Ministry of Housing, Communities and Local Government, © Crown copyright."
+  landing_page: https://www.gov.uk/government/statistics/english-indices-of-deprivation-2025
+  description: IMD 2025, its 7 domains, IDACI/IDAOPI and 6 sub-domains for 33,755 England LSOAs, plus mid-2022 population denominators.
+  licence: OGL-3.0
+  attribution: "Ministry of Housing, Communities and Local Government, English Indices of Deprivation 2025, licensed under the Open Government Licence v3.0."
+  cadence: static
+  size_hint: 9.4MB

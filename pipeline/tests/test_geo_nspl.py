@@ -19,6 +19,7 @@ class TestReadNsplRaw:
             "postcode",
             "postcode_norm",
             "doterm",
+            "usrtypind",
             "live",
             "oa21cd",
             "lsoa21cd",

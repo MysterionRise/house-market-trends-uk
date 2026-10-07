@@ -10,6 +10,22 @@ from lix_core.paths import data_dir
 
 logger = setup_logging("stage")
 
+# Raw datasets each stager reads, when that isn't just its own slug
+STAGE_INPUTS: dict[str, list[str]] = {
+    "price_paid": ["price_paid", "nspl"],
+    "geo_lsoa": [
+        "oa_lookup",
+        "msoa_names",
+        "nspl",
+        "lad_boundaries",
+        "ruc_2021",
+        "lsoa_centroids",
+        "iod_2025",
+        "lsoa_boundaries",
+    ],
+    "places": ["os_open_names", "lsoa_boundaries"],
+}
+
 
 def save_staged(df: pl.LazyFrame | pl.DataFrame, slug: str) -> Path:
     """Write a DataFrame to data/staged/{slug}.parquet with Snappy compression."""
@@ -27,12 +43,17 @@ def save_staged(df: pl.LazyFrame | pl.DataFrame, slug: str) -> Path:
 
 def stagers() -> dict[str, Callable[[], pl.LazyFrame]]:
     """Slug → stager, in run order (price_paid geocodes against the staged NSPL)."""
+    from lix_pipeline.stage import geo
     from lix_pipeline.stage.iod import stage_iod
     from lix_pipeline.stage.nspl import stage_nspl
     from lix_pipeline.stage.price_paid import stage_price_paid
 
     return {
         "nspl": stage_nspl,
-        "price_paid": stage_price_paid,
         "iod_2025": stage_iod,
+        "oa_lookup": geo.stage_oa_lookup,
+        "lsoa11_lsoa21": geo.stage_lsoa11_lsoa21,
+        "geo_lsoa": geo.stage_geo_lsoa,  # needs staged nspl and iod_2025
+        "places": geo.stage_places,
+        "price_paid": stage_price_paid,
     }

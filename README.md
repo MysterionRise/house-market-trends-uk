@@ -12,18 +12,29 @@ each; 33,755 in England).
 
 The pipeline downloads, stages and joins the open datasets below:
 
-- `lix fetch` downloads and caches each dataset listed in `config/datasets.yaml`
-  (resumable, checksummed, rejects error pages served as data, extracts only the files it needs)
+- `lix resolve` finds each source's current file and pins it in `config/datasets.lock.json`.
+  ONS deletes Open Geography items whenever it publishes a new version, so those are found by
+  search; GOV.UK files through the content API.
+- `lix fetch` downloads what the lockfile pins (resumable, checksummed, rejects error pages served
+  as data, waits out ArcGIS exports still being generated, extracts only the files it needs)
 - `lix stage` turns each raw file into tidy Parquet in `data/staged/`
-- postcodes are mapped to LSOAs with the ONS postcode lookup (NSPL)
-- CI runs ruff and pytest on every push and PR to `master`; tests never touch the network
+- `geo_lsoa` is the backbone every indicator joins onto: each England LSOA with its MSOA,
+  local authority, region, friendly MSOA name, population-weighted centroid, urban/rural class,
+  population, area and map bounding box; `lix validate geo` checks it
+- helpers bring other geographies onto LSOAs: points, output areas, MSOA/local-authority values,
+  1km grids (sampled at postcodes, so population-weighted) and distance-based access to places
+- CI runs ruff and pytest on every push and PR to `master` (tests never touch the network);
+  a nightly job checks every source is still reachable
 
 | Dataset | Granularity | Source |
 |---------|-------------|--------|
 | HM Land Registry Price Paid | Transaction, aggregated to LSOA medians | [Land Registry](https://www.gov.uk/government/statistical-data-sets/price-paid-data-downloads) |
 | English Indices of Deprivation 2025 | LSOA 2021 | [GOV.UK](https://www.gov.uk/government/statistics/english-indices-of-deprivation-2025) |
 | NSPL postcode lookup (Aug 2026) | Postcode to OA/LSOA/MSOA/LAD | [ONS Geoportal](https://geoportal.statistics.gov.uk) |
-| LSOA 2021 boundaries (BGC and BSC) | LSOA polygons | [ONS Geoportal](https://geoportal.statistics.gov.uk) |
+| LSOA, MSOA and local authority boundaries | Polygons | [ONS Geoportal](https://geoportal.statistics.gov.uk) |
+| LSOA population-weighted centroids, OA lookup, LSOA 2011→2021, rural–urban class | LSOA / OA | [ONS Geoportal](https://geoportal.statistics.gov.uk) |
+| MSOA names | MSOA | [House of Commons Library](https://houseofcommonslibrary.github.io/msoanames/) |
+| OS Open Names (settlements) | Place | [Ordnance Survey](https://www.ordnancesurvey.co.uk/products/os-open-names) |
 
 ## Planned
 
@@ -40,8 +51,9 @@ Requires [uv](https://docs.astral.sh/uv/) and Python 3.11+.
 
 ```bash
 make install    # uv sync
-make fetch      # download all datasets (about 6 GB; Price Paid alone is 5.5 GB)
+make fetch      # download every dataset pinned in the lockfile (about 7 GB; Price Paid is 5.5 GB)
 make stage      # stage every downloaded dataset to data/staged/*.parquet
+make validate   # check the staged geography backbone
 make test       # pytest (no network access; HTTP is tested against a local server)
 make lint       # ruff check + format check
 ```
@@ -49,10 +61,10 @@ make lint       # ruff check + format check
 Or step by step:
 
 ```bash
-uv run lix fetch --slug nspl
-uv run lix stage --slug nspl          # first: price_paid geocodes against it
-uv run lix fetch --slug price_paid && uv run lix stage --slug price_paid
-uv run lix fetch --slug iod_2025 && uv run lix stage --slug iod_2025
+uv run lix resolve --all              # pick up new upstream versions (updates the lockfile)
+uv run lix fetch --theme geography    # or --slug nspl, --priority P0, --all
+uv run lix stage --all
+uv run lix resolve --check --all      # is every source still reachable?
 ```
 
 Set `LIX_DATA_DIR` to keep data somewhere other than `./data`.
