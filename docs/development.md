@@ -188,3 +188,6 @@ data/                   raw/, staged/, ... (gitignored; rebuilt by the pipeline)
 
 The Python side is a [uv workspace](https://docs.astral.sh/uv/concepts/projects/workspaces/)
 (`core`, `pipeline`, `api`).
+
+Languages: how the interface and data-label catalogues work, and how to review or add
+one, is in [i18n.md](i18n.md).

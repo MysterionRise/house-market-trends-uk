@@ -25,6 +25,7 @@ from lix_core.config import (
     SERVE_SCHEMA_VERSION,
     indicator_coverage,
     load_indicators,
+    load_label_catalogues,
     load_nations,
     load_registry,
     load_weights,
@@ -187,6 +188,14 @@ def geography(area_counts: dict[str, int]) -> dict:
     }
 
 
+def languages() -> list[dict]:
+    """English plus every data-label catalogue, with its review status."""
+    out = [{"code": "en", "status": "reviewed"}]
+    for locale, labels in load_label_catalogues().items():
+        out.append({"code": locale, "status": (labels.get("_meta") or {}).get("status", "draft")})
+    return out
+
+
 def manifest(
     files: dict[str, Path],
     lsoa_count: int | None = None,
@@ -207,6 +216,11 @@ def manifest(
         "lsoa_count": lsoa_count,
         "demo": False,
         "quality_levels": list(QUALITY_LEVELS),
+        "languages": languages(),
+        "i18n": {
+            locale: {k: v for k, v in labels.items() if k != "_meta"}
+            for locale, labels in load_label_catalogues().items()
+        },
         "scored_indicators": [i.id for i in catalogue.scored()],
         "indicators": [
             {**i.model_dump(), "coverage": indicator_coverage(i, registry)}

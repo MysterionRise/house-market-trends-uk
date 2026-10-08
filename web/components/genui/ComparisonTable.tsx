@@ -5,12 +5,14 @@ import { useLocale, useTranslations } from "next-intl";
 import { useData } from "@/components/AppData";
 import { Card, Muted, formatValue } from "@/components/ui";
 import type { Comparison } from "@/lib/contracts.gen";
+import { useLabels } from "@/lib/labels";
 import { themeVar } from "@/lib/palette";
 
 export function ComparisonTable({ comparison }: { comparison: Comparison }) {
   const { manifest } = useData();
   const t = useTranslations("Comparison");
   const locale = useLocale();
+  const labels = useLabels();
   const units = new Map(manifest?.indicators.map((i) => [i.id, i.unit]));
   const areas = comparison.areas;
   const themeRows = Object.entries(comparison.theme_labels);
@@ -36,7 +38,8 @@ export function ComparisonTable({ comparison }: { comparison: Comparison }) {
                 return <td key={a.code} className={`py-1 pr-2 text-sm ${top ? "font-semibold" : ""}`}>{a.overall?.toFixed(0) ?? "–"}</td>;
               })}
             </tr>
-            {themeRows.map(([theme, label]) => {
+            {themeRows.map(([theme]) => {
+              const label = labels.theme(theme);
               const values = areas.map((a) => (a.themes as Record<string, number | null>)[theme] ?? null);
               const top = best(values);
               return (
@@ -55,9 +58,9 @@ export function ComparisonTable({ comparison }: { comparison: Comparison }) {
                 </tr>
               );
             })}
-            {Object.entries(comparison.indicator_labels).map(([id, label]) => (
+            {Object.keys(comparison.indicator_labels).map((id) => (
               <tr key={id} className="border-t border-[var(--border)]">
-                <td className="py-1 pr-2 text-[var(--text-secondary)]">{label}</td>
+                <td className="py-1 pr-2 text-[var(--text-secondary)]">{labels.indicator(id)}</td>
                 {areas.map((a) => (
                   <td key={a.code} className="py-1 pr-2">
                     {formatValue((a.indicators as Record<string, number | null>)[id], units.get(id) ?? "", locale)}

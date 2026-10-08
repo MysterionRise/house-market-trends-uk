@@ -4,6 +4,7 @@ import { useTranslations } from "next-intl";
 import { useState } from "react";
 
 import { useData } from "@/components/AppData";
+import { useLabels } from "@/lib/labels";
 
 const CELL = 9;
 const LABEL_W = 132;
@@ -19,10 +20,11 @@ function fill(rho: number): string {
 export function CorrelationHeatmap() {
   const { manifest } = useData();
   const t = useTranslations("Heatmap");
+  const labels = useLabels();
   const [hover, setHover] = useState<{ i: number; j: number } | null>(null);
   const c = manifest?.correlations;
   if (!manifest || !c || !c.ids.length) return null;
-  const label = (id: string) => manifest.indicators.find((i) => i.id === id)?.label ?? id;
+  const label = (id: string) => labels.indicator(id);
   const n = c.ids.length;
   const size = n * CELL;
   // Outline each theme's block on the diagonal

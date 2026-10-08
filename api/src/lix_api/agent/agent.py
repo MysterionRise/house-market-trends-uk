@@ -13,6 +13,7 @@ from pydantic_ai import Agent, ModelRetry, RunContext, ToolReturn
 from pydantic_ai.tools import ToolDefinition
 from pydantic_ai.ui import StateDeps
 
+from lix_api.agent.messages import language_instruction
 from lix_api.agent.models import build_model, model_settings
 from lix_api.agent.state import LiveabilityState, ShortlistItem
 from lix_api.models import (
@@ -109,6 +110,8 @@ def current_state(ctx: RunContext[Deps]) -> str:
     """Per-turn state, after the static instructions (so the cached prefix holds)."""
     s = ctx.deps.state
     lines = [coverage_note(), f"Current weighting: preset '{s.preset}'"]
+    if language := language_instruction(s.locale):
+        lines.insert(0, language)
     if s.theme_weights:
         lines.append(f"  theme weights adjusted by the user: {s.theme_weights}")
     if s.indicator_weights:

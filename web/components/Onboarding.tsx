@@ -5,6 +5,7 @@ import { useSyncExternalStore } from "react";
 
 import { useData, useLiveability } from "@/components/AppData";
 import { useCoverageName } from "@/lib/copy";
+import { useLabels } from "@/lib/labels";
 
 const KEY = "lix.welcomed";
 const listeners = new Set<() => void>();
@@ -36,6 +37,7 @@ export function Onboarding() {
   const { update } = useLiveability();
   const t = useTranslations("Onboarding");
   const coverage = useCoverageName();
+  const labels = useLabels();
   const welcomed = useSyncExternalStore(
     (cb) => {
       listeners.add(cb);
@@ -65,7 +67,7 @@ export function Onboarding() {
             key={id}
             className="btn text-xs"
             data-testid={`persona-${id}`}
-            title={manifest?.presets[id].description}
+            title={manifest ? labels.presetDescription(id) : undefined}
             onClick={() => {
               update((s) => ({ ...s, preset: id, theme_weights: {}, indicator_weights: {} }));
               dismiss();

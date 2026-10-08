@@ -24,38 +24,37 @@ from pydantic_ai.exceptions import (
 )
 from pydantic_ai.ui.ag_ui import AGUIAdapter, AGUIEventStream
 
+from lix_api.agent.messages import message
 from lix_core.log import setup_logging
 
 logger = setup_logging("agent.errors")
 
-STILL_WORKS = "The map, weights and area pages still work."
 
-
-def friendly_message(error: BaseException) -> str:
-    """What to tell the user about a failed run."""
+def friendly_message(error: BaseException, locale: str = "en") -> str:
+    """What to tell the user about a failed run, in the page's language."""
     if isinstance(error, FallbackExceptionGroup) and error.exceptions:
         # Every model failed; explain the first model's problem
-        return friendly_message(error.exceptions[0])
+        return friendly_message(error.exceptions[0], locale)
     if isinstance(error, UsageLimitExceeded):
-        return (
-            "That needed more steps than I'm allowed for one question, so I stopped. "
-            "Try asking for one thing at a time."
+        key = "usage_limit"
+    elif isinstance(error, ToolRetryError):
+        key = "tool_retry"
+    elif isinstance(error, ModelHTTPError):
+        key = {401: "key_rejected", 403: "key_rejected", 402: "out_of_credit", 429: "busy"}.get(
+            error.status_code, "model_problem"
         )
-    if isinstance(error, ToolRetryError):
-        return (
-            "I couldn't get the data I needed for that. Try rephrasing, or name a town or postcode."
-        )
-    if isinstance(error, ModelHTTPError):
-        if error.status_code in (401, 403):
-            return f"The assistant's API key was rejected; check it in .env. {STILL_WORKS}"
-        if error.status_code == 402:
-            return f"The assistant's model account is out of credit. {STILL_WORKS}"
-        if error.status_code == 429:
-            return f"The language model is busy right now; try again in a minute. {STILL_WORKS}"
-        return f"The language model service had a problem; try again. {STILL_WORKS}"
-    if isinstance(error, (ModelAPIError, TimeoutError, asyncio.TimeoutError, ConnectionError)):
-        return f"The language model didn't respond; try again in a moment. {STILL_WORKS}"
-    return f"Something went wrong while I was answering; try asking again. {STILL_WORKS}"
+    elif isinstance(error, (ModelAPIError, TimeoutError, asyncio.TimeoutError, ConnectionError)):
+        key = "no_response"
+    else:
+        key = "unknown"
+    return message(key, locale)
+
+
+def _locale(run_input) -> str:
+    """The page's language from the AG-UI state it sent with the run."""
+    state = getattr(run_input, "state", None)
+    locale = state.get("locale") if isinstance(state, dict) else getattr(state, "locale", None)
+    return locale if isinstance(locale, str) else "en"
 
 
 class FriendlyEventStream(AGUIEventStream):
@@ -64,7 +63,9 @@ class FriendlyEventStream(AGUIEventStream):
         self._error = True  # after_stream then adds nothing; we finish the run here
         message_id = self.new_message_id()
         yield TextMessageStartEvent(message_id=message_id, role="assistant")
-        yield TextMessageContentEvent(message_id=message_id, delta=friendly_message(error))
+        yield TextMessageContentEvent(
+            message_id=message_id, delta=friendly_message(error, _locale(self.run_input))
+        )
         yield TextMessageEndEvent(message_id=message_id)
         yield RunFinishedEvent(
             thread_id=self.thread_id, run_id=self.run_id, timestamp=self._get_timestamp()

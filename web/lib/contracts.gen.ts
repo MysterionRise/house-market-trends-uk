@@ -18,6 +18,10 @@ export type Lat = number;
 export type Lon = number;
 export type Coverage = number | null;
 /**
+ * The caveats' codes (imputed, low_n, broadcast_lad, not_available)
+ */
+export type FlagCodes = string[];
+/**
  * Caveats that apply to this area
  */
 export type Flags = string[];
@@ -35,6 +39,10 @@ export type Role = string;
 export type Score = number | null;
 export type Theme = string;
 export type Unit = string;
+/**
+ * The unit's code, for formatting and translation
+ */
+export type UnitCode = string;
 /**
  * Raw value in `unit`
  */
@@ -154,12 +162,17 @@ export type Role1 = string;
 export type Sources1 = string[];
 export type Theme3 = string;
 export type Unit1 = string;
+export type UnitCode1 = string;
 export type Weight = number;
 /**
  * What percentiles on the map compare against
  */
 export type CompareWithin = "uk" | "nation" | "urban_rural";
 export type CompareWithinUrbanRural = boolean;
+/**
+ * The page's language; the assistant replies in it
+ */
+export type Locale = "en" | "cy" | "gd" | "ga";
 /**
  * west, south, east, north
  */
@@ -244,6 +257,7 @@ export interface AreaProfile {
   bbox: Bbox;
   centre: Point;
   coverage: Coverage;
+  flag_codes?: FlagCodes;
   flags?: Flags;
   key_facts: KeyFacts;
   local_authority: LocalAuthority;
@@ -286,6 +300,7 @@ export interface IndicatorValue {
   score?: Score;
   theme: Theme;
   unit: Unit;
+  unit_code?: UnitCode;
   value?: Value;
 }
 /**
@@ -396,6 +411,7 @@ export interface IndicatorInfo {
   sources: Sources1;
   theme: Theme3;
   unit: Unit1;
+  unit_code?: UnitCode1;
   weight: Weight;
 }
 /**
@@ -406,6 +422,7 @@ export interface LiveabilityState {
   compare_within?: CompareWithin;
   compare_within_urban_rural?: CompareWithinUrbanRural;
   indicator_weights?: IndicatorWeights;
+  locale?: Locale;
   map?: MapView;
   mode?: Mode;
   preset?: Preset3;

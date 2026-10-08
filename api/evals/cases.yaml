@@ -219,6 +219,23 @@ cases:
       tools_any: [get_area_profile, rank_areas, search_place]
       reply_any: [newport]
 
+  # ------------------------------------------------------------------- languages
+  - name: welsh_profile
+    category: language
+    turns: ["Sut mae Pontcanna yng Nghaerdydd yn sgorio?"]
+    state: {locale: cy}
+    expect:
+      tools_any: [get_area_profile, search_place]
+      reply_lang: cy
+
+  - name: welsh_pubs
+    category: language
+    turns: ["Dangoswch dafarndai da ger CF10 1AA"]
+    state: {locale: cy}
+    expect:
+      tools_any: [nearest_pois]
+      reply_lang: cy
+
   # ---------------------------------------------------------- out of scope and ethics
   - name: scotland_out_of_scope
     category: scope_ethics

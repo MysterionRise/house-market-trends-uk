@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl";
 
 import { useData, useLiveability } from "@/components/AppData";
+import { useLabels } from "@/lib/labels";
 import { themeVar } from "@/lib/palette";
 import { type CompareWithin, effectiveWeights } from "@/lib/state";
 
@@ -12,6 +13,7 @@ export function WeightPanel() {
   const { manifest } = useData();
   const { state, update } = useLiveability();
   const t = useTranslations("Weights");
+  const labels = useLabels();
   if (!manifest) return null;
   const weights = effectiveWeights(manifest, state).themes;
   const preset = manifest.presets[state.preset];
@@ -28,11 +30,11 @@ export function WeightPanel() {
             update((s) => ({ ...s, preset: e.target.value, theme_weights: {}, indicator_weights: {} }))
           }
         >
-          {Object.entries(manifest.presets).map(([id, p]) => (
-            <option key={id} value={id}>{p.label}</option>
+          {Object.keys(manifest.presets).map((id) => (
+            <option key={id} value={id}>{labels.preset(id)}</option>
           ))}
         </select>
-        {preset && <span className="mt-1 block text-xs text-[var(--text-muted)]">{preset.description}</span>}
+        {preset && <span className="mt-1 block text-xs text-[var(--text-muted)]">{labels.presetDescription(state.preset)}</span>}
       </label>
 
       <div>
@@ -44,11 +46,11 @@ export function WeightPanel() {
             </button>
           )}
         </div>
-        {Object.entries(manifest.themes).map(([theme, meta]) => (
+        {Object.keys(manifest.themes).map((theme) => (
           <label key={theme} className="grid grid-cols-[8.5rem_1fr_2rem] items-center gap-2 py-1">
-            <span className="flex min-w-0 items-center gap-1.5 text-xs" title={meta.description}>
+            <span className="flex min-w-0 items-center gap-1.5 text-xs" title={labels.themeDescription(theme)}>
               <span className="inline-block h-2 w-2 shrink-0 rounded-full" style={{ background: themeVar(theme) }} aria-hidden />
-              <span className="truncate">{meta.label}</span>
+              <span className="truncate">{labels.theme(theme)}</span>
             </span>
             <input
               type="range"
@@ -57,7 +59,7 @@ export function WeightPanel() {
               max={3}
               step={0.25}
               value={weights[theme] ?? 0}
-              aria-label={t("weightOf", { theme: meta.label })}
+              aria-label={t("weightOf", { theme: labels.theme(theme) })}
               data-testid={`weight-${theme}`}
               onChange={(e) =>
                 update((s) => ({ ...s, theme_weights: { ...s.theme_weights, [theme]: Number(e.target.value) } }))
@@ -78,12 +80,12 @@ export function WeightPanel() {
         >
           <option value="overall">{t("overall")}</option>
           <optgroup label={t("themes")}>
-            {Object.entries(manifest.themes).map(([t, m]) => <option key={t} value={`theme:${t}`}>{m.label}</option>)}
+            {Object.keys(manifest.themes).map((id) => <option key={id} value={`theme:${id}`}>{labels.theme(id)}</option>)}
           </optgroup>
           <optgroup label={t("indicators")}>
             {manifest.indicators
               .filter((i) => manifest.scored_indicators.includes(i.id))
-              .map((i) => <option key={i.id} value={`indicator:${i.id}`}>{i.label}</option>)}
+              .map((i) => <option key={i.id} value={`indicator:${i.id}`}>{labels.indicator(i.id)}</option>)}
           </optgroup>
         </select>
       </label>

@@ -51,6 +51,7 @@ class IndicatorValue(BaseModel):
     label: str
     theme: str
     unit: str
+    unit_code: str = Field("", description="The unit's code, for formatting and translation")
     value: float | None = Field(None, description="Raw value in `unit`")
     score: float | None = Field(None, description="0–100, higher is better")
     quality: str = "ok"
@@ -91,6 +92,10 @@ class AreaProfile(BaseModel):
     weaknesses: list[IndicatorValue]
     key_facts: list[IndicatorValue]
     flags: list[str] = Field(default_factory=list, description="Caveats that apply to this area")
+    flag_codes: list[str] = Field(
+        default_factory=list,
+        description="The caveats' codes (imputed, low_n, broadcast_lad, not_available)",
+    )
     centre: Point
     bbox: tuple[float, float, float, float]
 
@@ -198,6 +203,7 @@ class IndicatorInfo(BaseModel):
     role: str
     normalise: str
     weight: float
+    unit_code: str = ""
     benchmark: Literal["uk", "nation"] = "uk"
     coverage: list[str] = Field(default_factory=list, description="Nation codes it is built for")
     caveats: str | None = None

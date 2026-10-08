@@ -4,7 +4,7 @@ from functools import lru_cache
 from typing import Annotated, Literal
 
 import yaml
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, computed_field
 
 from lix_core.paths import get_project_root
 
@@ -249,6 +249,34 @@ class ThemeSpec(_Strict):
     description: str
 
 
+# Display units → a code the front end formats by (and a catalogue translates), so the
+# unit text can be in any language without the formatting guessing from English words
+UNIT_CODES: dict[str, str] = {
+    "£": "gbp",
+    "£ a year": "gbp_year",
+    "%": "pct",
+    "% of homes": "pct_homes",
+    "% of pupils": "pct_pupils",
+    "% of 16–64s": "pct_working_age",
+    "metres": "metres",
+    "per 1,000 residents a year": "per_1000_year",
+    "score": "score",
+    "score 0–100": "score_100",
+    "µg/m³": "ugm3",
+    "index 0–1": "index",
+    "quality 0–1": "quality",
+    "rating 0–1 (Good = 0.75)": "rating",
+    "rate": "rate",
+    "collisions a year within 500m": "collisions_year",
+    "patients per FTE GP": "patients_per_gp",
+    "Attainment 8": "attainment8",
+    "buses an hour": "buses_hour",
+    "years of income": "years_income",
+    "years": "years",
+    "people per km²": "people_km2",
+}
+
+
 class IndicatorSpec(_Strict):
     """One indicator: how to build it per LSOA and how it enters the score.
 
@@ -284,6 +312,12 @@ class IndicatorSpec(_Strict):
     overlap_group: str | None = None
     caveats: str | None = None
 
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def unit_code(self) -> str:
+        """The unit's code (UNIT_CODES); the manifest and models carry it beside ``unit``."""
+        return UNIT_CODES[self.unit]
+
 
 class IndicatorCatalogue(_Strict):
     themes: dict[ScoredTheme, ThemeSpec]
@@ -317,6 +351,8 @@ def catalogue_problems(
         problems.append("duplicate indicator ids")
     groups: dict[str, list[tuple[str, list[str]]]] = {}
     for ind in catalogue.indicators:
+        if ind.unit not in UNIT_CODES:
+            problems.append(f"{ind.id}: unit {ind.unit!r} has no code in UNIT_CODES")
         unknown = [s for s in ind.sources if s not in registry]
         if unknown:
             problems.append(f"{ind.id}: unknown sources {unknown}")
@@ -452,6 +488,48 @@ class CountrySpec(_Strict):
 class NationsConfig(_Strict):
     country: CountrySpec
     nations: dict[str, NationSpec]
+
+
+# ---------------------------------------------------------------------------------------
+# Data-label catalogues (config/i18n/<locale>.yaml)
+# ---------------------------------------------------------------------------------------
+
+CATALOGUE_SECTIONS = ("themes", "presets", "units", "flags", "indicators")
+
+
+def load_label_catalogues() -> dict[str, dict]:
+    """Translations of the data's labels, keyed by locale (English lives in the YAML)."""
+    folder = get_project_root() / "config" / "i18n"
+    out: dict[str, dict] = {}
+    for path in sorted(folder.glob("*.yaml")) if folder.is_dir() else []:
+        with open(path) as f:
+            raw = yaml.safe_load(f) or {}
+        meta = raw.get("_meta") or {}
+        if meta.get("status") not in ("draft", "reviewed"):
+            raise ValueError(f"{path.name}: _meta.status must be draft or reviewed")
+        out[path.stem] = raw
+    return out
+
+
+def catalogue_gaps(
+    catalogue: IndicatorCatalogue, weights: "WeightsConfig", labels: dict
+) -> list[str]:
+    """Ids a label catalogue lacks (reviewed catalogues must have none)."""
+    gaps = []
+    for theme in catalogue.themes:
+        if theme not in (labels.get("themes") or {}):
+            gaps.append(f"themes.{theme}")
+    for name in weights.presets:
+        if name not in (labels.get("presets") or {}):
+            gaps.append(f"presets.{name}")
+    for code in sorted(set(UNIT_CODES.values())):
+        if code not in (labels.get("units") or {}):
+            gaps.append(f"units.{code}")
+    for ind in catalogue.indicators:
+        entry = (labels.get("indicators") or {}).get(ind.id) or {}
+        if not entry.get("label"):
+            gaps.append(f"indicators.{ind.id}.label")
+    return gaps
 
 
 @lru_cache(maxsize=1)

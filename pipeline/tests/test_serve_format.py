@@ -121,7 +121,11 @@ def test_manifest_has_geography_and_quality_levels():
     assert m["geography"]["nations"]["W"]["levels"]["low"]["count"] == 1917
     assert m["geography"]["country"]["currency"] == "GBP"
     assert m["quality_levels"] == list(QUALITY_LEVELS)
+    assert {lang["code"] for lang in m["languages"]} >= {"en", "cy"}
+    assert m["i18n"]["cy"]["themes"]["safety"]["label"] == "Diogelwch"
+    assert "_meta" not in m["i18n"]["cy"]
     crime = next(i for i in m["indicators"] if i["id"] == "crime_violence")
+    assert crime["unit_code"] == "per_1000_year"
     assert crime["benchmark"] == "nation" and crime["coverage"] == ["E", "W"]
     no2 = next(i for i in m["indicators"] if i["id"] == "no2")
     # Declared coverage is the indicator's, not the build's: Defra's grid covers the UK

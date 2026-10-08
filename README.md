@@ -62,7 +62,9 @@ over every neighbourhood and CSV export.
 
 <img src="docs/media/tiktok.gif" width="320" alt="The phone layout: choosing family with children recolours England, the assistant ranks family areas in Leeds under £350k, a tap opens a neighbourhood's scores, and a search for Hebden Bridge shows its flood risk">
 
-Also: a shortlist with side-by-side comparison, shareable links, and light and dark mode.
+Also: a shortlist with side-by-side comparison, shareable links, light and dark mode, and
+the interface in English or Cymraeg (a draft, until fluent speakers have reviewed it; see
+[docs/i18n.md](docs/i18n.md)).
 A full walkthrough video comes with each
 [release](https://github.com/MysterionRise/uk-liveability-index/releases).
 

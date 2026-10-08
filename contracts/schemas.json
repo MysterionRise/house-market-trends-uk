@@ -49,6 +49,14 @@
           ],
           "title": "Coverage"
         },
+        "flag_codes": {
+          "description": "The caveats' codes (imputed, low_n, broadcast_lad, not_available)",
+          "items": {
+            "type": "string"
+          },
+          "title": "Flag Codes",
+          "type": "array"
+        },
         "flags": {
           "description": "Caveats that apply to this area",
           "items": {
@@ -537,6 +545,11 @@
           "title": "Unit",
           "type": "string"
         },
+        "unit_code": {
+          "default": "",
+          "title": "Unit Code",
+          "type": "string"
+        },
         "weight": {
           "title": "Weight",
           "type": "number"
@@ -608,6 +621,12 @@
           "title": "Unit",
           "type": "string"
         },
+        "unit_code": {
+          "default": "",
+          "description": "The unit's code, for formatting and translation",
+          "title": "Unit Code",
+          "type": "string"
+        },
         "value": {
           "anyOf": [
             {
@@ -656,6 +675,18 @@
           "description": "Multipliers on individual indicators",
           "title": "Indicator Weights",
           "type": "object"
+        },
+        "locale": {
+          "default": "en",
+          "description": "The page's language; the assistant replies in it",
+          "enum": [
+            "en",
+            "cy",
+            "gd",
+            "ga"
+          ],
+          "title": "Locale",
+          "type": "string"
         },
         "map": {
           "$ref": "#/$defs/MapView"

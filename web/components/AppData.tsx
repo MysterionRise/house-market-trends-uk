@@ -7,13 +7,14 @@
  * - scores recomputed in the browser for the current weights (useScores)
  */
 import { UseAgentUpdate, useAgent } from "@copilotkit/react-core/v2";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 
 import { type Manifest, type ScoreData, loadManifest, loadScores, scoredIndicators } from "@/lib/data";
 import { type ScoreResult, aggregate, percentileRank, percentileWithin, scoreLsoas } from "@/lib/scoring";
 import type { LiveabilityState as WireState } from "@/lib/contracts.gen";
 import { DEFAULT_STATE, type LiveabilityState, effectiveWeights, normaliseState } from "@/lib/state";
+import { labelsFor } from "@/lib/labels";
 import { readHash, writeHash } from "@/lib/urlState";
 
 interface DataContext {
@@ -121,6 +122,7 @@ export interface LayerValues {
 /** Scores for the current weights and the values the map colours by. */
 export function useScores(state: LiveabilityState): LayerValues | null {
   const t = useTranslations("Map");
+  const locale = useLocale();
   const { manifest, scores } = useData();
   // Recompute only when the weighting changes, not on every map move
   const themeKey = JSON.stringify(state.theme_weights);
@@ -154,13 +156,13 @@ export function useScores(state: LiveabilityState): LayerValues | null {
     if (layer.startsWith("theme:") && result.themes[layer.slice(6)]) {
       const t = layer.slice(6);
       lsoa = result.themes[t].percentile;
-      label = manifest.themes[t]?.label ?? t;
+      label = labelsFor(manifest, locale).theme(t);
       theme = t;
     } else if (layer.startsWith("indicator:") && scores.indicators[layer.slice(10)]) {
       const id = layer.slice(10);
       lsoa = percentileRank(scores.indicators[id]);
       const info = manifest.indicators.find((i) => i.id === id);
-      label = info?.label ?? id;
+      label = labelsFor(manifest, locale).indicator(id);
       theme = info?.theme;
     } else {
       lsoa = result.overallPercentile;
@@ -181,5 +183,5 @@ export function useScores(state: LiveabilityState): LayerValues | null {
       label,
       theme,
     };
-  }, [manifest, scores, result, state.map.layer, state.compare_within, t]);
+  }, [manifest, scores, result, state.map.layer, state.compare_within, t, locale]);
 }

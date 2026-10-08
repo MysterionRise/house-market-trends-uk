@@ -62,3 +62,9 @@ went in the pull request.
   (`uv run lix qa places` writes the face-validity review).
 - By contributing, you agree your code is released under the [MIT licence](LICENSE) and
   any data under the project's [data licence](DATA-LICENCE.md).
+
+## Translating
+
+The interface and the data labels are translated through two catalogues per language,
+reviewed by fluent speakers before they lose their "draft" label. How to review a draft
+or add a language is in [docs/i18n.md](docs/i18n.md).

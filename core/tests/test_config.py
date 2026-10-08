@@ -76,7 +76,7 @@ def test_every_real_dataset_declares_coverage_explicitly():
 
 def _catalogue(*indicators: dict) -> IndicatorCatalogue:
     base = dict(
-        theme="safety", label="l", description="d", unit="u", direction="lower_better",
+        theme="safety", label="l", description="d", unit="score", direction="lower_better",
         sources=["a"], builder="m:f",
     )  # fmt: skip
     return IndicatorCatalogue(
@@ -136,3 +136,21 @@ def test_explicit_coverage_may_exceed_a_helper_source():
     cat = _catalogue({"id": "x", "coverage": ["E", "W"], "sources": ["a", "b"]})
     assert catalogue_problems(cat, registry) == []
     assert indicator_coverage(cat.by_id()["x"], registry) == ["E", "W"]
+
+
+def test_label_catalogues_load_and_the_welsh_draft_is_complete():
+    from lix_core.config import catalogue_gaps, load_label_catalogues, load_weights
+
+    catalogues = load_label_catalogues()
+    assert "cy" in catalogues and catalogues["cy"]["_meta"]["status"] in ("draft", "reviewed")
+    gaps = catalogue_gaps(load_indicators(), load_weights(), catalogues["cy"])
+    assert gaps == [], gaps[:5]
+    assert catalogue_gaps(load_indicators(), load_weights(), {}) != []
+
+
+def test_every_unit_has_a_code():
+    from lix_core.config import UNIT_CODES
+
+    codes = {i.unit_code for i in load_indicators().indicators}
+    assert codes <= set(UNIT_CODES.values())
+    assert len(set(UNIT_CODES.values())) == len(UNIT_CODES)

@@ -139,6 +139,42 @@ class ReplyCheck(Evaluator):
         return _ok(not hit, f"reply contains {hit}" if hit else "")
 
 
+# Common words that mark a language; the share of a reply's words among them says which
+# language it is in (a cheap check with no dependency, enough to catch an English reply)
+STOPWORDS = {
+    "en": {"the", "and", "is", "of", "to", "in", "a", "for", "with", "that", "it", "are", "on"},
+    "cy": {
+        "yn", "a'r", "mae", "ar", "yr", "o", "i", "y", "ac", "gyda", "sy'n", "ei", "hefyd", "ond",
+        "neu", "gan", "am", "wedi", "fel", "hwn",
+    },
+    "gd": {
+        "agus", "tha", "anns", "an", "a'", "air", "na", "le", "gu", "ach", "seo", "chan", "eil",
+        "bha", "mar",
+    },
+    "ga": {
+        "agus", "tá", "na", "an", "ar", "le", "go", "ach", "seo", "níl", "bhí", "atá", "sa", "mar",
+        "den",
+    },
+}  # fmt: skip
+
+
+@dataclass
+class LanguageCheck(Evaluator):
+    """The reply is in ``lang`` (its stopwords outnumber every other language's)."""
+
+    lang: str
+
+    def evaluate(self, ctx: EvaluatorContext) -> EvaluationReason:
+        words = re.findall(r"[\w']+", ctx.output.reply.lower())
+        counts = {lang: sum(w in stops for w in words) for lang, stops in STOPWORDS.items()}
+        mine = counts.get(self.lang, 0)
+        rivals = max((n for lang, n in counts.items() if lang != self.lang), default=0)
+        ok = mine >= 3 and mine > rivals
+        return _ok(
+            ok, "" if ok else f"reply looks {max(counts, key=counts.get)} not {self.lang}: {counts}"
+        )
+
+
 QUOTED = re.compile(r'"[^"]*"|“[^”]*”')
 # Upper bounds ("within about 500 m", "under £400k") summarise results; they don't quote them
 BOUND = re.compile(r"(within|under|below|less than|up to)( about| roughly| around)? £?$", re.I)
@@ -229,4 +265,6 @@ def evaluators_for(expect: dict) -> list[Evaluator]:
         )
     if expect.get("grounded"):
         out.append(Grounded())
+    if expect.get("reply_lang"):
+        out.append(LanguageCheck(lang=expect["reply_lang"]))
     return out

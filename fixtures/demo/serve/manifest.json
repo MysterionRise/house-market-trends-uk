@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "generated_at": "2026-10-08T17:55:17+00:00",
+  "generated_at": "2026-10-08T18:24:54+00:00",
   "geography": {
     "country": {
       "code": "UK",
@@ -95,6 +95,380 @@
     "missing",
     "not_available"
   ],
+  "languages": [
+    {
+      "code": "en",
+      "status": "reviewed"
+    },
+    {
+      "code": "cy",
+      "status": "draft"
+    }
+  ],
+  "i18n": {
+    "cy": {
+      "themes": {
+        "safety": {
+          "label": "Diogelwch",
+          "description": "Troseddau ac ymddygiad gwrthgymdeithasol a gofnodwyd lle mae pobl yn byw."
+        },
+        "environment": {
+          "label": "Amgylchedd",
+          "description": "Aer gl\u00e2n",
+          "parciau a mannau gwyrdd gerllaw": null,
+          "a pherygl llifogydd.": null
+        },
+        "health": {
+          "label": "Gwasanaethau iechyd",
+          "description": "Pa mor hawdd yw hi i drigolion weld meddyg teulu",
+          "fferyllydd neu ddeintydd.": null
+        },
+        "education": {
+          "label": "Ysgolion a gofal plant",
+          "description": "Ysgolion a meithrinfeydd da o fewn cyrraedd."
+        },
+        "transport": {
+          "label": "Trafnidiaeth a chysylltedd",
+          "description": "Pa mor dda mae ardal yn cysylltu \u00e2 swyddi a gwasanaethau ym mhob dull",
+          "a'i band eang.": null
+        },
+        "amenities": {
+          "label": "Amwynderau a bywyd nos",
+          "description": "Siopau",
+          "caffis": null,
+          "tafarndai da": null,
+          "hamdden a diwylliant gerllaw.": null
+        },
+        "housing": {
+          "label": "Tai a fforddiadwyedd",
+          "description": "Beth mae cartrefi'n ei gostio a chyflwr y stoc dai."
+        },
+        "community": {
+          "label": "Cymuned a lles",
+          "description": "Incwm",
+          "gwaith ac iechyd y bobl sy'n byw yno.": null
+        }
+      },
+      "presets": {
+        "balanced": {
+          "label": "Cytbwys",
+          "description": "Mae pob thema'n cyfrif yn gyfartal."
+        },
+        "family": {
+          "label": "Teulu \u00e2 phlant",
+          "description": "Ysgolion a meithrinfeydd da",
+          "diogelwch a mannau gwyrdd sy'n dod gyntaf.": null
+        },
+        "young_professional": {
+          "label": "Gweithiwr proffesiynol ifanc",
+          "description": "Cysylltiadau",
+          "pethau i'w gwneud a thafarndai da; mae ysgolion yn llai pwysig.": null
+        },
+        "retiree": {
+          "label": "Wedi ymddeol",
+          "description": "Diogelwch",
+          "gwasanaethau iechyd": null,
+          "aer gl\u00e2n ac ardal dawelach.": null
+        },
+        "commuter": {
+          "label": "Cymudwr",
+          "description": "Cysylltiadau cyflym \u00e2 swyddi",
+          "ar drafnidiaeth gyhoeddus yn anad dim.": null
+        }
+      },
+      "units": {
+        "gbp": "\u00a3",
+        "gbp_year": "\u00a3 y flwyddyn",
+        "pct": "%",
+        "pct_homes": "% o gartrefi",
+        "pct_pupils": "% o ddisgyblion",
+        "pct_working_age": "% o rai 16\u201364 oed",
+        "metres": "metrau",
+        "per_1000_year": "fesul 1,000 o drigolion y flwyddyn",
+        "score": "sg\u00f4r",
+        "score_100": "sg\u00f4r 0\u2013100",
+        "ugm3": "\u00b5g/m\u00b3",
+        "index": "mynegai 0\u20131",
+        "quality": "ansawdd 0\u20131",
+        "rating": "sg\u00f4r 0\u20131 (Da = 0.75)",
+        "rate": "cyfradd",
+        "collisions_year": "gwrthdrawiadau y flwyddyn o fewn 500m",
+        "patients_per_gp": "cleifion fesul meddyg teulu cyfwerth ag amser llawn",
+        "attainment8": "Cyrhaeddiad 8",
+        "buses_hour": "bysiau yr awr",
+        "years_income": "blynyddoedd o incwm",
+        "years": "blynyddoedd",
+        "people_km2": "pobl fesul km\u00b2"
+      },
+      "flags": {
+        "imputed": "Mae'r ffigurau troseddu yma'n amcangyfrifon: nid yw Heddlu Manceinion Fwyaf yn cyhoeddi data ar lefel stryd.",
+        "low_n": "Ychydig o gartrefi a werthwyd yma yn y flwyddyn ddiwethaf, felly mae'r pris wedi'i sefydlogi tuag at yr ardal o gwmpas.",
+        "broadcast_lad": "Mae ansawdd ysgolion uwchradd yn dod o ganlyniadau arholiadau'r cyngor cyfan, gan nad yw Cymru'n cyhoeddi canlyniadau na graddau arolygu fesul ysgol.",
+        "not_available": "Nid yw rhai dangosyddion ar gael yng Nghymru eto; mae'r thema'n defnyddio'r rhai sydd ganddi."
+      },
+      "indicators": {
+        "crime_violence": {
+          "label": "Troseddau treisgar a rhywiol",
+          "description": "Troseddau treisgar a rhywiol a gofnodwyd fesul 1",
+          "000 o drigolion y flwyddyn (cyfartaledd 36 mis).": null
+        },
+        "crime_burglary": {
+          "label": "Byrgleriaeth",
+          "description": "Byrgleriaethau a gofnodwyd fesul 1",
+          "000 o drigolion y flwyddyn.": null
+        },
+        "crime_asb": {
+          "label": "Ymddygiad gwrthgymdeithasol",
+          "description": "Digwyddiadau ymddygiad gwrthgymdeithasol a adroddwyd fesul 1",
+          "000 o drigolion y flwyddyn.": null
+        },
+        "crime_theft": {
+          "label": "Lladrad, dwyn a throseddau cerbydau",
+          "description": "Lladrad, dwyn oddi ar y person, troseddau cerbydau a dwyn beiciau fesul 1,000 o drigolion y flwyddyn."
+        },
+        "crime_damage_disorder": {
+          "label": "Difrod troseddol a threfn gyhoeddus",
+          "description": "Difrod troseddol, llosgi bwriadol a throseddau trefn gyhoeddus fesul 1,000 o drigolion y flwyddyn."
+        },
+        "road_danger": {
+          "label": "Gwrthdrawiadau ffordd difrifol gerllaw",
+          "description": "Gwrthdrawiadau ffordd lle lladdwyd neu anafwyd rhywun yn ddifrifol o fewn 500m i gartrefi, y flwyddyn (cyfartaledd 5 mlynedd)."
+        },
+        "iod_crime": {
+          "label": "Sg\u00f4r parth troseddu IoD 2025",
+          "description": "Risg wedi'i modelu o erledigaeth bersonol a materol (data 2021\u20132023)."
+        },
+        "no2": {
+          "label": "Nitrogen deuocsid (NO\u2082)",
+          "description": "NO\u2082 cefndirol blynyddol cymedrig lle mae trigolion yn byw (model 1km Defra)."
+        },
+        "pm25": {
+          "label": "Gronynnau m\u00e2n (PM2.5)",
+          "description": "PM2.5 cefndirol blynyddol cymedrig lle mae trigolion yn byw (model 1km Defra)."
+        },
+        "green_space_access": {
+          "label": "Parciau a mannau gwyrdd gerllaw",
+          "description": "Mynedfeydd i barciau, gerddi a chaeau chwarae cyhoeddus o fewn 1km o gerdded, wedi'u pwysoli yn \u00f4l pellter."
+        },
+        "play_spaces": {
+          "label": "Mannau chwarae gerllaw",
+          "description": "Mynedfeydd i fannau chwarae cyhoeddus o fewn 800m i gartrefi, wedi'u pwysoli yn \u00f4l pellter."
+        },
+        "flood_risk": {
+          "label": "Cartrefi mewn perygl o lifogydd",
+          "description": "Cyfran y cartrefi sydd mewn perygl uchel neu ganolig o lifogydd o afonydd neu'r m\u00f4r (siawns o 1% y flwyddyn o leiaf)."
+        },
+        "iod_outdoors": {
+          "label": "Amgylchedd byw awyr agored IoD 2025",
+          "description": "Ansawdd aer a damweiniau traffig ffordd (is-barth IoD 2025)."
+        },
+        "gp_distance": {
+          "label": "Pellter i'r practis meddyg teulu agosaf",
+          "description": "Pellter cyfartalog mewn llinell syth o gartrefi i'r practis meddyg teulu agosaf."
+        },
+        "patients_per_gp": {
+          "label": "Cleifion fesul meddyg teulu",
+          "description": "Cleifion cofrestredig fesul meddyg teulu cymwys cyfwerth ag amser llawn yn y practisau mae trigolion yn eu defnyddio mewn gwirionedd."
+        },
+        "gp_quality": {
+          "label": "Sgoriau practisau meddyg teulu",
+          "description": "Sgoriau CQC y practisau meddyg teulu mae trigolion wedi'u cofrestru \u00e2 nhw, wedi'u pwysoli yn \u00f4l faint sy'n defnyddio pob un."
+        },
+        "care_homes": {
+          "label": "Cartrefi gofal \u00e2 sg\u00f4r dda gerllaw",
+          "description": "Gwelyau mewn cartrefi gofal \u00e2 sg\u00f4r Da neu Rhagorol gan CQC o fewn 5km, wedi'u pwysoli yn \u00f4l pellter."
+        },
+        "pharmacy_distance": {
+          "label": "Pellter i'r fferyllfa agosaf",
+          "description": "Pellter cyfartalog mewn llinell syth o gartrefi i'r fferyllfa gymunedol GIG agosaf."
+        },
+        "dentist_distance": {
+          "label": "Pellter i'r deintydd GIG agosaf",
+          "description": "Pellter cyfartalog mewn llinell syth o gartrefi i'r practis deintyddol agosaf sydd \u00e2 chontract GIG."
+        },
+        "primary_school_quality": {
+          "label": "Ysgolion cynradd da gerllaw",
+          "description": "Ansawdd y tair ysgol gynradd wladol agosaf (Ofsted a chanlyniadau), gyda'r rhai agosach yn cyfrif mwy."
+        },
+        "secondary_school_quality": {
+          "label": "Ysgolion uwchradd da gerllaw",
+          "description": "Ansawdd y tair ysgol uwchradd wladol agosaf (Ofsted a chanlyniadau), gyda'r rhai agosach yn cyfrif mwy."
+        },
+        "school_choice": {
+          "label": "Dewis o ysgolion da",
+          "description": "Ysgolion cynradd gwladol da o fewn 2km ac ysgolion uwchradd o fewn 5km, wedi'u pwysoli yn \u00f4l ansawdd a phellter."
+        },
+        "primary_results": {
+          "label": "Canlyniadau ysgolion cynradd gerllaw",
+          "description": "Cyfran y disgyblion sy'n cyrraedd y safon ddisgwyliedig mewn darllen, ysgrifennu a mathemateg mewn ysgolion cynradd gwladol o fewn 2km (cyfartaledd 3 blynedd), wedi'u pwysoli yn \u00f4l pellter."
+        },
+        "secondary_results": {
+          "label": "Canlyniadau ysgolion uwchradd gerllaw",
+          "description": "Sg\u00f4r Cyrhaeddiad 8 cyfartalog mewn ysgolion uwchradd gwladol o fewn 5km, wedi'u pwysoli yn \u00f4l pellter."
+        },
+        "nursery_access": {
+          "label": "Meithrinfeydd da gerllaw",
+          "description": "Meithrinfeydd, cyn-ysgolion a dosbarthiadau meithrin ysgolion o fewn 1km, pob un wedi'i bwysoli yn \u00f4l ei radd Ofsted a'i bellter."
+        },
+        "connectivity_overall": {
+          "label": "Cysylltedd cyffredinol",
+          "description": "Sg\u00f4r cysylltedd yr Adran Drafnidiaeth ar draws pob dull a chyrchfan."
+        },
+        "connectivity_public_transport": {
+          "label": "Cysylltedd trafnidiaeth gyhoeddus",
+          "description": "Sg\u00f4r cysylltedd yr Adran Drafnidiaeth ar gyfer trafnidiaeth gyhoeddus i bob cyrchfan."
+        },
+        "connectivity_walking": {
+          "label": "Cerddadwyedd",
+          "description": "Sg\u00f4r cysylltedd yr Adran Drafnidiaeth ar gyfer cerdded i bob cyrchfan."
+        },
+        "connectivity_cycling": {
+          "label": "Cysylltedd beicio",
+          "description": "Sg\u00f4r cysylltedd yr Adran Drafnidiaeth ar gyfer beicio i bob cyrchfan."
+        },
+        "station_distance": {
+          "label": "Pellter i'r orsaf agosaf",
+          "description": "Pellter cyfartalog mewn llinell syth o gartrefi i'r orsaf reilffordd, metro neu dram agosaf."
+        },
+        "bus_frequency": {
+          "label": "Amlder bysiau",
+          "description": "Bysiau yr awr (dyddiau'r wythnos, 07:00\u201319:00) yn yr arhosfan brysuraf o fewn 400m i gartrefi."
+        },
+        "gigabit_broadband": {
+          "label": "Band eang gigabit",
+          "description": "Cyfran y cartrefi sy'n gallu cael band eang galluog gigabit (ffeibr llawn neu gebl)."
+        },
+        "slow_broadband": {
+          "label": "Cartrefi heb fand eang addas",
+          "description": "Cyfran y cartrefi na allant gael band eang 10 Mbit/s o linell sefydlog neu ddi-wifr sefydlog."
+        },
+        "well_run_pubs": {
+          "label": "Tafarndai da gerllaw",
+          "description": "Tafarndai o fewn 15 munud o gerdded sydd \u00e2 sg\u00f4r hylendid bwyd o 4 neu 5 o'r tair blynedd diwethaf, wedi'u pwysoli yn \u00f4l pellter, gyda bonws bach am gwrw go iawn, bwyd neu seddi awyr agored."
+        },
+        "food_and_drink": {
+          "label": "Caffis a bwytai",
+          "description": "Caffis a bwytai o fewn 800m, wedi'u pwysoli yn \u00f4l pellter."
+        },
+        "supermarket_distance": {
+          "label": "Pellter i'r archfarchnad agosaf",
+          "description": "Pellter cyfartalog mewn llinell syth o gartrefi i'r archfarchnad agosaf."
+        },
+        "shops": {
+          "label": "Siopau gerllaw",
+          "description": "Siopau o bob math o fewn 800m, wedi'u pwysoli yn \u00f4l pellter."
+        },
+        "leisure": {
+          "label": "Cyfleusterau chwaraeon a ffitrwydd",
+          "description": "Neuaddau chwaraeon, campfeydd, pyllau, stiwdios, cyrtiau a chaeau sy'n agored i'r cyhoedd o fewn 2km, wedi'u pwysoli yn \u00f4l pellter."
+        },
+        "swimming_pool_distance": {
+          "label": "Pellter i'r pwll cyhoeddus agosaf",
+          "description": "Pellter cyfartalog mewn llinell syth o gartrefi i'r pwll nofio agosaf sy'n agored i'r cyhoedd."
+        },
+        "culture": {
+          "label": "Llyfrgelloedd, sinem\u00e2u, theatrau ac amgueddfeydd",
+          "description": "Llyfrgelloedd, sinem\u00e2u, theatrau, canolfannau celfyddydau, amgueddfeydd ac orielau o fewn 2km."
+        },
+        "fast_food": {
+          "label": "Siopau bwyd cyflym gerllaw",
+          "description": "Siopau bwyd cyflym o fewn 800m."
+        },
+        "gambling": {
+          "label": "Siopau betio a chasinos gerllaw",
+          "description": "Siopau betio, lleoliadau gamblo a chasinos o fewn 800m."
+        },
+        "house_price": {
+          "label": "Pris t\u0177 arferol",
+          "description": "Pris gwerthu canolrifol dros y 12 mis diwethaf, wedi'i sefydlogi tuag at yr ardal o gwmpas lle mae'r gwerthiannau'n brin."
+        },
+        "housing_condition": {
+          "label": "Cyflwr tai",
+          "description": "Is-barth dan do IoD 2025 (cartrefi mewn cyflwr gwael neu heb wres canolog)."
+        },
+        "price_change": {
+          "label": "Newid ym mhrisiau tai",
+          "description": "Newid yn y pris gwerthu canolrifol, y 12 mis diwethaf yn erbyn y 12 mis cynt."
+        },
+        "council_tax": {
+          "label": "Treth gyngor (Band D)",
+          "description": "Treth gyngor flynyddol ar gartref Band D, gan gynnwys taliadau'r sir, yr heddlu, t\u00e2n a chyngor cymuned cyfartalog."
+        },
+        "price_to_income": {
+          "label": "Pris o'i gymharu ag incwm lleol",
+          "description": "Pris t\u0177 arferol wedi'i rannu ag incwm aelwyd net cymedrig yr ardal."
+        },
+        "new_builds": {
+          "label": "Cartrefi a adeiladwyd ers 2000",
+          "description": "Cyfran y cartrefi a adeiladwyd yn 2000 neu'n ddiweddarach."
+        },
+        "period_homes": {
+          "label": "Cartrefi a adeiladwyd cyn 1919",
+          "description": "Cyfran y cartrefi a adeiladwyd cyn 1919."
+        },
+        "lower_band_homes": {
+          "label": "Cartrefi ym mandiau treth gyngor A\u2013B",
+          "description": "Cyfran y cartrefi yn y ddau fand treth gyngor isaf (y cartrefi rhataf yng ngwerthoedd 1991)."
+        },
+        "income_deprivation": {
+          "label": "Amddifadedd incwm",
+          "description": "Cyfran y trigolion ar incwm isel (parth incwm IoD 2025)."
+        },
+        "employment_deprivation": {
+          "label": "Amddifadedd cyflogaeth",
+          "description": "Cyfran y trigolion o oedran gweithio sydd allan o waith yn anwirfoddol (parth cyflogaeth IoD 2025)."
+        },
+        "claimant_rate": {
+          "label": "Cyfradd hawlwyr",
+          "description": "Trigolion sy'n hawlio budd-daliadau sy'n gysylltiedig \u00e2 diweithdra, fel cyfran o'r rhai 16\u201364 oed (mis diweddaraf)."
+        },
+        "household_income": {
+          "label": "Incwm aelwydydd",
+          "description": "Incwm aelwyd net cymedrig yn yr ardal ehangach (MSOA), cyn costau tai."
+        },
+        "health_deprivation": {
+          "label": "Iechyd ac anabledd",
+          "description": "Marwolaeth gynamserol, salwch ac anabledd (parth amddifadedd iechyd ac anabledd IoD 2025)."
+        },
+        "life_expectancy": {
+          "label": "Disgwyliad oes",
+          "description": "Disgwyliad oes adeg geni yn yr ardal ehangach (MSOA), cymedr dynion a menywod, 2019\u201323."
+        },
+        "good_health": {
+          "label": "Iechyd da (hunan-adroddedig)",
+          "description": "Trigolion sy'n disgrifio eu hiechyd fel da neu dda iawn (Cyfrifiad 2021)."
+        },
+        "imd": {
+          "label": "Mynegai Amddifadedd Lluosog 2025",
+          "description": "Sg\u00f4r amddifadedd cyffredinol; heb ei sgorio am fod ei barthau'n gorgyffwrdd \u00e2 dangosyddion eraill."
+        },
+        "population_density": {
+          "label": "Dwysedd poblogaeth",
+          "description": "Trigolion fesul cilometr sgw\u00e2r (Cyfrifiad 2021)."
+        },
+        "households_with_children": {
+          "label": "Aelwydydd \u00e2 phlant dibynnol",
+          "description": "Cyfran yr aelwydydd \u00e2 phlant dibynnol (Cyfrifiad 2021)."
+        },
+        "aged_65_plus": {
+          "label": "Trigolion 65 oed a throsodd",
+          "description": "Cyfran y trigolion 65 oed neu'n h\u0177n (Cyfrifiad 2021)."
+        },
+        "owner_occupied": {
+          "label": "Cartrefi perchen-feddianwyr",
+          "description": "Cyfran yr aelwydydd sy'n berchen ar eu cartref yn llwyr neu \u00e2 morgais (Cyfrifiad 2021)."
+        },
+        "no_car": {
+          "label": "Aelwydydd heb gar",
+          "description": "Cyfran yr aelwydydd heb gar na fan (Cyfrifiad 2021)."
+        },
+        "sustainable_commute": {
+          "label": "Cerdded, beicio neu drafnidiaeth gyhoeddus i'r gwaith",
+          "description": "Cyfran y gweithwyr sy'n cymudo ar droed, ar feic neu ar drafnidiaeth gyhoeddus (Cyfrifiad 2021, yn ystod cyfyngiadau COVID-19)."
+        }
+      }
+    }
+  },
   "scored_indicators": [
     "crime_violence",
     "crime_burglary",
@@ -159,7 +533,8 @@
       "weight": 1.5,
       "role": "scored",
       "overlap_group": "violence_disorder",
-      "caveats": "Rates use residents as the denominator, so town centres with few residents and many visitors score badly. Greater Manchester Police publishes no data; its area is estimated from IoD 2025's crime domain."
+      "caveats": "Rates use residents as the denominator, so town centres with few residents and many visitors score badly. Greater Manchester Police publishes no data; its area is estimated from IoD 2025's crime domain.",
+      "unit_code": "per_1000_year"
     },
     {
       "id": "crime_burglary",
@@ -191,7 +566,8 @@
       "weight": 1.0,
       "role": "scored",
       "overlap_group": null,
-      "caveats": null
+      "caveats": null,
+      "unit_code": "per_1000_year"
     },
     {
       "id": "crime_asb",
@@ -223,7 +599,8 @@
       "weight": 1.0,
       "role": "scored",
       "overlap_group": null,
-      "caveats": null
+      "caveats": null,
+      "unit_code": "per_1000_year"
     },
     {
       "id": "crime_theft",
@@ -258,7 +635,8 @@
       "weight": 1.0,
       "role": "scored",
       "overlap_group": null,
-      "caveats": null
+      "caveats": null,
+      "unit_code": "per_1000_year"
     },
     {
       "id": "crime_damage_disorder",
@@ -291,7 +669,8 @@
       "weight": 1.0,
       "role": "context",
       "overlap_group": "violence_disorder",
-      "caveats": null
+      "caveats": null,
+      "unit_code": "per_1000_year"
     },
     {
       "id": "road_danger",
@@ -329,7 +708,8 @@
       "weight": 0.75,
       "role": "scored",
       "overlap_group": null,
-      "caveats": "Busy roads near homes raise the count whoever was involved. Police forces moved to a new injury-reporting system at different times, which records more injuries as serious."
+      "caveats": "Busy roads near homes raise the count whoever was involved. Police forces moved to a new injury-reporting system at different times, which records more injuries as serious.",
+      "unit_code": "collisions_year"
     },
     {
       "id": "iod_crime",
@@ -360,7 +740,8 @@
       "weight": 1.0,
       "role": "diagnostic",
       "overlap_group": "crime",
-      "caveats": null
+      "caveats": null,
+      "unit_code": "score"
     },
     {
       "id": "no2",
@@ -392,7 +773,8 @@
       "weight": 1.0,
       "role": "scored",
       "overlap_group": "air_quality_no2",
-      "caveats": "Background concentrations; roadside levels on busy streets are higher. WHO guideline is 10 \u00b5g/m\u00b3."
+      "caveats": "Background concentrations; roadside levels on busy streets are higher. WHO guideline is 10 \u00b5g/m\u00b3.",
+      "unit_code": "ugm3"
     },
     {
       "id": "pm25",
@@ -424,7 +806,8 @@
       "weight": 1.0,
       "role": "scored",
       "overlap_group": null,
-      "caveats": "WHO guideline is 5 \u00b5g/m\u00b3."
+      "caveats": "WHO guideline is 5 \u00b5g/m\u00b3.",
+      "unit_code": "ugm3"
     },
     {
       "id": "green_space_access",
@@ -462,7 +845,8 @@
       "weight": 0.75,
       "role": "scored",
       "overlap_group": null,
-      "caveats": "Counts public parks and playing fields, not open countryside, so villages surrounded by fields and footpaths score lower than they feel."
+      "caveats": "Counts public parks and playing fields, not open countryside, so villages surrounded by fields and footpaths score lower than they feel.",
+      "unit_code": "index"
     },
     {
       "id": "play_spaces",
@@ -499,7 +883,8 @@
       "weight": 1.0,
       "role": "context",
       "overlap_group": null,
-      "caveats": null
+      "caveats": null,
+      "unit_code": "index"
     },
     {
       "id": "flood_risk",
@@ -535,7 +920,8 @@
       "weight": 1.0,
       "role": "scored",
       "overlap_group": null,
-      "caveats": "Rivers and the sea only, not surface water or groundwater; the Environment Agency's model takes flood defences into account. In Wales, NRW publishes risk areas rather than postcode counts, so homes at risk are estimated from the share of an LSOA's residential postcodes inside the high and medium areas."
+      "caveats": "Rivers and the sea only, not surface water or groundwater; the Environment Agency's model takes flood defences into account. In Wales, NRW publishes risk areas rather than postcode counts, so homes at risk are estimated from the share of an LSOA's residential postcodes inside the high and medium areas.",
+      "unit_code": "pct_homes"
     },
     {
       "id": "iod_outdoors",
@@ -566,7 +952,8 @@
       "weight": 1.0,
       "role": "diagnostic",
       "overlap_group": null,
-      "caveats": null
+      "caveats": null,
+      "unit_code": "score"
     },
     {
       "id": "gp_distance",
@@ -594,7 +981,8 @@
       "weight": 1.0,
       "role": "scored",
       "overlap_group": null,
-      "caveats": null
+      "caveats": null,
+      "unit_code": "metres"
     },
     {
       "id": "patients_per_gp",
@@ -621,7 +1009,8 @@
       "weight": 1.0,
       "role": "scored",
       "overlap_group": null,
-      "caveats": "Excludes GPs in training; practices reporting under one full-time GP are left out of the average."
+      "caveats": "Excludes GPs in training; practices reporting under one full-time GP are left out of the average.",
+      "unit_code": "patients_per_gp"
     },
     {
       "id": "gp_quality",
@@ -648,7 +1037,8 @@
       "weight": 0.75,
       "role": "scored",
       "overlap_group": null,
-      "caveats": "Most practices are rated Good, and some ratings are several years old."
+      "caveats": "Most practices are rated Good, and some ratings are several years old.",
+      "unit_code": "rating"
     },
     {
       "id": "care_homes",
@@ -678,7 +1068,8 @@
       "weight": 1.0,
       "role": "context",
       "overlap_group": null,
-      "caveats": null
+      "caveats": null,
+      "unit_code": "index"
     },
     {
       "id": "pharmacy_distance",
@@ -709,7 +1100,8 @@
       "weight": 0.75,
       "role": "scored",
       "overlap_group": null,
-      "caveats": "Rural GP practices that dispense medicines themselves aren't counted. Welsh pharmacies come from OpenStreetMap, since NWSSP's list is not machine-readable."
+      "caveats": "Rural GP practices that dispense medicines themselves aren't counted. Welsh pharmacies come from OpenStreetMap, since NWSSP's list is not machine-readable.",
+      "unit_code": "metres"
     },
     {
       "id": "dentist_distance",
@@ -739,7 +1131,8 @@
       "weight": 0.5,
       "role": "scored",
       "overlap_group": null,
-      "caveats": "Whether a practice takes new NHS patients isn't published as open data."
+      "caveats": "Whether a practice takes new NHS patients isn't published as open data.",
+      "unit_code": "metres"
     },
     {
       "id": "primary_school_quality",
@@ -779,7 +1172,8 @@
       "weight": 1.5,
       "role": "scored",
       "overlap_group": null,
-      "caveats": "Quality blends Ofsted (60%) and key stage 2 results as a percentile (40%); results reflect intake as well as teaching. Distance isn't admission; oversubscribed schools admit by catchment or faith. Not available in Wales, which publishes no primary school results or inspection grades."
+      "caveats": "Quality blends Ofsted (60%) and key stage 2 results as a percentile (40%); results reflect intake as well as teaching. Distance isn't admission; oversubscribed schools admit by catchment or faith. Not available in Wales, which publishes no primary school results or inspection grades.",
+      "unit_code": "quality"
     },
     {
       "id": "secondary_school_quality",
@@ -824,7 +1218,8 @@
       "weight": 1.5,
       "role": "scored",
       "overlap_group": null,
-      "caveats": "Quality blends Ofsted (60%) and Attainment 8 as a percentile (40%); Progress 8 isn't published for 2024/25. In Wales, where no per-school results or inspection grades are published, the local authority's Capped 9 points score stands in for every school in it (flagged broadcast_lad)."
+      "caveats": "Quality blends Ofsted (60%) and Attainment 8 as a percentile (40%); Progress 8 isn't published for 2024/25. In Wales, where no per-school results or inspection grades are published, the local authority's Capped 9 points score stands in for every school in it (flagged broadcast_lad).",
+      "unit_code": "quality"
     },
     {
       "id": "school_choice",
@@ -856,7 +1251,8 @@
       "weight": 0.5,
       "role": "scored",
       "overlap_group": null,
-      "caveats": null
+      "caveats": null,
+      "unit_code": "index"
     },
     {
       "id": "primary_results",
@@ -893,7 +1289,8 @@
       "weight": 1.0,
       "role": "context",
       "overlap_group": null,
-      "caveats": "Results reflect pupils' backgrounds as well as teaching; progress measures aren't published for 2024/25."
+      "caveats": "Results reflect pupils' backgrounds as well as teaching; progress measures aren't published for 2024/25.",
+      "unit_code": "pct_pupils"
     },
     {
       "id": "secondary_results",
@@ -930,7 +1327,8 @@
       "weight": 1.0,
       "role": "context",
       "overlap_group": null,
-      "caveats": "Results reflect pupils' backgrounds as well as teaching; Progress 8 isn't published for 2024/25 and 2025/26."
+      "caveats": "Results reflect pupils' backgrounds as well as teaching; Progress 8 isn't published for 2024/25 and 2025/26.",
+      "unit_code": "attainment8"
     },
     {
       "id": "nursery_access",
@@ -964,7 +1362,8 @@
       "weight": 1.0,
       "role": "scored",
       "overlap_group": null,
-      "caveats": "Childminders aren't located (Ofsted withholds their addresses). In Wales nurseries come from OpenStreetMap (CIW publishes no provider list) and count as average quality; school nursery classes are included from the Welsh schools list."
+      "caveats": "Childminders aren't located (Ofsted withholds their addresses). In Wales nurseries come from OpenStreetMap (CIW publishes no provider list) and count as average quality; school nursery classes are included from the Welsh schools list.",
+      "unit_code": "index"
     },
     {
       "id": "connectivity_overall",
@@ -994,7 +1393,8 @@
       "weight": 1.5,
       "role": "scored",
       "overlap_group": "connectivity",
-      "caveats": null
+      "caveats": null,
+      "unit_code": "score_100"
     },
     {
       "id": "connectivity_public_transport",
@@ -1024,7 +1424,8 @@
       "weight": 1.0,
       "role": "context",
       "overlap_group": "connectivity",
-      "caveats": null
+      "caveats": null,
+      "unit_code": "score_100"
     },
     {
       "id": "connectivity_walking",
@@ -1054,7 +1455,8 @@
       "weight": 1.0,
       "role": "context",
       "overlap_group": "connectivity",
-      "caveats": null
+      "caveats": null,
+      "unit_code": "score_100"
     },
     {
       "id": "connectivity_cycling",
@@ -1084,7 +1486,8 @@
       "weight": 0.5,
       "role": "context",
       "overlap_group": "connectivity",
-      "caveats": null
+      "caveats": null,
+      "unit_code": "score_100"
     },
     {
       "id": "station_distance",
@@ -1120,7 +1523,8 @@
       "weight": 0.75,
       "role": "scored",
       "overlap_group": null,
-      "caveats": null
+      "caveats": null,
+      "unit_code": "metres"
     },
     {
       "id": "bus_frequency",
@@ -1153,7 +1557,8 @@
       "weight": 1.0,
       "role": "context",
       "overlap_group": "connectivity",
-      "caveats": "Timetabled buses on a normal Tuesday. Shown, not scored, because DfT's connectivity score (scored) already covers bus access (\u03c1 \u2248 0.82)."
+      "caveats": "Timetabled buses on a normal Tuesday. Shown, not scored, because DfT's connectivity score (scored) already covers bus access (\u03c1 \u2248 0.82).",
+      "unit_code": "buses_hour"
     },
     {
       "id": "gigabit_broadband",
@@ -1185,7 +1590,8 @@
       "weight": 0.75,
       "role": "scored",
       "overlap_group": null,
-      "caveats": null
+      "caveats": null,
+      "unit_code": "pct_homes"
     },
     {
       "id": "slow_broadband",
@@ -1217,7 +1623,8 @@
       "weight": 1.0,
       "role": "context",
       "overlap_group": null,
-      "caveats": null
+      "caveats": null,
+      "unit_code": "pct_homes"
     },
     {
       "id": "well_run_pubs",
@@ -1250,7 +1657,8 @@
       "weight": 1.0,
       "role": "scored",
       "overlap_group": null,
-      "caveats": "Hygiene ratings measure how well a pub is run, not the beer or the atmosphere."
+      "caveats": "Hygiene ratings measure how well a pub is run, not the beer or the atmosphere.",
+      "unit_code": "index"
     },
     {
       "id": "food_and_drink",
@@ -1286,7 +1694,8 @@
       "weight": 1.0,
       "role": "scored",
       "overlap_group": "high_street",
-      "caveats": null
+      "caveats": null,
+      "unit_code": "index"
     },
     {
       "id": "supermarket_distance",
@@ -1319,7 +1728,8 @@
       "weight": 1.0,
       "role": "scored",
       "overlap_group": null,
-      "caveats": null
+      "caveats": null,
+      "unit_code": "metres"
     },
     {
       "id": "shops",
@@ -1352,7 +1762,8 @@
       "weight": 0.75,
       "role": "context",
       "overlap_group": "high_street",
-      "caveats": null
+      "caveats": null,
+      "unit_code": "index"
     },
     {
       "id": "leisure",
@@ -1383,7 +1794,8 @@
       "weight": 0.75,
       "role": "scored",
       "overlap_group": null,
-      "caveats": null
+      "caveats": null,
+      "unit_code": "index"
     },
     {
       "id": "swimming_pool_distance",
@@ -1416,7 +1828,8 @@
       "weight": 1.0,
       "role": "context",
       "overlap_group": null,
-      "caveats": null
+      "caveats": null,
+      "unit_code": "metres"
     },
     {
       "id": "culture",
@@ -1456,7 +1869,8 @@
       "weight": 0.75,
       "role": "scored",
       "overlap_group": null,
-      "caveats": null
+      "caveats": null,
+      "unit_code": "index"
     },
     {
       "id": "fast_food",
@@ -1491,7 +1905,8 @@
       "weight": 1.0,
       "role": "context",
       "overlap_group": null,
-      "caveats": null
+      "caveats": null,
+      "unit_code": "index"
     },
     {
       "id": "gambling",
@@ -1529,7 +1944,8 @@
       "weight": 1.0,
       "role": "context",
       "overlap_group": null,
-      "caveats": null
+      "caveats": null,
+      "unit_code": "index"
     },
     {
       "id": "house_price",
@@ -1557,7 +1973,8 @@
       "weight": 2.0,
       "role": "scored",
       "overlap_group": null,
-      "caveats": "Lower prices score as more affordable; the scale reflects price, not value."
+      "caveats": "Lower prices score as more affordable; the scale reflects price, not value.",
+      "unit_code": "gbp"
     },
     {
       "id": "housing_condition",
@@ -1588,7 +2005,8 @@
       "weight": 1.0,
       "role": "scored",
       "overlap_group": null,
-      "caveats": null
+      "caveats": null,
+      "unit_code": "score"
     },
     {
       "id": "price_change",
@@ -1618,7 +2036,8 @@
       "weight": 1.0,
       "role": "context",
       "overlap_group": null,
-      "caveats": "Noisy where sales are few."
+      "caveats": "Noisy where sales are few.",
+      "unit_code": "pct"
     },
     {
       "id": "council_tax",
@@ -1648,7 +2067,8 @@
       "weight": 0.5,
       "role": "scored",
       "overlap_group": null,
-      "caveats": "The same for every neighbourhood in a council area; a home's bill depends on its band. Welsh bands are derived from each authority's average band D using the statutory ratios."
+      "caveats": "The same for every neighbourhood in a council area; a home's bill depends on its band. Welsh bands are derived from each authority's average band D using the statutory ratios.",
+      "unit_code": "gbp_year"
     },
     {
       "id": "price_to_income",
@@ -1676,7 +2096,8 @@
       "weight": 1.0,
       "role": "context",
       "overlap_group": null,
-      "caveats": "Income is a model-based estimate for the wider area (MSOA), for 2022\u201323."
+      "caveats": "Income is a model-based estimate for the wider area (MSOA), for 2022\u201323.",
+      "unit_code": "years_income"
     },
     {
       "id": "new_builds",
@@ -1709,7 +2130,8 @@
       "weight": 1.0,
       "role": "context",
       "overlap_group": null,
-      "caveats": null
+      "caveats": null,
+      "unit_code": "pct_homes"
     },
     {
       "id": "period_homes",
@@ -1742,7 +2164,8 @@
       "weight": 1.0,
       "role": "context",
       "overlap_group": null,
-      "caveats": null
+      "caveats": null,
+      "unit_code": "pct_homes"
     },
     {
       "id": "lower_band_homes",
@@ -1776,7 +2199,8 @@
       "weight": 1.0,
       "role": "context",
       "overlap_group": null,
-      "caveats": null
+      "caveats": null,
+      "unit_code": "pct_homes"
     },
     {
       "id": "income_deprivation",
@@ -1807,7 +2231,8 @@
       "weight": 1.0,
       "role": "scored",
       "overlap_group": "income_work",
-      "caveats": null
+      "caveats": null,
+      "unit_code": "rate"
     },
     {
       "id": "employment_deprivation",
@@ -1838,7 +2263,8 @@
       "weight": 1.0,
       "role": "context",
       "overlap_group": "income_work",
-      "caveats": null
+      "caveats": null,
+      "unit_code": "rate"
     },
     {
       "id": "claimant_rate",
@@ -1866,7 +2292,8 @@
       "weight": 1.0,
       "role": "context",
       "overlap_group": "income_work",
-      "caveats": "Not scored because it tracks IoD income deprivation closely (\u03c1\u22480.9), but it is far more recent (monthly). Includes Universal Credit claimants in low-paid work who must look for more."
+      "caveats": "Not scored because it tracks IoD income deprivation closely (\u03c1\u22480.9), but it is far more recent (monthly). Includes Universal Credit claimants in low-paid work who must look for more.",
+      "unit_code": "pct_working_age"
     },
     {
       "id": "household_income",
@@ -1895,7 +2322,8 @@
       "weight": 1.0,
       "role": "context",
       "overlap_group": "income_work",
-      "caveats": null
+      "caveats": null,
+      "unit_code": "gbp_year"
     },
     {
       "id": "health_deprivation",
@@ -1926,7 +2354,8 @@
       "weight": 1.0,
       "role": "scored",
       "overlap_group": "population_health",
-      "caveats": "Built to account for age, unlike self-reported health, which flatters areas of young adults."
+      "caveats": "Built to account for age, unlike self-reported health, which flatters areas of young adults.",
+      "unit_code": "score"
     },
     {
       "id": "life_expectancy",
@@ -1955,7 +2384,8 @@
       "weight": 1.0,
       "role": "context",
       "overlap_group": "population_health",
-      "caveats": "Shown, not scored, because IoD's health domain (scored) measures much the same at a finer scale."
+      "caveats": "Shown, not scored, because IoD's health domain (scored) measures much the same at a finer scale.",
+      "unit_code": "years"
     },
     {
       "id": "good_health",
@@ -1988,7 +2418,8 @@
       "weight": 1.0,
       "role": "context",
       "overlap_group": "population_health",
-      "caveats": "Not adjusted for age, so student areas look healthiest."
+      "caveats": "Not adjusted for age, so student areas look healthiest.",
+      "unit_code": "pct"
     },
     {
       "id": "imd",
@@ -2019,7 +2450,8 @@
       "weight": 1.0,
       "role": "context",
       "overlap_group": null,
-      "caveats": null
+      "caveats": null,
+      "unit_code": "score"
     },
     {
       "id": "population_density",
@@ -2049,7 +2481,8 @@
       "weight": 1.0,
       "role": "context",
       "overlap_group": null,
-      "caveats": null
+      "caveats": null,
+      "unit_code": "people_km2"
     },
     {
       "id": "households_with_children",
@@ -2084,7 +2517,8 @@
       "weight": 1.0,
       "role": "context",
       "overlap_group": null,
-      "caveats": null
+      "caveats": null,
+      "unit_code": "pct"
     },
     {
       "id": "aged_65_plus",
@@ -2120,7 +2554,8 @@
       "weight": 1.0,
       "role": "context",
       "overlap_group": null,
-      "caveats": null
+      "caveats": null,
+      "unit_code": "pct"
     },
     {
       "id": "owner_occupied",
@@ -2152,7 +2587,8 @@
       "weight": 1.0,
       "role": "context",
       "overlap_group": null,
-      "caveats": null
+      "caveats": null,
+      "unit_code": "pct"
     },
     {
       "id": "no_car",
@@ -2184,7 +2620,8 @@
       "weight": 1.0,
       "role": "context",
       "overlap_group": null,
-      "caveats": null
+      "caveats": null,
+      "unit_code": "pct"
     },
     {
       "id": "sustainable_commute",
@@ -2220,7 +2657,8 @@
       "weight": 1.0,
       "role": "context",
       "overlap_group": null,
-      "caveats": null
+      "caveats": null,
+      "unit_code": "pct"
     }
   ],
   "themes": {
@@ -2806,8 +3244,8 @@
       "bytes": 18733
     },
     "areas.parquet": {
-      "sha256": "3e2c557a085d7f0d199a85547fc37683fac86147c60358855e6c59b324fe0cf5",
-      "bytes": 14830
+      "sha256": "82b36c0572875ba7f12b6cb5304af65c41fc69ca4c776facfc1b9558d1dfb972",
+      "bytes": 14809
     },
     "pois.parquet": {
       "sha256": "9cba504e89f819a959b559a539472cf0f762c54200cdf97bd17310611a296d85",

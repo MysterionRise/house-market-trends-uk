@@ -31,6 +31,9 @@ class ShortlistItem(BaseModel):
 
 class LiveabilityState(BaseModel):
     preset: str = "balanced"
+    locale: Literal["en", "cy", "gd", "ga"] = Field(
+        "en", description="The page's language; the assistant replies in it"
+    )
     theme_weights: dict[str, float] = Field(
         default_factory=dict, description="Overrides on top of the preset's theme weights"
     )

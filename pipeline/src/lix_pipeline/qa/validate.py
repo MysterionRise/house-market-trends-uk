@@ -262,10 +262,26 @@ def validate_places() -> list[str]:
 
 
 def validate_config() -> list[str]:
-    """Every theme keeps enough scored weight in each active nation (see coverage_problems)."""
-    from lix_core.config import coverage_problems, load_registry
+    """Every theme keeps enough scored weight in each active nation (coverage_problems), and
+    every reviewed label catalogue is complete (a draft may have gaps: English fills them)."""
+    from lix_core.config import (
+        catalogue_gaps,
+        coverage_problems,
+        load_label_catalogues,
+        load_registry,
+        load_weights,
+    )
 
-    return coverage_problems(load_indicators(), load_registry(), active_nations())
+    catalogue, weights = load_indicators(), load_weights()
+    problems = coverage_problems(catalogue, load_registry(), active_nations())
+    for locale, labels in load_label_catalogues().items():
+        gaps = catalogue_gaps(catalogue, weights, labels)
+        status = (labels.get("_meta") or {}).get("status")
+        if gaps and status == "reviewed":
+            problems.append(f"config/i18n/{locale}.yaml is reviewed but lacks {gaps[:5]}…")
+        elif gaps:
+            print(f"config/i18n/{locale}.yaml (draft): {len(gaps)} labels fall back to English")
+    return problems
 
 
 VALIDATORS = {

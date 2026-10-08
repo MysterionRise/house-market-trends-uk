@@ -16,6 +16,10 @@ FLAG_TEXT = {
     "street-level data.",
     "low_n": "Few homes sold here in the last year, so the price is steadied towards the "
     "surrounding area.",
+    "broadcast_lad": "Secondary school quality comes from the council's exam results, because "
+    "Wales publishes no per-school results or inspection grades.",
+    "not_available": "Some indicators are not available in Wales yet; the theme uses the ones "
+    "it has.",
 }
 
 
@@ -29,6 +33,7 @@ def indicator_value(store: Store, row: dict, indicator_id: str) -> IndicatorValu
         id=spec.id, label=spec.label, theme=spec.theme, unit=spec.unit,
         value=_round(row.get(f"raw__{spec.id}"), 3), score=_round(row.get(f"n__{spec.id}")),
         quality=str(row.get(f"q__{spec.id}") or "ok"), role=spec.role, benchmark=spec.benchmark,
+        unit_code=spec.unit_code,
     )  # fmt: skip
 
 
@@ -64,10 +69,13 @@ def area_profile(
     ]
     scored = [indicator_value(store, row, i.id) for i in store.scored]
     ranked = sorted((v for v in scored if v.score is not None), key=lambda v: v.score)
-    flags = sorted(
-        {FLAG_TEXT[v.quality] for v in scored if v.quality in FLAG_TEXT}
-        | ({FLAG_TEXT["low_n"]} if row.get("q__house_price") == "low_n" else set())
+    flag_codes = sorted(
+        {v.quality for v in scored if v.quality in FLAG_TEXT}
+        | ({"low_n"} if row.get("q__house_price") == "low_n" else set())
+        | ({"broadcast_lad"} if any(v.quality == "broadcast_lad" for v in scored) else set())
+        | ({"not_available"} if any(v.quality == "not_available" for v in scored) else set())
     )
+    flags = [FLAG_TEXT[c] for c in flag_codes if c in FLAG_TEXT]
     pct = scores.get("overall_pct")
     # Precomputed per preset at build time; custom weights have no range
     preset_id = None if theme_weights else name
@@ -95,6 +103,7 @@ def area_profile(
         weaknesses=ranked[:3],
         key_facts=[indicator_value(store, row, i) for i in KEY_FACTS if i in store.indicators],
         flags=flags,
+        flag_codes=flag_codes,
         centre=Point(lat=row["pwc_lat"], lon=row["pwc_lon"]),
         bbox=(row["bbox_w"], row["bbox_s"], row["bbox_e"], row["bbox_n"]),
     )

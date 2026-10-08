@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { useEffect, useRef } from "react";
 
 import { useLiveability } from "@/components/AppData";
+import { useLocaleChoice } from "@/components/LocaleProvider";
 import { type Tab, usePanel } from "@/components/PanelContext";
 import { AnalystPanel } from "@/components/panels/AnalystPanel";
 import { AreaPanel } from "@/components/panels/AreaPanel";
@@ -19,6 +20,12 @@ export function SidePanel() {
   const coverage = useCoverageName();
   const { state, update } = useLiveability();
   const { tab, setTab } = usePanel();
+  const { locale } = useLocaleChoice();
+
+  // The assistant replies in the page's language: it reads it from the shared state
+  useEffect(() => {
+    update((s) => (s.locale === locale ? s : { ...s, locale }));
+  }, [locale, update]);
 
   const suggestions = SUGGESTION_KEYS.map((k) => ({
     title: t(`suggestions.${k}Title`),

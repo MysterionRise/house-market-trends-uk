@@ -207,3 +207,50 @@ def test_welsh_area_is_profiled_within_its_nation(store):
     assert lsoas_in(store, "nation", "W92000004").to_list() == ["W01001880", "W01001881"]
     wales = search_place(store, "Wales")[0]
     assert (wales.kind, wales.code) == ("nation", "W92000004")
+
+
+from types import SimpleNamespace  # noqa: E402
+
+
+class TestLanguage:
+    def test_error_messages_follow_the_locale(self):
+        from pydantic_ai.exceptions import UsageLimitExceeded
+
+        from lix_api.agent.errors import friendly_message
+
+        err = UsageLimitExceeded("too many")
+        assert friendly_message(err, "en").startswith("That needed more steps")
+        assert friendly_message(err, "cy").startswith("Roedd angen mwy o gamau")
+        assert friendly_message(err, "gd") == friendly_message(err, "en")  # no catalogue yet
+
+    def test_prompt_asks_for_welsh(self, store):
+        from types import SimpleNamespace
+
+        from lix_api.agent.agent import current_state
+        from lix_api.agent.state import LiveabilityState
+
+        ctx = SimpleNamespace(deps=SimpleNamespace(state=LiveabilityState(locale="cy")))
+        text = current_state(ctx)
+        assert text.startswith("Reply in Welsh (Cymraeg).")
+        ctx = SimpleNamespace(deps=SimpleNamespace(state=LiveabilityState()))
+        assert "Reply in" not in current_state(ctx)
+
+    def test_language_check_tells_welsh_from_english(self):
+        import sys
+        from pathlib import Path
+
+        sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+        from evals.evaluators import STOPWORDS, LanguageCheck
+
+        assert set(STOPWORDS) == {"en", "cy", "gd", "ga"}
+        check = LanguageCheck(lang="cy")
+        ctx = SimpleNamespace(
+            output=SimpleNamespace(
+                reply="Mae Pontcanna yn sgorio'n dda ar y map ac mae'r ardal yn dawel."
+            )
+        )
+        assert check.evaluate(ctx).value
+        ctx = SimpleNamespace(
+            output=SimpleNamespace(reply="Pontcanna scores well and the area is quiet on the map.")
+        )
+        assert not check.evaluate(ctx).value

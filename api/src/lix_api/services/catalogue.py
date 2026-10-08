@@ -16,6 +16,7 @@ def list_indicators(store: Store, theme: str | None = None) -> list[IndicatorInf
             role=i.role,
             normalise=i.normalise,
             weight=i.weight,
+            unit_code=i.unit_code,
             benchmark=i.benchmark,
             coverage=i.coverage or [],
             caveats=i.caveats,

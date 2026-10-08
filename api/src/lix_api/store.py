@@ -51,7 +51,12 @@ class Store:
 
     @cached_property
     def indicators(self) -> dict[str, IndicatorSpec]:
-        return {i["id"]: IndicatorSpec.model_validate(i) for i in self.manifest["indicators"]}
+        # The manifest dumps the computed unit_code beside the fields; the strict model
+        # recomputes it
+        return {
+            i["id"]: IndicatorSpec.model_validate({k: v for k, v in i.items() if k != "unit_code"})
+            for i in self.manifest["indicators"]
+        }
 
     @cached_property
     def themes(self) -> dict[str, ThemeSpec]:

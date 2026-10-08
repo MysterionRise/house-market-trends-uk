@@ -21,6 +21,11 @@ All notable changes to this project. The format follows
 - Nation as configuration (`config/nations.yaml`, `LIX_NATIONS=E,W`), coverage per
   source and `lix validate config`, which lists the themes still short of data in a
   nation.
+- **Languages.** A locale layer for the interface (English, Cymraeg as a draft; Gàidhlig
+  and Gaeilge to follow with their nations): every string comes from a catalogue, numbers
+  and dates follow the locale, the data labels have a Welsh catalogue with English
+  fallback, and the assistant replies and reports failures in the chosen language. See
+  [docs/i18n.md](docs/i18n.md) for how to review a draft.
 
 ### Changed
 

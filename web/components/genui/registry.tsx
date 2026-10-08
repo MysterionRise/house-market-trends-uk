@@ -16,6 +16,7 @@ import { PoiList } from "@/components/genui/PoiList";
 import { RankedList } from "@/components/genui/RankedList";
 import { type SqlData, SqlResult } from "@/components/genui/SqlResult";
 import { parseResult } from "@/components/ui";
+import { useLabels } from "@/lib/labels";
 import type { AreaProfile, Comparison, Explanation, IndicatorInfo, Place, PoiResult, RankResult } from "@/lib/contracts.gen";
 
 const anyArgs = z.record(z.string(), z.unknown());
@@ -64,6 +65,7 @@ function useToolCard<T>(name: string, render: (result: T, args: Record<string, u
 
 export function GenerativeUI() {
   const t = useTranslations("Registry");
+  const labels = useLabels();
   useToolCard<RankResult>("rank_areas", (r) => <RankedList result={r} />);
   useToolCard<AreaProfile>("get_area_profile", (p) => <AreaProfileCard profile={p} />);
   useToolCard<Comparison>("compare_areas", (c) => <ComparisonTable comparison={c} />);
@@ -96,8 +98,9 @@ export function GenerativeUI() {
       <ul className="mt-1 space-y-1">
         {items.map((i) => (
           <li key={i.id}>
-            <span className="font-medium">{i.label}</span> <span className="text-[var(--text-muted)]">({i.role}, {i.unit})</span>
-            <div className="text-[var(--text-secondary)]">{i.description}</div>
+            <span className="font-medium">{labels.indicator(i.id)}</span>{" "}
+            <span className="text-[var(--text-muted)]">({i.role}, {labels.unit(i.id)})</span>
+            <div className="text-[var(--text-secondary)]">{labels.indicatorDescription(i.id)}</div>
           </li>
         ))}
       </ul>

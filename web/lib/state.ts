@@ -19,6 +19,7 @@ export type Bbox = [number, number, number, number];
 
 export const DEFAULT_STATE: LiveabilityState = {
   preset: "balanced",
+  locale: "en",
   theme_weights: {},
   indicator_weights: {},
   compare_within: "uk",

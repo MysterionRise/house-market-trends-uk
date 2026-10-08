@@ -1,0 +1,64 @@
+"""The assistant's own words (not the model's) in the interface language.
+
+The model answers in the language the page asks for (see ``current_state`` in agent.py);
+these are the fixed texts the server itself sends: what to do when a run fails.
+English is the fallback for any language or key without a translation.
+"""
+
+LANGUAGE_NAMES = {
+    "en": "English",
+    "cy": "Welsh (Cymraeg)",
+    "gd": "Scottish Gaelic (Gàidhlig)",
+    "ga": "Irish (Gaeilge)",
+}
+
+MESSAGES: dict[str, dict[str, str]] = {
+    "en": {
+        "still_works": "The map, weights and area pages still work.",
+        "usage_limit": "That needed more steps than I'm allowed for one question, so I stopped. "
+        "Try asking for one thing at a time.",
+        "tool_retry": "I couldn't get the data I needed for that. Try rephrasing, or name a town "
+        "or postcode.",
+        "key_rejected": "The assistant's API key was rejected; check it in .env. {still_works}",
+        "out_of_credit": "The assistant's model account is out of credit. {still_works}",
+        "busy": "The language model is busy right now; try again in a minute. {still_works}",
+        "model_problem": "The language model service had a problem; try again. {still_works}",
+        "no_response": "The language model didn't respond; try again in a moment. {still_works}",
+        "unknown": "Something went wrong while I was answering; try asking again. {still_works}",
+    },
+    "cy": {
+        "still_works": "Mae'r map, y pwysau a thudalennau'r ardaloedd yn dal i weithio.",
+        "usage_limit": "Roedd angen mwy o gamau ar hynny nag a ganiateir i mi ar gyfer un "
+        "cwestiwn, felly rhoddais y gorau iddi. Ceisiwch ofyn am un peth ar y tro.",
+        "tool_retry": "Methais gael y data roedd ei angen arnaf ar gyfer hynny. Ceisiwch ei "
+        "aralleirio, neu enwch dref neu god post.",
+        "key_rejected": "Gwrthodwyd allwedd API y cynorthwyydd; gwiriwch hi yn .env. {still_works}",
+        "out_of_credit": "Mae cyfrif model y cynorthwyydd wedi rhedeg allan o gredyd. "
+        "{still_works}",
+        "busy": "Mae'r model iaith yn brysur ar hyn o bryd; rhowch gynnig arall arni mewn munud. "
+        "{still_works}",
+        "model_problem": "Cafodd gwasanaeth y model iaith broblem; rhowch gynnig arall arni. "
+        "{still_works}",
+        "no_response": "Ni ymatebodd y model iaith; rhowch gynnig arall arni mewn eiliad. "
+        "{still_works}",
+        "unknown": "Aeth rhywbeth o'i le wrth i mi ateb; ceisiwch ofyn eto. {still_works}",
+    },
+}
+
+
+def message(key: str, locale: str = "en") -> str:
+    """A fixed assistant message in ``locale``, English where no translation exists."""
+    texts = MESSAGES.get(locale) or MESSAGES["en"]
+    text = texts.get(key) or MESSAGES["en"][key]
+    return text.format(still_works=texts.get("still_works") or MESSAGES["en"]["still_works"])
+
+
+def language_instruction(locale: str) -> str | None:
+    """The line added to the prompt when the page is not in English."""
+    if locale in ("en", None) or locale not in LANGUAGE_NAMES:
+        return None
+    name = LANGUAGE_NAMES[locale]
+    return (
+        f"Reply in {name}. Keep place names as the user wrote them. If you cannot write "
+        f"{name} well, say so in {name} and continue in English."
+    )

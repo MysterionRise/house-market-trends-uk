@@ -6,16 +6,18 @@ import { useState } from "react";
 import { useLiveability } from "@/components/AppData";
 import { Band, Card, Muted, ScoreBar, formatValue, useQualityNote } from "@/components/ui";
 import type { AreaProfile, IndicatorValue } from "@/lib/contracts.gen";
+import { useLabels } from "@/lib/labels";
 import { bboxOf } from "@/lib/state";
 
 function Facts({ items }: { items: IndicatorValue[] }) {
   const locale = useLocale();
   const qualityNote = useQualityNote();
+  const labels = useLabels();
   return (
     <dl className="grid grid-cols-2 gap-x-3 gap-y-1">
       {items.map((f) => (
         <div key={f.id} className="min-w-0">
-          <dt className="truncate text-xs text-[var(--text-muted)]">{f.label}</dt>
+          <dt className="truncate text-xs text-[var(--text-muted)]">{labels.indicator(f.id)}</dt>
           <dd className="text-sm tabular-nums">
             {formatValue(f.value, f.unit, locale)}
             {qualityNote(f.quality) && (
@@ -60,6 +62,7 @@ function CopyLink({ code }: { code: string }) {
 export function AreaProfileCard({ profile }: { profile: AreaProfile }) {
   const { state, update } = useLiveability();
   const t = useTranslations("Profile");
+  const labels = useLabels();
   const saved = state.shortlist.some((i) => i.code === profile.lsoa21cd);
   const title = profile.neighbourhood ? `${profile.neighbourhood}, ${profile.local_authority}` : profile.lsoa_name;
 
@@ -90,7 +93,7 @@ export function AreaProfileCard({ profile }: { profile: AreaProfile }) {
         {profile.themes.map((th) => (
           <ScoreBar
             key={th.theme}
-            label={th.label}
+            label={labels.theme(th.theme)}
             score={th.score}
             theme={th.theme}
             hint={th.percentile != null ? t("betterThan", { pct: th.percentile }) : undefined}
@@ -114,11 +117,11 @@ export function AreaProfileCard({ profile }: { profile: AreaProfile }) {
       <div className="mt-3 grid grid-cols-2 gap-3 text-xs">
         <div>
           <div className="mb-1 font-medium text-[var(--text-secondary)]">{t("strengths")}</div>
-          {profile.strengths.map((s) => <div key={s.id}>{s.label}</div>)}
+          {profile.strengths.map((s) => <div key={s.id}>{labels.indicator(s.id)}</div>)}
         </div>
         <div>
           <div className="mb-1 font-medium text-[var(--text-secondary)]">{t("weakerSpots")}</div>
-          {profile.weaknesses.map((s) => <div key={s.id}>{s.label}</div>)}
+          {profile.weaknesses.map((s) => <div key={s.id}>{labels.indicator(s.id)}</div>)}
         </div>
       </div>
 
@@ -128,7 +131,7 @@ export function AreaProfileCard({ profile }: { profile: AreaProfile }) {
 
       {profile.flags && profile.flags.length > 0 && (
         <ul className="mt-2 list-disc pl-4 text-xs text-[var(--text-secondary)]">
-          {profile.flags.map((f) => <li key={f}>{f}</li>)}
+          {profile.flags.map((f, i) => <li key={f}>{labels.flag(profile.flag_codes?.[i] ?? f, f)}</li>)}
         </ul>
       )}
 

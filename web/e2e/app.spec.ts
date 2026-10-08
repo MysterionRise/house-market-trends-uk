@@ -166,6 +166,9 @@ test("the interface switches to Cymraeg", async ({ page }) => {
   await expect(page.locator("main header h1")).toContainText("Mynegai Byw yn y DU");
   await expect(page.getByTestId("legend")).toContainText("Yn erbyn");
   await expect(page.getByTestId("locale-toggle")).toHaveValue("cy");
+  // Data labels come from the Welsh catalogue in the manifest
+  await page.getByTestId("tab-weights").click();
+  await expect(page.getByTestId("weights")).toContainText("Diogelwch");
   // Documentation stays English, and says so in Welsh
   await page.getByRole("link", { name: "Sut mae'r sgoriau'n gweithio" }).click();
   await expect(page.getByTestId("english-only")).toContainText("Saesneg");

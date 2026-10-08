@@ -20,6 +20,8 @@ export interface IndicatorMeta extends ScoredIndicator {
   role: "scored" | "context" | "diagnostic";
   caveats: string | null;
   sources: string[];
+  /** The unit's code (lix_core.config.UNIT_CODES): what formatValue formats by */
+  unit_code: string;
   /** uk: ranked against the whole country · nation: percentiles within the nation */
   benchmark: "uk" | "nation";
   /** Nation codes (E, W, S, N) the indicator is built for */
@@ -62,6 +64,10 @@ export interface Manifest {
   geography: Geography;
   /** Quality levels in code order: scores.parquet's q__ columns index this list */
   quality_levels: string[];
+  /** Interface languages with a data-label catalogue, and whether each is reviewed */
+  languages: { code: string; status: "draft" | "reviewed" }[];
+  /** Translated data labels by locale (config/i18n/*.yaml), English being the manifest itself */
+  i18n: Record<string, { themes?: unknown; indicators?: unknown; presets?: unknown; units?: unknown; flags?: unknown }>;
   scored_indicators: string[];
   indicators: IndicatorMeta[];
   themes: Record<string, { label: string; description: string }>;

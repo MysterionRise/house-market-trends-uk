@@ -1,0 +1,118 @@
+# Cymraeg labels for the data: themes, indicators (label, unit, description), presets and
+# the profile flags. English stays in indicators.yaml and weights.yaml; anything missing
+# here falls back to it. `_meta.status` is "draft" until a fluent reviewer signs it off
+# (see docs/i18n.md). Drafted with the TermCymru termbase in mind, 8 October 2026.
+_meta: {status: draft, reviewer: null, date: 2026-10-08}
+
+themes:
+  safety: {label: Diogelwch, description: Troseddau ac ymddygiad gwrthgymdeithasol a gofnodwyd lle mae pobl yn byw.}
+  environment: {label: Amgylchedd, description: Aer glân, parciau a mannau gwyrdd gerllaw, a pherygl llifogydd.}
+  health: {label: Gwasanaethau iechyd, description: Pa mor hawdd yw hi i drigolion weld meddyg teulu, fferyllydd neu ddeintydd.}
+  education: {label: Ysgolion a gofal plant, description: Ysgolion a meithrinfeydd da o fewn cyrraedd.}
+  transport: {label: Trafnidiaeth a chysylltedd, description: Pa mor dda mae ardal yn cysylltu â swyddi a gwasanaethau ym mhob dull, a'i band eang.}
+  amenities: {label: Amwynderau a bywyd nos, description: Siopau, caffis, tafarndai da, hamdden a diwylliant gerllaw.}
+  housing: {label: Tai a fforddiadwyedd, description: Beth mae cartrefi'n ei gostio a chyflwr y stoc dai.}
+  community: {label: Cymuned a lles, description: Incwm, gwaith ac iechyd y bobl sy'n byw yno.}
+
+presets:
+  balanced: {label: Cytbwys, description: Mae pob thema'n cyfrif yn gyfartal.}
+  family: {label: Teulu â phlant, description: Ysgolion a meithrinfeydd da, diogelwch a mannau gwyrdd sy'n dod gyntaf.}
+  young_professional: {label: Gweithiwr proffesiynol ifanc, description: Cysylltiadau, pethau i'w gwneud a thafarndai da; mae ysgolion yn llai pwysig.}
+  retiree: {label: Wedi ymddeol, description: Diogelwch, gwasanaethau iechyd, aer glân ac ardal dawelach.}
+  commuter: {label: Cymudwr, description: Cysylltiadau cyflym â swyddi, ar drafnidiaeth gyhoeddus yn anad dim.}
+
+units:
+  gbp: "£"
+  gbp_year: "£ y flwyddyn"
+  pct: "%"
+  pct_homes: "% o gartrefi"
+  pct_pupils: "% o ddisgyblion"
+  pct_working_age: "% o rai 16–64 oed"
+  metres: metrau
+  per_1000_year: "fesul 1,000 o drigolion y flwyddyn"
+  score: sgôr
+  score_100: "sgôr 0–100"
+  ugm3: "µg/m³"
+  index: "mynegai 0–1"
+  quality: "ansawdd 0–1"
+  rating: "sgôr 0–1 (Da = 0.75)"
+  rate: cyfradd
+  collisions_year: "gwrthdrawiadau y flwyddyn o fewn 500m"
+  patients_per_gp: "cleifion fesul meddyg teulu cyfwerth ag amser llawn"
+  attainment8: "Cyrhaeddiad 8"
+  buses_hour: "bysiau yr awr"
+  years_income: "blynyddoedd o incwm"
+  years: blynyddoedd
+  people_km2: "pobl fesul km²"
+
+flags:
+  imputed: "Mae'r ffigurau troseddu yma'n amcangyfrifon: nid yw Heddlu Manceinion Fwyaf yn cyhoeddi data ar lefel stryd."
+  low_n: "Ychydig o gartrefi a werthwyd yma yn y flwyddyn ddiwethaf, felly mae'r pris wedi'i sefydlogi tuag at yr ardal o gwmpas."
+  broadcast_lad: "Mae ansawdd ysgolion uwchradd yn dod o ganlyniadau arholiadau'r cyngor cyfan, gan nad yw Cymru'n cyhoeddi canlyniadau na graddau arolygu fesul ysgol."
+  not_available: "Nid yw rhai dangosyddion ar gael yng Nghymru eto; mae'r thema'n defnyddio'r rhai sydd ganddi."
+
+indicators:
+  crime_violence: {label: Troseddau treisgar a rhywiol, description: Troseddau treisgar a rhywiol a gofnodwyd fesul 1,000 o drigolion y flwyddyn (cyfartaledd 36 mis).}
+  crime_burglary: {label: Byrgleriaeth, description: Byrgleriaethau a gofnodwyd fesul 1,000 o drigolion y flwyddyn.}
+  crime_asb: {label: Ymddygiad gwrthgymdeithasol, description: Digwyddiadau ymddygiad gwrthgymdeithasol a adroddwyd fesul 1,000 o drigolion y flwyddyn.}
+  crime_theft: {label: "Lladrad, dwyn a throseddau cerbydau", description: "Lladrad, dwyn oddi ar y person, troseddau cerbydau a dwyn beiciau fesul 1,000 o drigolion y flwyddyn."}
+  crime_damage_disorder: {label: Difrod troseddol a threfn gyhoeddus, description: "Difrod troseddol, llosgi bwriadol a throseddau trefn gyhoeddus fesul 1,000 o drigolion y flwyddyn."}
+  road_danger: {label: Gwrthdrawiadau ffordd difrifol gerllaw, description: "Gwrthdrawiadau ffordd lle lladdwyd neu anafwyd rhywun yn ddifrifol o fewn 500m i gartrefi, y flwyddyn (cyfartaledd 5 mlynedd)."}
+  iod_crime: {label: Sgôr parth troseddu IoD 2025, description: Risg wedi'i modelu o erledigaeth bersonol a materol (data 2021–2023).}
+  no2: {label: Nitrogen deuocsid (NO₂), description: NO₂ cefndirol blynyddol cymedrig lle mae trigolion yn byw (model 1km Defra).}
+  pm25: {label: Gronynnau mân (PM2.5), description: PM2.5 cefndirol blynyddol cymedrig lle mae trigolion yn byw (model 1km Defra).}
+  green_space_access: {label: Parciau a mannau gwyrdd gerllaw, description: "Mynedfeydd i barciau, gerddi a chaeau chwarae cyhoeddus o fewn 1km o gerdded, wedi'u pwysoli yn ôl pellter."}
+  play_spaces: {label: Mannau chwarae gerllaw, description: "Mynedfeydd i fannau chwarae cyhoeddus o fewn 800m i gartrefi, wedi'u pwysoli yn ôl pellter."}
+  flood_risk: {label: Cartrefi mewn perygl o lifogydd, description: Cyfran y cartrefi sydd mewn perygl uchel neu ganolig o lifogydd o afonydd neu'r môr (siawns o 1% y flwyddyn o leiaf).}
+  iod_outdoors: {label: Amgylchedd byw awyr agored IoD 2025, description: Ansawdd aer a damweiniau traffig ffordd (is-barth IoD 2025).}
+  gp_distance: {label: Pellter i'r practis meddyg teulu agosaf, description: Pellter cyfartalog mewn llinell syth o gartrefi i'r practis meddyg teulu agosaf.}
+  patients_per_gp: {label: Cleifion fesul meddyg teulu, description: Cleifion cofrestredig fesul meddyg teulu cymwys cyfwerth ag amser llawn yn y practisau mae trigolion yn eu defnyddio mewn gwirionedd.}
+  gp_quality: {label: Sgoriau practisau meddyg teulu, description: "Sgoriau CQC y practisau meddyg teulu mae trigolion wedi'u cofrestru â nhw, wedi'u pwysoli yn ôl faint sy'n defnyddio pob un."}
+  care_homes: {label: Cartrefi gofal â sgôr dda gerllaw, description: "Gwelyau mewn cartrefi gofal â sgôr Da neu Rhagorol gan CQC o fewn 5km, wedi'u pwysoli yn ôl pellter."}
+  pharmacy_distance: {label: Pellter i'r fferyllfa agosaf, description: Pellter cyfartalog mewn llinell syth o gartrefi i'r fferyllfa gymunedol GIG agosaf.}
+  dentist_distance: {label: Pellter i'r deintydd GIG agosaf, description: Pellter cyfartalog mewn llinell syth o gartrefi i'r practis deintyddol agosaf sydd â chontract GIG.}
+  primary_school_quality: {label: Ysgolion cynradd da gerllaw, description: "Ansawdd y tair ysgol gynradd wladol agosaf (Ofsted a chanlyniadau), gyda'r rhai agosach yn cyfrif mwy."}
+  secondary_school_quality: {label: Ysgolion uwchradd da gerllaw, description: "Ansawdd y tair ysgol uwchradd wladol agosaf (Ofsted a chanlyniadau), gyda'r rhai agosach yn cyfrif mwy."}
+  school_choice: {label: Dewis o ysgolion da, description: "Ysgolion cynradd gwladol da o fewn 2km ac ysgolion uwchradd o fewn 5km, wedi'u pwysoli yn ôl ansawdd a phellter."}
+  primary_results: {label: Canlyniadau ysgolion cynradd gerllaw, description: "Cyfran y disgyblion sy'n cyrraedd y safon ddisgwyliedig mewn darllen, ysgrifennu a mathemateg mewn ysgolion cynradd gwladol o fewn 2km (cyfartaledd 3 blynedd), wedi'u pwysoli yn ôl pellter."}
+  secondary_results: {label: Canlyniadau ysgolion uwchradd gerllaw, description: "Sgôr Cyrhaeddiad 8 cyfartalog mewn ysgolion uwchradd gwladol o fewn 5km, wedi'u pwysoli yn ôl pellter."}
+  nursery_access: {label: Meithrinfeydd da gerllaw, description: "Meithrinfeydd, cyn-ysgolion a dosbarthiadau meithrin ysgolion o fewn 1km, pob un wedi'i bwysoli yn ôl ei radd Ofsted a'i bellter."}
+  connectivity_overall: {label: Cysylltedd cyffredinol, description: Sgôr cysylltedd yr Adran Drafnidiaeth ar draws pob dull a chyrchfan.}
+  connectivity_public_transport: {label: Cysylltedd trafnidiaeth gyhoeddus, description: Sgôr cysylltedd yr Adran Drafnidiaeth ar gyfer trafnidiaeth gyhoeddus i bob cyrchfan.}
+  connectivity_walking: {label: Cerddadwyedd, description: Sgôr cysylltedd yr Adran Drafnidiaeth ar gyfer cerdded i bob cyrchfan.}
+  connectivity_cycling: {label: Cysylltedd beicio, description: Sgôr cysylltedd yr Adran Drafnidiaeth ar gyfer beicio i bob cyrchfan.}
+  station_distance: {label: Pellter i'r orsaf agosaf, description: "Pellter cyfartalog mewn llinell syth o gartrefi i'r orsaf reilffordd, metro neu dram agosaf."}
+  bus_frequency: {label: Amlder bysiau, description: "Bysiau yr awr (dyddiau'r wythnos, 07:00–19:00) yn yr arhosfan brysuraf o fewn 400m i gartrefi."}
+  gigabit_broadband: {label: Band eang gigabit, description: Cyfran y cartrefi sy'n gallu cael band eang galluog gigabit (ffeibr llawn neu gebl).}
+  slow_broadband: {label: Cartrefi heb fand eang addas, description: Cyfran y cartrefi na allant gael band eang 10 Mbit/s o linell sefydlog neu ddi-wifr sefydlog.}
+  well_run_pubs: {label: Tafarndai da gerllaw, description: "Tafarndai o fewn 15 munud o gerdded sydd â sgôr hylendid bwyd o 4 neu 5 o'r tair blynedd diwethaf, wedi'u pwysoli yn ôl pellter, gyda bonws bach am gwrw go iawn, bwyd neu seddi awyr agored."}
+  food_and_drink: {label: Caffis a bwytai, description: "Caffis a bwytai o fewn 800m, wedi'u pwysoli yn ôl pellter."}
+  supermarket_distance: {label: Pellter i'r archfarchnad agosaf, description: Pellter cyfartalog mewn llinell syth o gartrefi i'r archfarchnad agosaf.}
+  shops: {label: Siopau gerllaw, description: "Siopau o bob math o fewn 800m, wedi'u pwysoli yn ôl pellter."}
+  leisure: {label: Cyfleusterau chwaraeon a ffitrwydd, description: "Neuaddau chwaraeon, campfeydd, pyllau, stiwdios, cyrtiau a chaeau sy'n agored i'r cyhoedd o fewn 2km, wedi'u pwysoli yn ôl pellter."}
+  swimming_pool_distance: {label: Pellter i'r pwll cyhoeddus agosaf, description: Pellter cyfartalog mewn llinell syth o gartrefi i'r pwll nofio agosaf sy'n agored i'r cyhoedd.}
+  culture: {label: "Llyfrgelloedd, sinemâu, theatrau ac amgueddfeydd", description: "Llyfrgelloedd, sinemâu, theatrau, canolfannau celfyddydau, amgueddfeydd ac orielau o fewn 2km."}
+  fast_food: {label: Siopau bwyd cyflym gerllaw, description: Siopau bwyd cyflym o fewn 800m.}
+  gambling: {label: Siopau betio a chasinos gerllaw, description: "Siopau betio, lleoliadau gamblo a chasinos o fewn 800m."}
+  house_price: {label: Pris tŷ arferol, description: "Pris gwerthu canolrifol dros y 12 mis diwethaf, wedi'i sefydlogi tuag at yr ardal o gwmpas lle mae'r gwerthiannau'n brin."}
+  housing_condition: {label: Cyflwr tai, description: Is-barth dan do IoD 2025 (cartrefi mewn cyflwr gwael neu heb wres canolog).}
+  price_change: {label: Newid ym mhrisiau tai, description: "Newid yn y pris gwerthu canolrifol, y 12 mis diwethaf yn erbyn y 12 mis cynt."}
+  council_tax: {label: Treth gyngor (Band D), description: "Treth gyngor flynyddol ar gartref Band D, gan gynnwys taliadau'r sir, yr heddlu, tân a chyngor cymuned cyfartalog."}
+  price_to_income: {label: Pris o'i gymharu ag incwm lleol, description: Pris tŷ arferol wedi'i rannu ag incwm aelwyd net cymedrig yr ardal.}
+  new_builds: {label: Cartrefi a adeiladwyd ers 2000, description: Cyfran y cartrefi a adeiladwyd yn 2000 neu'n ddiweddarach.}
+  period_homes: {label: Cartrefi a adeiladwyd cyn 1919, description: Cyfran y cartrefi a adeiladwyd cyn 1919.}
+  lower_band_homes: {label: Cartrefi ym mandiau treth gyngor A–B, description: Cyfran y cartrefi yn y ddau fand treth gyngor isaf (y cartrefi rhataf yng ngwerthoedd 1991).}
+  income_deprivation: {label: Amddifadedd incwm, description: Cyfran y trigolion ar incwm isel (parth incwm IoD 2025).}
+  employment_deprivation: {label: Amddifadedd cyflogaeth, description: Cyfran y trigolion o oedran gweithio sydd allan o waith yn anwirfoddol (parth cyflogaeth IoD 2025).}
+  claimant_rate: {label: Cyfradd hawlwyr, description: "Trigolion sy'n hawlio budd-daliadau sy'n gysylltiedig â diweithdra, fel cyfran o'r rhai 16–64 oed (mis diweddaraf)."}
+  household_income: {label: Incwm aelwydydd, description: "Incwm aelwyd net cymedrig yn yr ardal ehangach (MSOA), cyn costau tai."}
+  health_deprivation: {label: Iechyd ac anabledd, description: "Marwolaeth gynamserol, salwch ac anabledd (parth amddifadedd iechyd ac anabledd IoD 2025)."}
+  life_expectancy: {label: Disgwyliad oes, description: "Disgwyliad oes adeg geni yn yr ardal ehangach (MSOA), cymedr dynion a menywod, 2019–23."}
+  good_health: {label: Iechyd da (hunan-adroddedig), description: Trigolion sy'n disgrifio eu hiechyd fel da neu dda iawn (Cyfrifiad 2021).}
+  imd: {label: Mynegai Amddifadedd Lluosog 2025, description: Sgôr amddifadedd cyffredinol; heb ei sgorio am fod ei barthau'n gorgyffwrdd â dangosyddion eraill.}
+  population_density: {label: Dwysedd poblogaeth, description: Trigolion fesul cilometr sgwâr (Cyfrifiad 2021).}
+  households_with_children: {label: Aelwydydd â phlant dibynnol, description: Cyfran yr aelwydydd â phlant dibynnol (Cyfrifiad 2021).}
+  aged_65_plus: {label: Trigolion 65 oed a throsodd, description: Cyfran y trigolion 65 oed neu'n hŷn (Cyfrifiad 2021).}
+  owner_occupied: {label: Cartrefi perchen-feddianwyr, description: Cyfran yr aelwydydd sy'n berchen ar eu cartref yn llwyr neu â morgais (Cyfrifiad 2021).}
+  no_car: {label: Aelwydydd heb gar, description: Cyfran yr aelwydydd heb gar na fan (Cyfrifiad 2021).}
+  sustainable_commute: {label: "Cerdded, beicio neu drafnidiaeth gyhoeddus i'r gwaith", description: "Cyfran y gweithwyr sy'n cymudo ar droed, ar feic neu ar drafnidiaeth gyhoeddus (Cyfrifiad 2021, yn ystod cyfyngiadau COVID-19)."}
