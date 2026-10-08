@@ -24,7 +24,15 @@ function dismiss() {
   listeners.forEach((l) => l());
 }
 
-const PERSONAS = ["family", "young_professional", "retiree", "commuter", "balanced"];
+// The manifest's labels, so the card can show before the manifest arrives (it is the
+// largest text on a first visit, and waiting for the fetch delays the first paint of it)
+const PERSONAS: Record<string, string> = {
+  family: "Family with children",
+  young_professional: "Young professional",
+  retiree: "Retired",
+  commuter: "Commuter",
+  balanced: "Balanced",
+};
 
 /** First visit: pick who you are (sets the weights) and how to read the map. */
 export function Onboarding() {
@@ -38,8 +46,8 @@ export function Onboarding() {
     readWelcomed,
     () => true, // server render: no card, so nothing flashes
   );
-  if (welcomed || !manifest) return null;
-  const presets = PERSONAS.filter((p) => manifest.presets[p]);
+  if (welcomed) return null;
+  const presets = Object.keys(PERSONAS).filter((p) => !manifest || manifest.presets[p]);
 
   return (
     <div
@@ -62,13 +70,13 @@ export function Onboarding() {
             key={id}
             className="btn text-xs"
             data-testid={`persona-${id}`}
-            title={manifest.presets[id].description}
+            title={manifest?.presets[id].description}
             onClick={() => {
               update((s) => ({ ...s, preset: id, theme_weights: {}, indicator_weights: {} }));
               dismiss();
             }}
           >
-            {manifest.presets[id].label}
+            {manifest?.presets[id].label ?? PERSONAS[id]}
           </button>
         ))}
       </div>

@@ -184,3 +184,8 @@ input[type="range"] {
   padding-left: 0.75rem;
   color: var(--text-secondary);
 }
+
+/* Map credits: underlined, so the links don't rely on a slight colour difference */
+.maplibregl-ctrl-attrib a {
+  text-decoration: underline;
+}

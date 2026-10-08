@@ -139,8 +139,10 @@ test("the method and sources pages render the docs", async ({ page }) => {
   await page.goto("/methodology");
   await expect(page.getByRole("heading", { level: 1 })).toContainText("Methodology");
   await page.getByRole("link", { name: "Sources & licences" }).click();
+  await expect(page.getByRole("heading", { name: "Data licence" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Data sources" })).toBeVisible();
-  await expect(page.locator("article").first()).toContainText("OGL-3.0");
+  await expect(page.locator("article").nth(1)).toContainText("OGL-3.0");
+  await expect(page.getByTestId("build-info")).toContainText(/Version \d+\.\d+\.\d+ · data built/);
 });
 
 test.describe("on a phone", () => {
