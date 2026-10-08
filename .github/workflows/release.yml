@@ -109,6 +109,7 @@ jobs:
       - name: Tag the multi-platform image
         working-directory: digests
         run: |
+          # shellcheck disable=SC2046 # split on purpose: a -t per tag, an image per digest
           docker buildx imagetools create \
             $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
             $(printf "$IMAGE@sha256:%s " *)
