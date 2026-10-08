@@ -136,12 +136,13 @@ data-unpack:
 	@if command -v uv >/dev/null && [ -d .venv ]; then uv run lix validate serve; fi
 	@echo "Data ready in data/serve (built $$(sed -n 's/.*"generated_at": *"\([^"]*\)".*/\1/p' data/serve/manifest.json | head -1))"
 
-# From a fresh clone to the app in the browser: Docker, make and curl are all it needs
+# From a fresh clone to the app in the browser: Docker, make and curl are all it needs.
+# NO_OPEN=1 skips opening the browser
 quickstart:
 	@test -f data/serve/manifest.json || $(MAKE) data-download
 	@test -f .env || (cp .env.example .env && echo "Created .env from .env.example: add a model key there to use the assistant")
 	$(MAKE) up
-	@(open $(APP_URL) || xdg-open $(APP_URL)) >/dev/null 2>&1 || true
+	@$(if $(NO_OPEN),true,(open $(APP_URL) || xdg-open $(APP_URL)) >/dev/null 2>&1 || true)
 
 # Assistant eval on the full build (api/evals/cases.yaml). Real models cost money:
 #   make eval MODEL=openrouter:anthropic/claude-opus-5.5 CASES=family_leeds_budget,compare_two
