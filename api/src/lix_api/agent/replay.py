@@ -71,11 +71,11 @@ def load_cassettes(path: Path = CASSETTES) -> dict[str, list[ModelResponse]]:
 Responder = Callable[[list[ModelMessage], AgentInfo], ModelResponse]
 
 
-def replay_model(path: Path = CASSETTES, fallback: Responder | None = None) -> FunctionModel:
+def replay_model(path: Path | None = None, fallback: Responder | None = None) -> FunctionModel:
     """Replays recorded turns; other prompts go to ``fallback`` (the scripted model)."""
     from lix_api.agent.models import _scripted
 
-    cassettes = load_cassettes(path)
+    cassettes = load_cassettes(path or CASSETTES)
     other = fallback or _scripted
     delay = float(os.environ.get("LIX_REPLAY_DELAY", 0))
 

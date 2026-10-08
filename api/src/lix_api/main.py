@@ -4,12 +4,13 @@
     LIX_MODEL=test uv run lix-api       # scripted assistant, no API key needed
 
 In development /data serves data/serve/ (map tiles and the browser's score file); in
-docker compose a static file server does that instead.
+docker compose the proxy (docker/Caddyfile) does that instead.
 """
 
 import os
 import time
 from contextlib import asynccontextmanager
+from importlib.metadata import version
 from typing import Annotated
 
 from fastapi import Body, FastAPI, HTTPException, Query, Request
@@ -21,6 +22,7 @@ from pydantic_ai.ui import StateDeps
 
 from lix_api.agent.agent import agent
 from lix_api.agent.errors import FriendlyAGUIAdapter
+from lix_api.agent.limits import Limits, reply_model, user_turns
 from lix_api.agent.runlog import log_run, usage_limits
 from lix_api.agent.state import LiveabilityState
 from lix_api.mcp_server import mcp
@@ -37,20 +39,24 @@ from lix_api.models import (
 from lix_api.services import areas, catalogue, compare, explain, pois, ranking, search
 from lix_api.services.sql import SqlError, get_guard
 from lix_api.store import get_store
+from lix_core.paths import data_dir
 
+VERSION = version("lix-api")
 mcp_app = mcp.http_app(path="/")
+limits = Limits.from_env()
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     get_store().warm()
+    limits.load(data_dir("logs") / "agent.jsonl")
     async with mcp_app.lifespan(app):
         yield
 
 
 app = FastAPI(
     title="UK Liveability Index API",
-    version="0.1.0",
+    version=VERSION,
     description="Scores for England's neighbourhoods from open data. "
     "See /api/v1/sources for attribution.",
     lifespan=lifespan,
@@ -84,9 +90,16 @@ def health() -> dict:
     store = get_store()
     return {
         "status": "ok",
+        "version": VERSION,
         "lsoas": len(store.lsoa_index),
         "built": store.manifest["generated_at"],
-        "assistant": {"model": models.model_name(), "problem": models.MODEL_PROBLEM},
+        "assistant": {
+            "model": models.model_name(),
+            "problem": models.MODEL_PROBLEM,
+            # Without a working model, only the recorded prompts get real answers
+            "recorded_only": models.MODEL_PROBLEM is not None,
+            "limits": limits.status(),
+        },
     }
 
 
@@ -166,12 +179,27 @@ def run_sql(query: Annotated[str, Body(embed=True)]) -> dict:
 async def run_agent(request: Request) -> Response:
     """AG-UI endpoint: streams the assistant's messages, tool calls and state snapshots."""
     started = time.monotonic()
+    try:
+        turns = user_turns(await request.json())  # the body is cached for the adapter
+    except ValueError:
+        turns = 0  # the adapter rejects the malformed request
+    refusal = limits.admit(turns)
+    if refusal:
+        # Answered without the model; the run still completes normally for the client
+        return await FriendlyAGUIAdapter.dispatch_request(
+            request, agent=agent, deps=StateDeps(LiveabilityState()), model=reply_model(refusal)
+        )
+
+    def done(result) -> None:
+        record = log_run(result, started)
+        limits.spend(record and record["cost"])
+
     return await FriendlyAGUIAdapter.dispatch_request(
         request,
         agent=agent,
         deps=StateDeps(LiveabilityState()),
         usage_limits=usage_limits(),
-        on_complete=lambda result: log_run(result, started),
+        on_complete=done,
     )
 
 

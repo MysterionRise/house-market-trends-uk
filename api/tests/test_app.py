@@ -264,3 +264,97 @@ def test_nearby_places_bring_the_map_to_them(client):
     west, south, east, north = snapshot["map"]["bbox"]
     for poi in snapshot["map"]["pois"]:
         assert west <= poi["point"]["lon"] <= east and south <= poi["point"]["lat"] <= north
+
+
+def _text(events: list[dict]) -> str:
+    return "".join(e["delta"] for e in events if e["type"] == "TEXT_MESSAGE_CONTENT")
+
+
+def test_limits_turns_rate_and_budget(tmp_path):
+    from lix_api.agent.limits import Limits
+
+    now = [0.0]
+    day = ["2026-10-08"]
+    limits = Limits(session_turns=3, rate_per_minute=2, daily_budget=0.05,
+                    clock=lambda: now[0], today=lambda: day[0])  # fmt: skip
+    assert limits.admit(1) is None and limits.admit(2) is None
+    assert "busy" in limits.admit(3)  # two questions in the last minute
+    now[0] = 61
+    assert "limit of 3 questions" in limits.admit(4)
+    assert limits.admit(3) is None
+    limits.spend(0.03)
+    limits.spend(None)
+    limits.spend(0.03)
+    now[0] = 200
+    assert "today's budget" in limits.admit(1)
+    day[0] = "2026-10-09"  # a new day, a new budget
+    assert limits.admit(1) is None
+
+    log = tmp_path / "agent.jsonl"
+    log.write_text(
+        '{"at": "2026-10-09T08:00:00+00:00", "cost": 0.02}\n'
+        '{"at": "2026-10-08T23:59:00+00:00", "cost": 0.50}\n'
+        "not json\n"
+        '{"at": "2026-10-09T09:00:00+00:00", "cost": null}\n'
+    )
+    limits.load(log)
+    assert limits.status()["spent"] == 0.02
+
+
+def test_refused_questions_get_a_chat_reply(client, monkeypatch):
+    from lix_api import main
+
+    monkeypatch.setattr(main.limits, "spent", 99.0)
+    monkeypatch.setattr(main.limits, "daily_budget", 1.0)
+    events = _agui(client, "Use family weights please")
+    types = [e["type"] for e in events]
+    assert types[-1] == "RUN_FINISHED" and "RUN_ERROR" not in types
+    assert "TOOL_CALL_START" not in types  # the model wasn't asked
+    assert "today's budget" in _text(events)
+    assert client.get("/health").json()["assistant"]["limits"]["spent"] == 99.0
+
+
+def test_without_a_key_recorded_prompts_still_answer(monkeypatch, tmp_path):
+    from pydantic_ai import Agent
+    from pydantic_ai.messages import ModelMessagesTypeAdapter, ModelResponse, TextPart
+
+    from lix_api.agent import models
+
+    monkeypatch.setenv("LIX_MODEL", "openrouter:anthropic/claude-haiku-5.5")
+    monkeypatch.delenv("OPENROUTER_API_KEY", raising=False)
+    monkeypatch.delenv("LIX_FALLBACK_MODELS", raising=False)
+    cassettes = tmp_path / "cassettes.json"
+    recorded = [ModelResponse(parts=[TextPart("Recorded answer.")], model_name="m")]
+    turn = json.loads(ModelMessagesTypeAdapter.dump_json(recorded))
+    cassettes.write_text(json.dumps({"hello there": turn}))
+    monkeypatch.setattr("lix_api.agent.replay.CASSETTES", cassettes)
+    monkeypatch.setattr(models, "MODEL_PROBLEM", None)
+    model = models.build_model()
+    assert models.MODEL_PROBLEM and "openrouter" in models.MODEL_PROBLEM
+    agent = Agent(model)
+    assert agent.run_sync("Hello there?").output == "Recorded answer."
+    assert "isn't configured" in agent.run_sync("Something else").output
+    monkeypatch.setattr(models, "MODEL_PROBLEM", None)
+
+
+def test_health_reports_version(client):
+    body = client.get("/health").json()
+    assert body["version"] == "0.1.0"
+    assert body["assistant"]["recorded_only"] is False
+
+
+def test_run_cost_prefers_what_the_provider_billed():
+    from types import SimpleNamespace
+
+    from pydantic_ai.messages import ModelResponse, TextPart
+
+    from lix_api.agent.runlog import run_cost
+
+    def response(cost=None):
+        details = {"cost": cost} if cost is not None else None
+        return ModelResponse(parts=[TextPart("x")], provider_details=details)
+
+    estimate = SimpleNamespace(cost=0.5)
+    assert run_cost([response(0.001), response(0.002)], estimate) == 0.003
+    assert run_cost([response()], estimate) == 0.5
+    assert run_cost([response()], SimpleNamespace(cost=None)) is None

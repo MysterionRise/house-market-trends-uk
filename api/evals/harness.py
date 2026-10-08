@@ -12,7 +12,7 @@ from pydantic_ai.ui import StateDeps
 
 from lix_api.agent.agent import agent
 from lix_api.agent.models import model_settings
-from lix_api.agent.runlog import usage_limits
+from lix_api.agent.runlog import run_cost, usage_limits
 from lix_api.agent.state import LiveabilityState
 
 
@@ -112,8 +112,10 @@ async def run_case(inputs: CaseInput, model=None) -> Trace:
             usage = result.usage() if callable(result.usage) else result.usage
             trace.input_tokens += usage.input_tokens
             trace.output_tokens += usage.output_tokens
-            if getattr(usage, "cost", None) is not None:
-                trace.cost = (trace.cost or 0.0) + float(usage.cost)
+            responses = [m for m in result.new_messages() if isinstance(m, ModelResponse)]
+            cost = run_cost(responses, usage)
+            if cost is not None:
+                trace.cost = (trace.cost or 0.0) + cost
             # Only the last turn's calls are checked
             new = result.new_messages()
             trace.calls = [

@@ -7,7 +7,9 @@ called, latency and usage. That log is how a demo's cost and behaviour are check
 LIX_REQUEST_LIMIT    model requests per turn (default 8)
 LIX_TOOL_CALL_LIMIT  tool calls per turn (default 12)
 LIX_TOKEN_LIMIT      total tokens per turn (default 150,000)
-LIX_COST_LIMIT       cost per turn in the provider's currency, e.g. 0.50 (OpenRouter)
+LIX_COST_LIMIT       cost per turn in USD (off by default). Pydantic AI checks it against
+                     its own price estimate, which models it can't price (most OpenRouter
+                     slugs) don't have: the token limit is what bounds a question's cost
 """
 
 import json
@@ -37,13 +39,25 @@ def usage_limits() -> UsageLimits:
     )
 
 
+def run_cost(responses: list[ModelResponse], usage) -> float | None:
+    """What a run cost: what the provider billed where it says (OpenRouter puts it in each
+    response's provider_details), else Pydantic AI's estimate from list prices."""
+    billed = [
+        float(c) for m in responses if (c := (m.provider_details or {}).get("cost")) is not None
+    ]
+    if billed:
+        return sum(billed)
+    cost = getattr(usage, "cost", None)
+    return float(cost) if cost is not None else None
+
+
 def run_record(result, started: float) -> dict:
     """One JSON-able line describing a finished run."""
     messages = result.new_messages()
     responses = [m for m in messages if isinstance(m, ModelResponse)]
     tools = [p.tool_name for m in responses for p in m.parts if isinstance(p, ToolCallPart)]
     usage = result.usage() if callable(result.usage) else result.usage
-    cost = getattr(usage, "cost", None)
+    cost = run_cost(responses, usage)
     return {
         "at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "model": model_name(),
@@ -53,13 +67,13 @@ def run_record(result, started: float) -> dict:
         "input_tokens": usage.input_tokens,
         "cache_read_tokens": usage.cache_read_tokens,
         "output_tokens": usage.output_tokens,
-        "cost": float(cost) if cost is not None else None,
+        "cost": cost,
         "seconds": round(time.monotonic() - started, 2),
     }
 
 
-def log_run(result, started: float, path: Path | None = None) -> None:
-    """Append the run to the JSONL log; never let logging break a reply."""
+def log_run(result, started: float, path: Path | None = None) -> dict | None:
+    """Append the run to the JSONL log and return it; never let logging break a reply."""
     try:
         record = run_record(result, started)
         path = path or data_dir("logs") / "agent.jsonl"
@@ -71,5 +85,7 @@ def log_run(result, started: float, path: Path | None = None) -> None:
             f"{record['input_tokens']}+{record['output_tokens']} tokens"
             + (f", cost {record['cost']:.4f}" if record["cost"] is not None else "")
         )
+        return record
     except Exception:  # pragma: no cover - logging must not fail a run
         logger.exception("Couldn't log the assistant run")
+        return None

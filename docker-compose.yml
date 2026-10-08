@@ -17,6 +17,10 @@ services:
       LIX_REPLAY_DELAY: ${LIX_REPLAY_DELAY:-0}
       LIX_FALLBACK_MODELS: ${LIX_FALLBACK_MODELS:-openrouter:qwen/qwen3.8-27b}
       LIX_EFFORT: ${LIX_EFFORT:-low}
+      # Caps (agent/runlog.py, agent/limits.py): per conversation, minute and day
+      LIX_SESSION_TURNS: ${LIX_SESSION_TURNS:-30}
+      LIX_RATE_PER_MINUTE: ${LIX_RATE_PER_MINUTE:-20}
+      LIX_DAILY_BUDGET: ${LIX_DAILY_BUDGET:-1.00}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
       OPENROUTER_APP_TITLE: ${OPENROUTER_APP_TITLE:-UK Liveability Index}

@@ -7,10 +7,13 @@ real catalogue in config/, so every service sees the shapes it sees in productio
 
 import json
 import os
+import tempfile
 
 # The assistant reads LIX_MODEL when lix_api.agent is imported: use the scripted model
 os.environ["LIX_MODEL"] = "test"
 os.environ.setdefault("LIX_SERVE_DATA", "0")
+# Turn logs and anything else written under data/ go to a scratch directory
+os.environ["LIX_DATA_DIR"] = tempfile.mkdtemp(prefix="lix-api-tests-")
 
 import polars as pl  # noqa: E402
 import pytest  # noqa: E402

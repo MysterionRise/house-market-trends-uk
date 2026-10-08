@@ -1,12 +1,13 @@
 # ruff: noqa: E501 (the scripted model's rule table reads best unwrapped)
 """Which LLM drives the assistant, from the environment.
 
-LIX_MODEL            provider:model, e.g. anthropic:claude-opus-5-5 (default),
-                     openrouter:anthropic/claude-opus-5.5 (one OPENROUTER_API_KEY for
-                     many providers), openai:gpt-5, google:gemini-2.5-pro,
-                     ollama:llama3.1 (with OLLAMA_BASE_URL), or "test" for a scripted
-                     model that needs no API key (end-to-end tests and demos), or
-                     "replay" for the recorded demo conversations (offline demos)
+LIX_MODEL            provider:model: openrouter:anthropic/claude-haiku-5.5 (default; one
+                     OPENROUTER_API_KEY reaches many providers), anthropic:claude-opus-5-5,
+                     openai:gpt-5, google:gemini-2.5-pro, ollama:llama3.1 (with
+                     OLLAMA_BASE_URL), or "test" for a scripted model that needs no API key
+                     (end-to-end tests), or "replay" for the recorded demo conversations.
+                     Without a key the assistant answers the recorded prompts and says
+                     how to add one for anything else
 LIX_FALLBACK_MODELS  comma-separated models to try if the first fails
 LIX_EFFORT           reasoning effort (default "low": the assistant mostly picks and
                      fills in tools)
@@ -35,7 +36,7 @@ from lix_core.log import setup_logging
 
 logger = setup_logging("agent.models")
 
-DEFAULT_MODEL = "anthropic:claude-opus-5-5"
+DEFAULT_MODEL = "openrouter:anthropic/claude-haiku-5.5"
 
 
 def model_name() -> str:
@@ -47,8 +48,9 @@ MODEL_PROBLEM: str | None = None
 
 
 def build_model() -> Model:
-    """The model from LIX_MODEL (plus fallbacks); a model that explains the problem if
-    it can't be built, so a missing key doesn't stop the map and API from starting."""
+    """The model from LIX_MODEL (plus fallbacks). If it can't be built (no key, say), the
+    recorded conversations answer what they can and anything else gets an explanation,
+    so a missing key doesn't stop the map and API from starting."""
     global MODEL_PROBLEM
     from pydantic_ai.exceptions import UserError
     from pydantic_ai.models import infer_model
@@ -70,24 +72,28 @@ def build_model() -> Model:
         )
     except (UserError, ValueError, ImportError) as e:
         MODEL_PROBLEM = f"{name}: {e}"
-        logger.error(f"The assistant's model can't be used ({MODEL_PROBLEM})")
-        return unconfigured_model(MODEL_PROBLEM)
+        logger.error(
+            f"The assistant's model can't be used ({MODEL_PROBLEM}); answering "
+            "the recorded prompts only"
+        )
+        from lix_api.agent.replay import replay_model
+
+        return replay_model(fallback=_explain(MODEL_PROBLEM))
 
 
-def unconfigured_model(problem: str) -> FunctionModel:
-    """Answers every message by saying how to configure the assistant."""
+def _explain(problem: str):
+    """Answers any message by saying how to configure the assistant."""
     text = (
-        "The assistant isn't configured yet, so I can't answer. The map, weights and area "
-        f"pages still work. To fix it, set the model's API key in .env and restart. ({problem})"
+        "The assistant isn't configured with a model key, so it can only answer the "
+        "suggested questions (from recordings). The map, search, weights and area profiles "
+        "all work. To ask anything else, add a key to .env (see .env.example) and restart. "
+        f"({problem})"
     )
 
     def reply(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
         return ModelResponse(parts=[TextPart(text)])
 
-    async def stream(messages: list[ModelMessage], info: AgentInfo):
-        yield text
-
-    return FunctionModel(reply, stream_function=stream, model_name="unconfigured")
+    return reply
 
 
 def model_settings() -> ModelSettings:
