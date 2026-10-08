@@ -1,188 +1,148 @@
 # UK Liveability Index
 
-> **Being restructured.** This repo started in 2020 as a plan to analyse UK house price trends.
-> It is now a data platform that scores **English** neighbourhoods on safety, environment,
-> health access, schools, transport, amenities, affordability and community, using open data
-> only, with a map and an AI assistant that answers by building the interface it needs.
+Every neighbourhood in England, scored from open data. Choose what matters to you (safety,
+schools, green space, transport, pubs, prices…), see the whole country recolour, and ask an
+assistant that answers with maps, profiles and comparisons instead of walls of text.
 
-Everything is computed at **LSOA** level (Lower Layer Super Output Area, 1,000 to 3,000 residents
-each; 33,755 in England).
+![Choosing "family with children", raising the weight on safety, then asking the assistant where to look around Leeds on a £350k budget: it sets the weights, ranks neighbourhoods and outlines them on the map](docs/media/hero.gif)
 
-## What works today
+- **33,755 neighbourhoods** (2021 LSOAs, 1,000–3,000 residents each), scored 0–100 on eight
+  themes from **about 40 open datasets**: police.uk, NHS, Ofsted, DfE, Land Registry, ONS,
+  Defra air quality, Environment Agency flood risk, Ofcom broadband, bus timetables,
+  OpenStreetMap and more.
+- **Your weights, computed in your browser**, from five ready-made personas or any
+  weighting of your own, with an honest range for how much a result depends on them.
+- **An assistant that shows its working**, tested on 30 cases with three models, including
+  that its replies only use numbers from the data ([evals](docs/evals.md)).
+- **Open**: MIT code, open data under the ODbL, a documented and validated
+  [method](docs/methodology.md). It runs on your own machine.
 
-The pipeline downloads, stages and joins the open datasets below:
+## Quickstart
 
-- `lix resolve` finds each source's current file and pins it in `config/datasets.lock.json`.
-  ONS deletes Open Geography items whenever it publishes a new version, so those are found by
-  search; GOV.UK files through the content API.
-- `lix fetch` downloads what the lockfile pins (resumable, checksummed, rejects error pages served
-  as data, waits out ArcGIS exports still being generated, extracts only the files it needs)
-- `lix stage` turns each raw file into tidy Parquet in `data/staged/`
-- `geo_lsoa` is the backbone every indicator joins onto: each England LSOA with its MSOA,
-  local authority, region, friendly MSOA name, population-weighted centroid, urban/rural class,
-  population, area and map bounding box; `lix validate geo` checks it
-- helpers bring other geographies onto LSOAs: points, output areas, MSOA/local-authority values,
-  1km grids (sampled at postcodes, so population-weighted) and distance-based access to places
-- `lix indicators` builds 64 indicators (31 scored across 8 themes) from
-  [`config/indicators.yaml`](config/indicators.yaml); `lix score` turns them into theme and
-  overall scores per LSOA for five persona presets ([`config/weights.yaml`](config/weights.yaml)),
-  plus a QA report. The method, including how Greater Manchester's missing crime data and
-  Ofsted's framework changes are handled, is in [docs/methodology.md](docs/methodology.md)
-- CI runs ruff and pytest on every push and PR to `master` (tests never touch the network);
-  a nightly job checks every source is still reachable
-
-Datasets ingested so far (full list with licences: [docs/data-sources.md](docs/data-sources.md)):
-
-| Theme | Sources |
-|-------|---------|
-| Geography | NSPL postcode lookup, LSOA/MSOA/local authority boundaries, population-weighted centroids, OA and 2011→2021 lookups, rural–urban class, House of Commons Library MSOA names, OS Open Names |
-| Community | English Indices of Deprivation 2025; Census 2021 (population, density, age, households, health, accommodation, cars, tenure, commuting, qualifications); Nomis claimant count (monthly); OHID life expectancy by MSOA |
-| Housing | HM Land Registry Price Paid (LSOA medians); ONS small-area income; council tax by billing authority; VOA housing stock by council tax band and build period |
-| Safety | police.uk street crime, 36 months (Greater Manchester Police publishes none; flagged); DfT road collisions (STATS19, 5 years) |
-| Environment | Defra modelled NO₂, PM2.5 and PM10 (1km, population-weighted to LSOAs); OS Open Greenspace; Environment Agency flood risk from rivers and the sea, by postcode |
-| Health | NHS GP practices, patients registered by LSOA (real catchments), GP workforce; CQC ratings of GP practices and care homes; NHS dental practices; NHSBSA community pharmacies |
-| Education | Get Information About Schools; Ofsted inspections blended across the 2024 and 2025 framework changes; Ofsted nurseries and pre-schools; DfE key stage 2 and 4 results |
-| Transport | DfT Transport Connectivity Metric; NaPTAN stations; Bus Open Data Service timetables (bus frequency); Ofcom broadband coverage |
-| Amenities | OpenStreetMap points of interest; Food Standards Agency hygiene ratings; Overture Maps Places (pubs OSM lacks); Sport England Active Places |
-
-### API and assistant
-
-`make api` (or `uv run lix-api`) serves, on http://localhost:8000:
-
-- a REST API under `/api/v1`: place search, area profiles, rankings with any weights and
-  filters, comparisons, nearest places (GPs, schools, well-run pubs, ...), score explanations,
-  the indicator catalogue and read-only SQL (docs at `/docs`)
-- an AI assistant at `/agent` speaking [AG-UI](https://docs.ag-ui.com), built with
-  [Pydantic AI](https://ai.pydantic.dev): its tools return typed results the front end renders as
-  maps, cards and tables, and it moves the map and weight sliders through shared state
-- an [MCP](https://modelcontextprotocol.io) server at `/mcp` with the same tools, for Claude
-  Desktop and other MCP clients
-
-The model is set with `LIX_MODEL`: `openrouter:...` (one `OPENROUTER_API_KEY` for many
-providers), `anthropic:...`, `openai:...`, `google:...` or `ollama:...`. `LIX_MODEL=test` runs a
-scripted assistant that needs no API key. See [.env.example](.env.example). Each question is
-capped (model requests, tool calls, tokens and optionally cost); a failure or a missing key is
-explained in the chat while the map keeps working, and every turn is logged to
-`data/logs/agent.jsonl` (tools called, latency, tokens, cost).
-
-The assistant has an eval suite ([api/evals/cases.yaml](api/evals/cases.yaml): about 30 cases
-covering ranking with constraints, look-ups, follow-ups, ambiguous places, out-of-scope and
-discriminatory requests, numbers grounded in tool results, analyst SQL and prompt injection):
+You need [Docker](https://docs.docker.com/get-docker/) (with Compose), `make` and `curl`.
+On Windows, use WSL (not tested yet).
 
 ```bash
-make eval MODEL=openrouter:anthropic/claude-opus-5.5 CASES=family_leeds_budget,compare_two
-make eval MODEL=openrouter:anthropic/claude-opus-5.5     # all cases; costs real money
+git clone https://github.com/MysterionRise/uk-liveability-index.git
+cd uk-liveability-index
+make quickstart
 ```
 
-Claude Opus 5.5, Claude Haiku 5.5 and Qwen 3.8 27B (open weights) all pass the 30 cases;
-results, costs and what the evals caught are in [docs/evals.md](docs/evals.md).
+That downloads the data pack (about 120 MB) and the app's images, and opens
+http://localhost:3000. Stop it with `make down`.
 
-### Demo
+**The assistant** needs a model key. Put an [OpenRouter](https://openrouter.ai) key in
+`.env` (`make quickstart` creates it from [.env.example](.env.example)) and run `make up`.
+Without a key, everything else works and the assistant answers its suggested questions
+from recordings. See [Assistant](#assistant) for other providers and costs.
 
-A 7–10 minute stakeholder walkthrough, with talking points and a rehearsal checklist, is in
-[docs/demo.md](docs/demo.md):
+**Just a look?** `make up-demo` runs on the small dataset in the repo (Leeds and Brighton),
+with no download.
+
+## What you can do
+
+**Search a postcode or place** to see its profile: the score on each theme against the
+council and England medians, its strengths and weak spots, key facts, and how much the
+result depends on the weights.
+
+![Searching for Hebden Bridge: its profile shows flood risk as a weak spot, with theme scores against the Calderdale and England medians](docs/media/search-profile.gif)
+
+**Ask the assistant** to rank, compare or explain areas, or find well-run pubs, GPs and
+schools nearby. Its answers are live components that move the map.
+
+![Asking the assistant to compare Far Headingley with Chapel Allerton, then for well-run pubs near LS6 3AA](docs/media/assistant.gif)
+
+**Analyst mode** adds distributions, an overlap heatmap of the indicators, read-only SQL
+over every neighbourhood and CSV export.
+
+![Analyst mode: the indicator overlap heatmap and a SQL query ranking local authorities](docs/media/analyst.gif)
+
+Also: a shortlist with side-by-side comparison, shareable links, light and dark mode,
+and a phone layout. A full walkthrough video comes with each
+[release](https://github.com/MysterionRise/uk-liveability-index/releases).
+
+## How the scores work
+
+Each neighbourhood gets 64 indicators. The 31 that count towards the score are turned into
+0–100 scores against the rest of England, averaged within eight themes (safety, environment,
+health services, schools and childcare, transport, amenities, housing and community), and
+the themes are weighted by what you choose. The other indicators are shown for context, so
+related measures aren't counted twice.
+
+- **Fair to rural areas.** Access measures stop adding points beyond what a typical suburb
+  has, and "compare like with like" ranks villages against villages.
+- **Uncertain where it should be.** Nudging every theme's weight shows how stable a result is:
+  "better than 72–95% of England" rather than a falsely precise 84%, and "close call" tags in
+  rankings.
+- **Checked.** A review of 25 contrasting places (49/49 checks, the key ones run on every
+  build) is in [docs/validation.md](docs/validation.md).
+
+The full method, including how Greater Manchester's missing crime data and Ofsted's
+framework changes are handled, is in [docs/methodology.md](docs/methodology.md), and every
+source with its licence and date is in [docs/data-sources.md](docs/data-sources.md).
+
+## Assistant
+
+The assistant runs on any model [Pydantic AI](https://ai.pydantic.dev) supports. The
+default is Claude Haiku 5.5 through OpenRouter, with an open-weights model on another
+provider as the fallback:
+
+| Model (via OpenRouter) | Eval cases passed | Typical answer | Cost per question |
+|---|---|---|---|
+| Claude Haiku 5.5 (default) | 30/30 | 5 s | about $0.0014 |
+| Qwen 3.8 27B (fallback, open weights) | 30/30 | 7 s | about $0.0045 |
+| Claude Opus 5.5 | 30/30 | 7 s | about $0.04 |
+
+Set `LIX_MODEL` in `.env` to use another: `anthropic:claude-opus-5-5`, `openai:gpt-5`,
+`google:gemini-2.5-pro`, or a local model with Ollama (`ollama:llama3.1`,
+`docker compose --profile local-llm`).
+
+**Caps, so a key can't run up a bill.** By default: 30 questions per conversation, 20 a
+minute and $1 of spend a day, plus limits on each question's model requests, tool calls and
+tokens. A refused question gets a chat reply and the map keeps working. Change them in
+`.env`, and also set a credit limit on the key itself.
+
+The same tools are available to Claude Desktop and other clients over
+[MCP](https://modelcontextprotocol.io) at http://localhost:3000/mcp/.
+
+## Limitations
+
+- **England only**, because the other nations publish different data.
+- **Neighbourhoods, not streets.** Scores describe areas of 1,000–3,000 residents, and
+  distances are straight-line.
+- **Data has dates.** Each source has its own (shown in the app); this release's data was
+  built on 7 October 2026. Crime in Greater Manchester is estimated, because its police
+  force publishes none.
+- **Judgement calls.** The weights, thresholds and choice of indicators are explained,
+  not objective. Use the scores to explore, not as property, financial or legal advice.
+- **Not yet included:** road and rail noise, surface-water flooding and tree cover.
+
+## Building the data yourself
+
+The `lix` pipeline rebuilds everything from the original publishers: about 20 GB of
+downloads, then staging, indicators, scores and map tiles.
 
 ```bash
-make demo           # Docker, real model from .env, opens http://localhost:3000
-make demo-offline   # recorded conversations (config/demo_cassettes.json): no network needed
-make demo-record    # re-record them after changing data or prompts
+make install       # uv sync (needs uv and Python 3.11)
+make build-data    # fetch, stage, indicators, score, tiles, validate
+make up BUILD=1    # build the images from this checkout
 ```
 
-`LIX_DEMO=1 npx playwright test demo-storyline` (in `web/`) rehearses the storyline against a
-running demo and saves a screenshot per step.
+How the pipeline, API, assistant and front end fit together, and how to run their tests,
+is in [docs/development.md](docs/development.md).
 
-### Running it with Docker
+## Contributing
 
-```bash
-make up          # api :8000, static data :8080, web http://localhost:3000 (data from ./data/serve)
-make up-demo     # the same on the committed demo dataset (fixtures/demo: Leeds + Brighton)
-make down
-```
-
-No full build on this machine? `make data-pack` on one that has it writes
-`dist/lix-serve-YYYYMMDD.tar.gz` (about 120 MB); `make data-unpack PACK=...` restores and
-validates it here. `make demo-data` re-cuts the demo dataset from a full build, and
-`lix validate serve` checks any serve directory (CI runs the browser tests on the demo data).
-
-### Front end
-
-`web/` is a Next.js app (Node 24, see `.nvmrc`):
-
-- a MapLibre map of every England neighbourhood from static PMTiles, coloured by England
-  percentile; weights are recomputed in the browser, so moving a slider recolours all 33,755
-  areas in about 100 ms
-- an assistant chat ([CopilotKit](https://copilotkit.ai) over AG-UI) whose tool calls render as
-  components: ranked lists, area profiles, side-by-side comparisons, nearby places, score
-  explanations and SQL results. The assistant and the page share state, so it can move the map,
-  outline areas, set the weight sliders and save a shortlist, and it sees what you change
-- presets (family, young professional, retired, commuter), a "compare like with like" switch for
-  urban/rural fairness, a shortlist, shareable URLs, light and dark mode, and an analyst mode with
-  a distribution chart, read-only SQL and CSV export
-
-```bash
-make web-install   # npm ci (Node 24)
-make dev           # API (model from .env, else the scripted assistant) + front end on :3000
-make web-test      # typecheck, lint, unit tests (incl. scoring parity with Python)
-make e2e           # browser tests (Playwright) against the local build
-```
-
-With a model key in `.env`, `LIX_MODEL=anthropic:claude-opus-5-5 make dev` uses a real LLM.
-
-## Planned
-
-- More open datasets: rail service frequency, surface water flooding and road and rail noise
-  (both published as rasters only), tree cover, and the CDRC's Access to Healthy Assets &
-  Hazards (behind a free login)
-- Walking-network travel times instead of straight-line distances
-
-## Running it
-
-Requires [uv](https://docs.astral.sh/uv/) and Python 3.11+.
-
-```bash
-make install    # uv sync
-make fetch      # download every dataset pinned in the lockfile (about 7 GB; Price Paid is 5.5 GB)
-make stage      # stage every downloaded dataset to data/staged/*.parquet
-make indicators # build the indicator table
-make score      # theme/overall scores, browser files and QA report in data/serve/
-make validate   # check the staged geography backbone
-make test       # pytest (no network access; HTTP is tested against a local server)
-make lint       # ruff check + format check
-```
-
-Or step by step:
-
-```bash
-uv run lix resolve --all              # pick up new upstream versions (updates the lockfile)
-uv run lix fetch --theme geography    # or --slug nspl, --priority P0, --all
-uv run lix stage --all
-uv run lix resolve --check --all      # is every source still reachable?
-```
-
-Set `LIX_DATA_DIR` to keep data somewhere other than `./data`.
-
-## Layout
-
-```
-config/datasets.yaml    dataset URLs, formats, licences
-core/                   lix_core: paths, config, logging, shared code patterns
-api/                    lix_api: FastAPI, the AI assistant (AG-UI) and the MCP server
-pipeline/               lix_pipeline and the `lix` CLI
-web/                    Next.js front end: map, chat and generative UI components
-contracts/              JSON Schema of the API models and the scoring golden cases
-  fetch/http.py         download engine with caching and resume
-  geo/                  NSPL postcode lookup, LSOA boundaries
-  stage/                one stager per dataset (nspl, price_paid, iod)
-data/                   raw/, staged/, ... (gitignored; rebuilt by the pipeline)
-```
-
-The Python side is a [uv workspace](https://docs.astral.sh/uv/concepts/projects/workspaces/)
-(`core`, `pipeline`, `api`).
+Issues and pull requests are welcome; see [CONTRIBUTING.md](CONTRIBUTING.md). Report
+security problems privately ([SECURITY.md](SECURITY.md)).
 
 ## Licence
 
-Code is MIT-licensed (see [LICENSE](LICENSE)).
+- **Code:** MIT ([LICENSE](LICENSE)).
+- **Data:** the data pack is built from open data and released under the Open Database
+  Licence because part of it comes from OpenStreetMap ([DATA-LICENCE.md](DATA-LICENCE.md)).
+  Reuse must keep the notices in [ATTRIBUTION.md](ATTRIBUTION.md).
 
-Data attribution: contains HM Land Registry data, ONS data and MHCLG data, Crown copyright and
-database right, licensed under the [Open Government Licence v3.0](https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/).
-Contains OS data, Royal Mail data and GeoPlace data © Crown copyright and database right.
+Contains public sector information licensed under the Open Government Licence v3.0; OS data,
+Royal Mail data and GeoPlace data © Crown copyright and database right 2026; © OpenStreetMap
+contributors.

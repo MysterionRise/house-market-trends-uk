@@ -8,6 +8,7 @@ const DOCS = {
   "../docs/evals.md": "evals.md",
   "../docs/data-sources.md": "data-sources.md",
   "../ATTRIBUTION.md": "attribution.md",
+  "../DATA-LICENCE.md": "data-licence.md",
 };
 
 mkdirSync("content", { recursive: true });

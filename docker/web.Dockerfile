@@ -16,7 +16,7 @@ RUN npm ci
 COPY web ./
 # The methodology and sources pages render these (scripts/copy-docs.mjs reads ../docs)
 COPY docs /docs
-COPY ATTRIBUTION.md /ATTRIBUTION.md
+COPY ATTRIBUTION.md DATA-LICENCE.md /
 RUN npm run build
 
 FROM node:24-alpine

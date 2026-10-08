@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 import Link from "next/link";
+import type { ReactNode } from "react";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
@@ -13,6 +14,7 @@ const IN_APP: Record<string, string> = {
   "evals.md": "/methodology/evals",
   "data-sources.md": "/about",
   "ATTRIBUTION.md": "/about",
+  "DATA-LICENCE.md": "/about",
 };
 
 /** A doc copied into web/content by scripts/copy-docs.mjs (read at build time). */
@@ -38,8 +40,12 @@ const PAGES = [
   ["/about", "Sources & licences"],
 ] as const;
 
-/** A documentation page: the map link, page tabs and rendered markdown. */
-export function DocPage({ current, sources }: { current: string; sources: { text: string; base: string }[] }) {
+/** A documentation page: the map link, page tabs, an optional intro and rendered markdown. */
+export function DocPage({ current, sources, intro }: {
+  current: string;
+  sources: { text: string; base: string }[];
+  intro?: ReactNode;
+}) {
   return (
     <div className="min-h-dvh bg-[var(--page)] text-[var(--text-primary)]">
       <header className="sticky top-0 z-10 flex flex-wrap items-center gap-x-4 gap-y-1 border-b border-[var(--border)] bg-[var(--surface-1)] px-4 py-2">
@@ -63,6 +69,7 @@ export function DocPage({ current, sources }: { current: string; sources: { text
         </Link>
       </header>
       <main className="mx-auto max-w-3xl px-4 py-6">
+        {intro}
         {sources.map((s, i) => (
           <article key={i} className="doc">
             <Markdown
