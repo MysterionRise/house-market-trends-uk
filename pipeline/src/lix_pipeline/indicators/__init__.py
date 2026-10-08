@@ -4,8 +4,9 @@
 
 Each builder (``module:function`` in the catalogue) takes a ``Context`` plus the
 indicator's ``params`` and returns ``lsoa21cd, value`` and optionally ``quality``.
-The runner gives every indicator a row for each of England's 33,755 LSOAs, with
-``quality = "missing"`` where there is no value.
+The runner gives every indicator a row for each area of the active nations, with
+``quality = "missing"`` where there is no value and ``"not_available"`` in nations the
+indicator is not built for (see ``IndicatorSpec.coverage``).
 """
 
 import importlib
@@ -14,14 +15,15 @@ from pathlib import Path
 
 import polars as pl
 
-from lix_core.config import IndicatorSpec, load_indicators
+from lix_core.config import IndicatorSpec, indicator_coverage, load_indicators, load_registry
 from lix_core.log import setup_logging
 from lix_core.paths import data_dir
+from lix_core.quality import QUALITY_LEVELS
 from lix_pipeline.geo.access import poi_access, residential_postcodes
 
 logger = setup_logging("indicators")
 
-QUALITY = ["ok", "imputed", "low_n", "broadcast_msoa", "broadcast_lad", "missing"]
+QUALITY = list(QUALITY_LEVELS)
 
 
 class Context:
@@ -54,24 +56,41 @@ def _builder(spec: IndicatorSpec):
     return getattr(importlib.import_module(f"lix_pipeline.indicators.{module}"), func)
 
 
-def build_indicator(spec: IndicatorSpec, ctx: Context) -> pl.DataFrame:
+def build_indicator(
+    spec: IndicatorSpec, ctx: Context, coverage: list[str] | None = None
+) -> pl.DataFrame:
+    """One row per area: the builder's value and quality, ``missing`` where it has none,
+    and ``not_available`` (value dropped) in nations outside ``coverage``."""
     df = _builder(spec)(ctx, **spec.params)
     if df["lsoa21cd"].n_unique() != df.height:
         raise ValueError(f"{spec.id}: builder returned duplicate LSOAs")
     if "quality" not in df.columns:
         df = df.with_columns(pl.lit("ok").alias("quality"))
+    geo = ctx.geo.select("lsoa21cd", "nation") if "nation" in ctx.geo.columns else None
     out = (
-        ctx.geo.select("lsoa21cd")
+        (geo if geo is not None else ctx.geo.select("lsoa21cd"))
         .join(df.select("lsoa21cd", "value", "quality"), on="lsoa21cd", how="left")
         # NaN → null first, so the quality flag below sees it as missing
         .with_columns(pl.col("value").cast(pl.Float64).fill_nan(None))
-        .with_columns(
-            pl.when(pl.col("value").is_null())
-            .then(pl.lit("missing"))
+    )
+    if geo is not None and coverage is not None:
+        outside = ~pl.col("nation").is_in(coverage)
+        dropped = out.filter(outside & pl.col("value").is_not_null()).height
+        if dropped:
+            logger.info(f"{spec.id}: {dropped:,} values outside its coverage {coverage} dropped")
+        out = out.with_columns(
+            pl.when(outside).then(None).otherwise(pl.col("value")).alias("value"),
+            pl.when(outside)
+            .then(pl.lit("not_available"))
             .otherwise(pl.col("quality"))
             .alias("quality"),
-            pl.lit(spec.id).alias("indicator_id"),
         )
+    out = out.with_columns(
+        pl.when(pl.col("value").is_null() & pl.col("quality").ne_missing("not_available"))
+        .then(pl.lit("missing"))
+        .otherwise(pl.col("quality"))
+        .alias("quality"),
+        pl.lit(spec.id).alias("indicator_id"),
     )
     return out.select("indicator_id", "lsoa21cd", "value", "quality")
 
@@ -81,14 +100,14 @@ def build_all(only: list[str] | None = None) -> Path:
 
     When rebuilding a subset, the other indicators are kept from the existing file.
     """
-    catalogue = load_indicators()
+    catalogue, registry = load_indicators(), load_registry()
     ctx = Context()
     out_path = data_dir("indicators") / "long.parquet"
     frames = []
     for spec in catalogue.indicators:
         if only and spec.id not in only:
             continue
-        df = build_indicator(spec, ctx)
+        df = build_indicator(spec, ctx, indicator_coverage(spec, registry))
         coverage = df["value"].is_not_null().mean()
         flagged = df.filter(pl.col("quality") != "ok").group_by("quality").len().rows()
         logger.info(f"{spec.id:28} coverage {coverage:6.1%}  {dict(flagged) if flagged else ''}")

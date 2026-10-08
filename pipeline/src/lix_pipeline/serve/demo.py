@@ -55,6 +55,7 @@ def build_demo(lads: list[str], out: Path, source: Path | None = None) -> dict[s
     )
     areas = pl.read_parquet(source / "areas.parquet")
     regions = set(features["rgn_cd"])
+    nations = set(features["ctry_cd"])
     tables = {
         "lsoa_features.parquet": features,
         "scores.parquet": pl.read_parquet(source / "scores.parquet").filter(in_subset),
@@ -64,6 +65,7 @@ def build_demo(lads: list[str], out: Path, source: Path | None = None) -> dict[s
             ((pl.col("level") == "msoa") & pl.col("code").is_in(list(msoas)))
             | ((pl.col("level") == "lad") & pl.col("code").is_in(lads))
             | ((pl.col("level") == "region") & pl.col("code").is_in(list(regions)))
+            | ((pl.col("level") == "nation") & pl.col("code").is_in(list(nations)))
         ),
         "pois.parquet": pl.read_parquet(source / "pois.parquet").filter(near),
     }
@@ -77,6 +79,8 @@ def build_demo(lads: list[str], out: Path, source: Path | None = None) -> dict[s
     build_tiles(out_dir=serve / "tiles", lsoas=lsoas, lads=set(lads))
 
     manifest = json.loads((source / "manifest.json").read_text())
+    area_counts = dict(features.group_by("nation").len().sort("nation").iter_rows())
+    manifest["geography"] = {**manifest["geography"], "area_counts": area_counts}
     manifest.update(
         demo=True,
         demo_local_authorities=lads,

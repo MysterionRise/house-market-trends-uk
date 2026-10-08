@@ -159,6 +159,9 @@ Access = Annotated[
     Field(discriminator="type"),
 ]
 
+# Layout of data/serve/ (manifest, parquet columns). Readers refuse other versions.
+SERVE_SCHEMA_VERSION = 2
+
 # The UK's nations, by the first letter of their ONS codes. config/nations.yaml configures
 # the ones a build can include; coverage declarations may name any of them.
 Nation = Literal["E", "W", "S", "N"]

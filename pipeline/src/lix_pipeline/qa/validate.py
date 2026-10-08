@@ -9,13 +9,10 @@ from pathlib import Path
 
 import polars as pl
 
-from lix_core.codes import ENGLAND_LSOA21, active_nations, area_code_regex, in_scope
-from lix_core.config import load_indicators, load_nations
+from lix_core.codes import active_nations, area_code_regex, in_scope
+from lix_core.config import NATION_NAMES, SERVE_SCHEMA_VERSION, load_indicators, load_nations
 from lix_core.paths import data_dir
-
-# England LSOAs (December 2021); validate_serve still assumes England until the serve
-# format carries nations (v0.3.0 step 6)
-ENGLAND_LSOA_COUNT = 33_755
+from lix_core.quality import QUALITY_LEVELS
 
 
 def validate_geo() -> list[str]:
@@ -128,40 +125,97 @@ SERVE_FILES = [
 ]
 
 
+def indicator_coverage_problems(
+    features: pl.DataFrame, scored: list[str], coverage: dict[str, list[str]], nations: list[str]
+) -> list[str]:
+    """Each scored indicator covers (almost) every area of the nations it is built for and
+    is ``not_available`` everywhere else."""
+    problems = []
+    for nation in nations:
+        rows = features.filter(pl.col("nation") == nation)
+        name = NATION_NAMES.get(nation, nation)
+        if rows.is_empty():
+            problems.append(f"no areas in {name}")
+            continue
+        for iid in scored:
+            col, q = f"n__{iid}", f"q__{iid}"
+            if col not in features.columns:
+                continue
+            if nation in coverage.get(iid, []):
+                share = rows[col].is_not_null().mean()
+                minimum = COVERAGE_EXCEPTIONS.get(iid, MIN_SCORED_COVERAGE)
+                if share < minimum:
+                    problems.append(f"{iid} covers {share:.1%} of {name} (< {minimum:.0%})")
+            else:
+                stray = rows.filter(pl.col(col).is_not_null()).height
+                not_flagged = (
+                    rows.filter(pl.col(q) != "not_available").height if q in rows.columns else 0
+                )
+                if stray or not_flagged:
+                    problems.append(
+                        f"{iid} is not built for {name} but has {stray} values and "
+                        f"{not_flagged} rows not flagged not_available"
+                    )
+    return problems
+
+
 def validate_serve(serve_dir: Path | None = None) -> list[str]:
     """The files the API and browser read: complete, consistent and as the manifest says.
 
-    Works on a full build (33,755 LSOAs) and on a demo cut (``demo: true`` in the
-    manifest, with its own ``lsoa_count``).
+    Works on a full build (every area of the active nations) and on a demo cut
+    (``demo: true`` in the manifest, with its own ``lsoa_count`` and ``area_counts``).
     """
     serve = serve_dir or data_dir("serve")
     missing = [f for f in SERVE_FILES if not (serve / f).is_file()]
     if missing:
         return [f"missing {', '.join(missing)} in {serve}"]
-    problems = []
     manifest = json.loads((serve / "manifest.json").read_text())
+    version = manifest.get("schema_version")
+    if version != SERVE_SCHEMA_VERSION:
+        return [
+            f"manifest schema_version {version!r}; this code reads v{SERVE_SCHEMA_VERSION}: "
+            "rebuild with lix score (or lix demo-data)"
+        ]
+    problems = []
     catalogue = load_indicators()
     scored = [i.id for i in catalogue.scored()]
-    expected = manifest.get("lsoa_count") if manifest.get("demo") else ENGLAND_LSOA_COUNT
+    cfg = load_nations().nations
+    geo = manifest.get("geography", {})
+    nations = [n for n in geo.get("active", []) if n in cfg]
+    area_counts = {k: int(v) for k, v in geo.get("area_counts", {}).items()}
+    if not nations:
+        problems.append("manifest geography names no configured nation")
+    if manifest.get("demo"):
+        expected = manifest.get("lsoa_count")
+    else:
+        expected = sum(cfg[n].levels["low"].count or 0 for n in nations)
+        for n in nations:
+            if (c := cfg[n].levels["low"].count) and area_counts.get(n) != c:
+                problems.append(
+                    f"manifest counts {area_counts.get(n)} areas in {n}, expected {c:,}"
+                )
 
     features = pl.read_parquet(serve / "lsoa_features.parquet")
     codes = features["lsoa21cd"]
     if features.height != expected:
         problems.append(f"lsoa_features has {features.height:,} rows, expected {expected:,}")
+    if sum(area_counts.values()) != features.height:
+        problems.append(
+            f"manifest area_counts sum to {sum(area_counts.values()):,}, not {features.height:,}"
+        )
     if codes.n_unique() != features.height:
         problems.append("lsoa_features has duplicate lsoa21cd")
-    if not codes.str.contains(ENGLAND_LSOA21).all():
-        problems.append("lsoa_features has non-England LSOA codes")
-
-    for iid in scored:
-        col = f"n__{iid}"
+    if nations and not codes.str.contains(area_code_regex(nations=tuple(nations))).all():
+        problems.append(f"lsoa_features has codes outside the nations {nations}")
+    for col in ("nation", "ctry_cd", "ruc_class"):
         if col not in features.columns:
+            problems.append(f"lsoa_features is missing column {col}")
+    if "nation" in features.columns:
+        coverage = {i["id"]: i.get("coverage") or [] for i in manifest.get("indicators", [])}
+        problems += indicator_coverage_problems(features, scored, coverage, nations)
+    for iid in scored:
+        if f"n__{iid}" not in features.columns:
             problems.append(f"scored indicator {iid} is missing from lsoa_features")
-            continue
-        coverage = features[col].is_not_null().mean()
-        minimum = COVERAGE_EXCEPTIONS.get(iid, MIN_SCORED_COVERAGE)
-        if coverage < minimum:
-            problems.append(f"{iid} covers {coverage:.1%} of LSOAs (< {minimum:.0%})")
     overall = features["overall"]
     if overall.null_count() or not overall.is_between(0, 100).all():
         problems.append("overall score has nulls or values outside 0–100")
@@ -173,9 +227,14 @@ def validate_serve(serve_dir: Path | None = None) -> list[str]:
         problems.append("manifest scored_indicators differ from config/indicators.yaml")
     if set(manifest.get("themes", {})) != set(catalogue.themes):
         problems.append("manifest themes differ from config/indicators.yaml")
+    if manifest.get("quality_levels") != list(QUALITY_LEVELS):
+        problems.append("manifest quality_levels differ from lix_core.quality")
     absent = [i for i in scored if i not in scores.columns]
     if absent:
         problems.append(f"scores.parquet lacks scored indicators {absent}")
+    no_quality = [i for i in scored if f"q__{i}" not in scores.columns]
+    if no_quality:
+        problems.append(f"scores.parquet lacks quality codes for {no_quality}")
     for iid in scored:
         if iid in scores.columns:
             bad = scores.filter((pl.col(iid) > 10_000) & (pl.col(iid) != MISSING_U16)).height

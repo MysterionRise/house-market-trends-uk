@@ -165,7 +165,7 @@ export function useScores(state: LiveabilityState): LayerValues | null {
       label = "Overall";
     }
     if (state.compare_within_urban_rural) {
-      lsoa = percentileWithin(lsoa, scores.ruc);
+      lsoa = percentileWithin(lsoa, scores.rucClass);
       label += " (vs similar urban/rural areas)";
     }
     return {

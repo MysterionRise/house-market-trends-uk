@@ -1,8 +1,9 @@
 """Lookup tables the API serves: postcodes, places, named areas and points of interest.
 
-    data/serve/postcodes.parquet  live England postcodes → LSOA, lat/lon
+    data/serve/postcodes.parquet  live postcodes of the active nations → LSOA, lat/lon
     data/serve/places.parquet     settlements (OS Open Names) for place search
-    data/serve/areas.parquet      MSOAs, local authorities and regions with bounding boxes
+    data/serve/areas.parquet      MSOAs, local authorities, regions and nations with
+                                  bounding boxes
     data/serve/pois.parquet       points of interest by category, with source and licence
 
 POIs derived from OpenStreetMap are a derivative database under the ODbL; every row
@@ -14,6 +15,7 @@ import json
 import polars as pl
 
 from lix_core.codes import in_scope
+from lix_core.config import load_nations
 from lix_core.log import setup_logging
 from lix_core.paths import data_dir
 from lix_pipeline.stage.geo import bng_to_lonlat
@@ -166,19 +168,30 @@ def build_pois() -> pl.DataFrame:
 
 
 def build_areas(features: pl.DataFrame) -> pl.DataFrame:
-    """Named areas above the LSOA with bounding boxes, for search and map fitting."""
+    """Named areas above the LSOA with bounding boxes, for search and map fitting.
+
+    Levels: msoa, lad, region, nation. A nation without real regions (Wales) has no
+    region rows: its nation row stands in.
+    """
+    names = {code: spec.name for code, spec in load_nations().nations.items()}
+    features = features.with_columns(
+        pl.col("nation").replace_strict(names, default=None).alias("nation_name")
+    )
     levels = [
-        ("msoa", "msoa21cd", pl.col("msoa_name")),
-        ("lad", "lad_cd", pl.col("lad_nm")),
-        ("region", "rgn_cd", pl.col("rgn_nm")),
+        ("msoa", "msoa21cd", pl.col("msoa_name"), pl.lit(True)),
+        ("lad", "lad_cd", pl.col("lad_nm"), pl.lit(True)),
+        ("region", "rgn_cd", pl.col("rgn_nm"), pl.col("rgn_cd") != pl.col("ctry_cd")),
+        ("nation", "ctry_cd", pl.col("nation_name"), pl.lit(True)),
     ]
     frames = []
-    for level, code, name in levels:
+    for level, code, name, keep in levels:
         frames.append(
-            features.group_by(code)
+            features.filter(keep)
+            .group_by(code)
             .agg(
                 name.first().alias("name"),
                 pl.col("lad_nm").first().alias("lad_nm"),
+                pl.col("nation").first().alias("nation"),
                 pl.col("population").sum(),
                 pl.len().alias("lsoas"),
                 pl.col("bbox_w").min(),

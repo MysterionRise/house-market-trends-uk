@@ -62,8 +62,9 @@ class Store:
     def base_features(self) -> pl.DataFrame:
         """Features without the default preset's scores, for re-scoring with any weights."""
         return self.features.select(
-            pl.exclude(r"^theme__.*$", r"^theme_pct__.*$", r"^theme_coverage__.*$",
-                       "overall", "overall_pct", "coverage", "band")
+            pl.exclude(r"^theme__.*$", r"^theme_pct__.*$", r"^theme_pct_nation__.*$",
+                       r"^theme_coverage__.*$", "overall", "overall_pct", "overall_pct_nation",
+                       "coverage", "band")
         )  # fmt: skip
 
     @cached_property

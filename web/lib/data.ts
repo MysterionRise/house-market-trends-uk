@@ -1,6 +1,7 @@
 /**
- * Data the browser loads once: the build manifest (indicators, themes, presets,
- * sources) and scores.parquet (per-LSOA indicator scores as uint16 × 100).
+ * Data the browser loads once: the build manifest (geography, indicators, themes,
+ * presets, sources) and scores.parquet (per-LSOA indicator scores as uint16 × 100 with
+ * a uint8 quality code each).
  */
 import { asyncBufferFromUrl, parquetReadObjects } from "hyparquet";
 
@@ -8,6 +9,8 @@ import { DATA_URL } from "./config";
 import type { ScoredIndicator } from "./scoring";
 
 export const MISSING_U16 = 65535;
+/** Layout of the data pack this app reads (lix_core.config.SERVE_SCHEMA_VERSION) */
+export const SCHEMA_VERSION = 2;
 
 export interface IndicatorMeta extends ScoredIndicator {
   label: string;
@@ -17,6 +20,33 @@ export interface IndicatorMeta extends ScoredIndicator {
   role: "scored" | "context" | "diagnostic";
   caveats: string | null;
   sources: string[];
+  /** uk: ranked against the whole country · nation: percentiles within the nation */
+  benchmark: "uk" | "nation";
+  /** Nation codes (E, W, S, N) the indicator is built for */
+  coverage: string[];
+}
+
+export interface NationMeta {
+  name: string;
+  ctry_cd: string;
+  bbox: [number, number, number, number];
+  levels: Record<string, { official: string; count: number | null }>;
+}
+
+export interface Geography {
+  country: {
+    code: string;
+    name: string;
+    currency: string;
+    locale: string;
+    bbox: [number, number, number, number];
+    area_key: string;
+  };
+  nations: Record<string, NationMeta>;
+  /** Nation codes in this build, in config order */
+  active: string[];
+  /** Areas per nation in this build (a demo cut has fewer) */
+  area_counts: Record<string, number>;
 }
 
 export interface PresetMeta {
@@ -27,14 +57,18 @@ export interface PresetMeta {
 }
 
 export interface Manifest {
+  schema_version: number;
   generated_at: string;
+  geography: Geography;
+  /** Quality levels in code order: scores.parquet's q__ columns index this list */
+  quality_levels: string[];
   scored_indicators: string[];
   indicators: IndicatorMeta[];
   themes: Record<string, { label: string; description: string }>;
   default_preset: string;
   presets: Record<string, PresetMeta>;
   sources: Record<string, { title: string; licence: string; attribution: string; version?: string }>;
-  /** Neighbourhoods in this build (33,755 for England; fewer in a demo cut) */
+  /** Areas in this build (35,672 for England and Wales; fewer in a demo cut) */
   lsoa_count?: number;
   /** A small cut of the full build (CI and quick starts): see `lix demo-data` */
   demo?: boolean;
@@ -49,20 +83,36 @@ export interface ScoreData {
   codes: string[];
   msoa: string[];
   lad: string[];
-  ruc: string[];
+  /** Nation letter per LSOA (E, W, S, N) */
+  nation: string[];
+  /** Harmonised urban | town | rural class, for like-for-like comparison */
+  rucClass: string[];
   urban: boolean[];
   population: Float64Array;
   /** Indicator id → 0–100 score per LSOA (NaN when missing) */
   indicators: Record<string, Float64Array>;
-  flags: Uint32Array;
+  /** Indicator id → quality code per LSOA (index into manifest.quality_levels) */
+  quality: Record<string, Uint8Array>;
   index: Map<string, number>;
+}
+
+/** Throws a message that says what to do when the data pack is from another layout. */
+export function assertSchema(manifest: { schema_version?: number }): void {
+  const found = manifest.schema_version ?? 1;
+  if (found !== SCHEMA_VERSION) {
+    throw new Error(
+      `Data pack schema v${found} but this app needs v${SCHEMA_VERSION}: run make data-download`,
+    );
+  }
 }
 
 export async function loadManifest(): Promise<Manifest> {
   // Always fresh: it says which build the other files belong to
   const res = await fetch(`${DATA_URL}/manifest.json`, { cache: "no-store" });
   if (!res.ok) throw new Error(`manifest.json: HTTP ${res.status}`);
-  return res.json();
+  const manifest = (await res.json()) as Manifest;
+  assertSchema(manifest);
+  return manifest;
 }
 
 export async function loadScores(manifest: Manifest): Promise<ScoreData> {
@@ -74,13 +124,19 @@ export async function loadScores(manifest: Manifest): Promise<ScoreData> {
   const rows = (await parquetReadObjects({ file })) as Record<string, unknown>[];
   const n = rows.length;
   const indicators: Record<string, Float64Array> = {};
+  const quality: Record<string, Uint8Array> = {};
+  const missing = Math.max(0, manifest.quality_levels.indexOf("missing"));
   for (const id of manifest.scored_indicators) {
     const col = new Float64Array(n);
+    const q = new Uint8Array(n);
     for (let i = 0; i < n; i++) {
       const v = rows[i][id] as number;
       col[i] = v === MISSING_U16 || v == null ? NaN : v / 100;
+      const code = rows[i][`q__${id}`];
+      q[i] = code == null ? missing : Number(code);
     }
     indicators[id] = col;
+    quality[id] = q;
   }
   const codes = rows.map((r) => r.lsoa21cd as string);
   return {
@@ -88,11 +144,12 @@ export async function loadScores(manifest: Manifest): Promise<ScoreData> {
     codes,
     msoa: rows.map((r) => r.msoa21cd as string),
     lad: rows.map((r) => r.lad_cd as string),
-    ruc: rows.map((r) => r.ruc21cd as string),
+    nation: rows.map((r) => r.nation as string),
+    rucClass: rows.map((r) => r.ruc_class as string),
     urban: rows.map((r) => Boolean(r.urban)),
     population: Float64Array.from(rows, (r) => Number(r.population)),
     indicators,
-    flags: Uint32Array.from(rows, (r) => Number(r.quality_flags)),
+    quality,
     index: new Map(codes.map((c, i) => [c, i])),
   };
 }

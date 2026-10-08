@@ -7,25 +7,43 @@ from pathlib import Path
 import polars as pl
 import pytest
 
+from lix_core.config import SERVE_SCHEMA_VERSION
 from lix_core.paths import get_project_root
 from lix_pipeline.qa.validate import validate_serve
 
 DEMO = get_project_root() / "fixtures" / "demo" / "serve"
 
 
-@pytest.fixture
-def demo_copy(tmp_path: Path) -> Path:
+def _require_demo() -> None:
     if not DEMO.is_dir():
         pytest.skip("demo dataset not built (make demo-data)")
+    version = json.loads((DEMO / "manifest.json").read_text()).get("schema_version")
+    if version != SERVE_SCHEMA_VERSION:
+        pytest.skip(f"demo dataset is schema v{version}, code reads v{SERVE_SCHEMA_VERSION}")
+
+
+@pytest.fixture
+def demo_copy(tmp_path: Path) -> Path:
+    _require_demo()
     out = tmp_path / "serve"
     shutil.copytree(DEMO, out)
     return out
 
 
 def test_demo_dataset_is_valid():
-    if not DEMO.is_dir():
-        pytest.skip("demo dataset not built (make demo-data)")
+    _require_demo()
     assert validate_serve(DEMO) == []
+
+
+def test_refuses_another_schema_version(tmp_path: Path):
+    _require_demo()
+    out = tmp_path / "serve"
+    shutil.copytree(DEMO, out)
+    manifest = json.loads((out / "manifest.json").read_text())
+    manifest["schema_version"] = 1
+    (out / "manifest.json").write_text(json.dumps(manifest))
+    (problem,) = validate_serve(out)
+    assert problem.startswith("manifest schema_version 1; this code reads v2")
 
 
 def test_flags_a_file_changed_after_the_manifest(demo_copy):

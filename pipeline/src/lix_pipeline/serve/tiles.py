@@ -1,7 +1,7 @@
 """Vector map tiles (PMTiles) for the browser map, written with GDAL's PMTiles driver.
 
-    data/serve/tiles/lsoa.pmtiles   England LSOAs, zoom 8–14   (property: lsoa21cd)
-    data/serve/tiles/msoa.pmtiles   England MSOAs, zoom 6–12   (property: msoa21cd)
+    data/serve/tiles/lsoa.pmtiles   LSOAs of the active nations, zoom 8–14 (lsoa21cd)
+    data/serve/tiles/msoa.pmtiles   MSOAs, zoom 6–12 (msoa21cd)
     data/serve/tiles/lad.pmtiles    local authorities, zoom 4–10 (lad_cd, name)
 
 Polygons carry only their code (and a name for labels): the browser colours them from
@@ -73,7 +73,7 @@ def build_tiles(
     lad = _read("lad_boundaries")
     code = next(c for c in lad.columns if c.upper().startswith("LAD") and c.upper().endswith("CD"))
     lad = lad.rename(columns={code: "lad_cd", code[:-2] + "NM": "name"})
-    lad = lad[lad["lad_cd"].str.startswith("E")][["lad_cd", "name", "geometry"]]
+    lad = lad[lad["lad_cd"].str.match(area_code_regex("upper"))][["lad_cd", "name", "geometry"]]
     if lads is not None:
         lad = lad[lad["lad_cd"].isin(lads)]
     outputs.append(write_layer(lad, out_dir / "lad.pmtiles", "lad", 4, 10))
