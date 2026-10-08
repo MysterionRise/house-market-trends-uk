@@ -1,12 +1,12 @@
+"use client";
+
+import { useData } from "@/components/AppData";
 import { Card, Muted, formatValue } from "@/components/ui";
 import type { Comparison } from "@/lib/contracts.gen";
 
-const UNITS: Record<string, string> = {
-  house_price: "£", gp_distance: "metres", supermarket_distance: "metres",
-  no2: "µg/m³", patients_per_gp: "patients", population_density: "per km²",
-};
-
 export function ComparisonTable({ comparison }: { comparison: Comparison }) {
+  const { manifest } = useData();
+  const units = new Map(manifest?.indicators.map((i) => [i.id, i.unit]));
   const areas = comparison.areas;
   const themeRows = Object.entries(comparison.theme_labels);
   const best = (values: (number | null)[]) => Math.max(...values.map((v) => v ?? -Infinity));
@@ -55,7 +55,7 @@ export function ComparisonTable({ comparison }: { comparison: Comparison }) {
                 <td className="py-1 pr-2 text-[var(--text-secondary)]">{label}</td>
                 {areas.map((a) => (
                   <td key={a.code} className="py-1 pr-2">
-                    {formatValue((a.indicators as Record<string, number | null>)[id], UNITS[id] ?? "")}
+                    {formatValue((a.indicators as Record<string, number | null>)[id], units.get(id) ?? "")}
                   </td>
                 ))}
               </tr>

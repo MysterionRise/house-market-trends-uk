@@ -1,6 +1,8 @@
 /** Small shared pieces: cards, single-hue score bars, bands and number formatting. */
 import type { ReactNode } from "react";
 
+export { formatValue } from "@/lib/format";
+
 export function Card({ title, subtitle, children, testId }: {
   title?: ReactNode;
   subtitle?: ReactNode;
@@ -76,16 +78,6 @@ export function Band({ band, percentile }: { band?: number | null; percentile?: 
       {percentile != null && ` · better than ${Math.round(percentile)}% of England`}
     </span>
   );
-}
-
-export function formatValue(value: number | null | undefined, unit: string): string {
-  if (value == null || Number.isNaN(value)) return "–";
-  if (unit.startsWith("£")) return `£${Math.round(value).toLocaleString("en-GB")}`;
-  if (unit === "metres") return value >= 1000 ? `${(value / 1000).toFixed(1)} km` : `${Math.round(value)} m`;
-  if (unit.startsWith("%")) return `${value.toFixed(value > 0 && value < 10 ? 1 : 0)}%`;
-  if (unit.startsWith("index")) return value.toFixed(2);
-  if (Math.abs(value) >= 100) return Math.round(value).toLocaleString("en-GB");
-  return value.toFixed(1);
 }
 
 const QUALITY_NOTE: Record<string, string> = {

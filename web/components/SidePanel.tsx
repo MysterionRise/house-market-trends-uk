@@ -75,7 +75,10 @@ export function SidePanel() {
             {label}
           </button>
         ))}
-        <label className="ml-auto flex shrink-0 items-center gap-1.5 py-2 pl-2 text-xs text-[var(--text-secondary)]">
+        <label
+          className="ml-auto flex shrink-0 items-center gap-1.5 py-2 pl-2 text-xs text-[var(--text-secondary)]"
+          title="Analyst mode: distributions, indicator overlap and SQL"
+        >
           <input
             type="checkbox"
             data-testid="analyst-toggle"
@@ -86,7 +89,8 @@ export function SidePanel() {
               if (!analyst && tab === "analyst") setTab("assistant");
             }}
           />
-          Analyst
+          {/* Once on, the Analyst tab names it; the word would crowd the tabs off a narrow panel */}
+          <span className={state.mode === "analyst" ? "sr-only" : ""}>Analyst</span>
         </label>
       </nav>
       <div className="min-h-0 flex-1 overflow-y-auto">

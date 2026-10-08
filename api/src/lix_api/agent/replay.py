@@ -6,13 +6,18 @@
 A cassette maps a user prompt to the model responses of that turn (tool calls, then
 the reply). Replaying returns the next recorded response for the prompt, so tools run
 for real against the data and the page shows live cards; prompts that weren't recorded
-fall back to the scripted model.
+fall back to the scripted model (or ``fallback``).
+
+LIX_REPLAY_DELAY     seconds between streamed words (default 0); a little delay makes
+                     recorded answers stream naturally in screen recordings
 """
 
 import argparse
 import asyncio
 import json
+import os
 import re
+from collections.abc import Callable
 from pathlib import Path
 
 from pydantic_ai.messages import (
@@ -63,17 +68,23 @@ def load_cassettes(path: Path = CASSETTES) -> dict[str, list[ModelResponse]]:
     }
 
 
-def replay_model(path: Path = CASSETTES) -> FunctionModel:
+Responder = Callable[[list[ModelMessage], AgentInfo], ModelResponse]
+
+
+def replay_model(path: Path = CASSETTES, fallback: Responder | None = None) -> FunctionModel:
+    """Replays recorded turns; other prompts go to ``fallback`` (the scripted model)."""
     from lix_api.agent.models import _scripted
 
     cassettes = load_cassettes(path)
+    other = fallback or _scripted
+    delay = float(os.environ.get("LIX_REPLAY_DELAY", 0))
 
     def respond(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
         prompt, answered = _turn(messages)
         recorded = cassettes.get(prompt)
         if recorded and answered < len(recorded):
             return recorded[answered]
-        return _scripted(messages, info)
+        return other(messages, info)
 
     async def stream(messages: list[ModelMessage], info: AgentInfo):
         response = respond(messages, info)
@@ -81,6 +92,8 @@ def replay_model(path: Path = CASSETTES) -> FunctionModel:
         for part in response.parts:
             if isinstance(part, TextPart):
                 for word in re.split(r"(?<= )", part.content):
+                    if delay:
+                        await asyncio.sleep(delay)
                     yield word
             elif isinstance(part, ToolCallPart):
                 args = part.args if isinstance(part.args, str) else json.dumps(part.args or {})
@@ -131,8 +144,6 @@ def main() -> None:
     rec.add_argument("--model", required=True)
     args = parser.parse_args()
     if args.cmd == "record":
-        import os
-
         os.environ["LIX_MODEL"] = args.model  # model_settings() follows the model
         os.environ.setdefault("PYDANTIC_AI_NO_BANNER", "1")
         asyncio.run(record(args.model))

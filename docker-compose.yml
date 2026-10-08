@@ -12,6 +12,7 @@ services:
     # Values come from the shell or ./.env (see .env.example); unset ones stay empty
     environment:
       LIX_MODEL: ${LIX_MODEL:-anthropic:claude-opus-5-5}
+      LIX_REPLAY_DELAY: ${LIX_REPLAY_DELAY:-0}
       LIX_FALLBACK_MODELS: ${LIX_FALLBACK_MODELS:-}
       LIX_EFFORT: ${LIX_EFFORT:-low}
       LIX_CORS_ORIGINS: ${LIX_CORS_ORIGINS:-http://localhost:3000}

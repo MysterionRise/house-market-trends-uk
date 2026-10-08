@@ -3,6 +3,8 @@ node_modules/
 next-env.d.ts
 *.tsbuildinfo
 test-results/
+# Screen recordings (e2e/record.spec.ts)
+recordings/
 playwright-report/
 public/maplibre-gl-worker.mjs
 # Copied from ../docs by scripts/copy-docs.mjs

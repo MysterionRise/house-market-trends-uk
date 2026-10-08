@@ -1,4 +1,4 @@
-.PHONY: up down up-demo data-pack data-unpack eval demo demo-offline demo-check demo-record install resolve fetch stage indicators score tiles build-data validate demo-data docs schemas api web-install web web-test e2e dev test lint format
+.PHONY: up down up-demo gif data-pack data-unpack eval demo demo-offline demo-check demo-record install resolve fetch stage indicators score tiles build-data validate demo-data docs schemas api web-install web web-test e2e dev test lint format
 
 PY_DIRS := core pipeline api
 # Local runs read model keys from .env when it exists (see .env.example)
@@ -146,3 +146,10 @@ demo-check:
 demo-record:
 	uv run $(ENV_FILE) python -m lix_api.agent.replay record --model $${MODEL:-openrouter:anthropic/claude-opus-5.5}
 
+
+# Screen recordings of the interface for the README and release (docs/media/*.gif and
+# dist/walkthrough.mp4): the Docker stack with the recorded assistant answers. Needs ffmpeg
+gif: demo-check
+	LIX_MODEL=replay LIX_REPLAY_DELAY=0.025 docker compose up -d --build --wait
+	cd web && LIX_RECORD=1 npx playwright test record
+	./scripts/make-gif.sh
