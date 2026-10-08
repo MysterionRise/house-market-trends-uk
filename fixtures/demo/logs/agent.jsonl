@@ -1,5 +1,0 @@
-{"at": "2026-10-07T23:36:48+00:00", "model": "test", "models": ["scripted"], "tools": ["set_weights"], "requests": 2, "input_tokens": 100, "cache_read_tokens": 0, "output_tokens": 10, "cost": null, "seconds": 0.02}
-{"at": "2026-10-07T23:36:49+00:00", "model": "test", "models": ["scripted"], "tools": ["rank_areas"], "requests": 2, "input_tokens": 100, "cache_read_tokens": 0, "output_tokens": 13, "cost": null, "seconds": 0.02}
-{"at": "2026-10-07T23:36:51+00:00", "model": "test", "models": ["scripted"], "tools": ["get_area_profile"], "requests": 2, "input_tokens": 100, "cache_read_tokens": 0, "output_tokens": 10, "cost": null, "seconds": 0.01}
-{"at": "2026-10-07T23:36:51+00:00", "model": "test", "models": ["scripted"], "tools": ["compare_areas"], "requests": 2, "input_tokens": 100, "cache_read_tokens": 0, "output_tokens": 13, "cost": null, "seconds": 0.05}
-{"at": "2026-10-07T23:36:52+00:00", "model": "test", "models": ["scripted"], "tools": ["nearest_pois"], "requests": 2, "input_tokens": 100, "cache_read_tokens": 0, "output_tokens": 15, "cost": null, "seconds": 0.05}
