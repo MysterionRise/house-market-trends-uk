@@ -37,6 +37,10 @@ class LiveabilityState(BaseModel):
     indicator_weights: dict[str, float] = Field(
         default_factory=dict, description="Multipliers on individual indicators"
     )
+    compare_within: Literal["uk", "nation", "urban_rural"] = Field(
+        "uk", description="What percentiles on the map compare against"
+    )
+    # Kept one release for older pages; compare_within replaces it
     compare_within_urban_rural: bool = False
     mode: Literal["consumer", "analyst"] = "consumer"
     map: MapView = Field(default_factory=MapView)

@@ -241,7 +241,7 @@ export function LiveabilityMap() {
       const name = f?.properties?.name;
       setHover(
         f && typeof v === "number"
-          ? { x: e.point.x, y: e.point.y, text: `${name ? `${name}: ` : ""}better than ${Math.round(v)}% of England` }
+          ? { x: e.point.x, y: e.point.y, text: `${name ? `${name}: ` : ""}better than ${Math.round(v)}% of the UK` }
           : null,
       );
     };

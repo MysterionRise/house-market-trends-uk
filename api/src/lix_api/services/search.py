@@ -6,18 +6,20 @@ import polars as pl
 from rapidfuzz import fuzz, process
 
 from lix_api.models import Place, Point
-from lix_api.store import Store
+from lix_api.store import Store, to_bng
 
 POSTCODE = re.compile(r"^[A-Z]{1,2}\d[A-Z\d]?\d[A-Z]{2}$")
-GSS = re.compile(r"^E0[1-2]\d{6}$|^E0[6-9]\d{6}$|^E1[0-2]\d{6}$")
+# Any ONS GSS code (nation letter + entity type + 6 digits); whether it names an LSOA
+# or an area in this build is decided by looking it up
+GSS = re.compile(r"^[EWSN]\d{8}$")
 
 # Higher wins when names score equally: "Leeds" the city beats Leeds village in Kent
 # WRatio similarity a name must reach: typos ("Headingly", "Mancheser") score ~95,
 # while unrelated names sharing a suffix ("Nowheresville" vs "Teesville") score ~80
 MIN_SIMILARITY = 88
 
-KIND_PRIORITY = {"lad": 6, "region": 5, "City": 5, "Town": 4, "msoa": 3, "Suburban Area": 3,
-                 "Village": 2, "Other Settlement": 1, "Hamlet": 0}  # fmt: skip
+KIND_PRIORITY = {"nation": 7, "lad": 6, "region": 5, "City": 5, "Town": 4, "msoa": 3,
+                 "Suburban Area": 3, "Village": 2, "Other Settlement": 1, "Hamlet": 0}  # fmt: skip
 
 
 def normalise_postcode(text: str) -> str:
@@ -142,6 +144,6 @@ def resolve_lsoa(store: Store, ref: str) -> str:
 
 
 def nearest_lsoa(store: Store, point: Point) -> str:
-    f = store.features
-    d = (f["pwc_lat"] - point.lat) ** 2 + ((f["pwc_lon"] - point.lon) * 0.62) ** 2
-    return f["lsoa21cd"][int(d.arg_min())]
+    """The LSOA whose population-weighted centroid is nearest the point (on the grid)."""
+    _, idx = store.lsoa_tree.query(to_bng(point.lon, point.lat))
+    return store.features["lsoa21cd"][int(idx)]

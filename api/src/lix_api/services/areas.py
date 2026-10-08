@@ -28,7 +28,7 @@ def indicator_value(store: Store, row: dict, indicator_id: str) -> IndicatorValu
     return IndicatorValue(
         id=spec.id, label=spec.label, theme=spec.theme, unit=spec.unit,
         value=_round(row.get(f"raw__{spec.id}"), 3), score=_round(row.get(f"n__{spec.id}")),
-        quality=str(row.get(f"q__{spec.id}") or "ok"), role=spec.role,
+        quality=str(row.get(f"q__{spec.id}") or "ok"), role=spec.role, benchmark=spec.benchmark,
     )  # fmt: skip
 
 
@@ -44,6 +44,7 @@ def area_profile(
     every = scores_for(store, themes, multipliers)
     scores = every.row(store.lsoa_index[code], named=True)
     local = every.filter(store.features["lad_cd"] == row["lad_cd"])
+    nation = every.filter(store.features["nation"] == row["nation"])
 
     def median(df: pl.DataFrame, col: str) -> float | None:
         return _round(df[col].median()) if col in df.columns else None
@@ -54,7 +55,9 @@ def area_profile(
             label=spec.label,
             score=_round(scores.get(f"theme__{t}")),
             percentile=_round(scores.get(f"theme_pct__{t}"), 0),
-            england_median=median(every, f"theme__{t}"),
+            percentile_nation=_round(scores.get(f"theme_pct_nation__{t}"), 0),
+            country_median=median(every, f"theme__{t}"),
+            nation_median=median(nation, f"theme__{t}"),
             local_median=median(local, f"theme__{t}"),
         )  # fmt: skip
         for t, spec in store.themes.items()
@@ -76,10 +79,13 @@ def area_profile(
         msoa21cd=row["msoa21cd"],
         local_authority=row["lad_nm"],
         region=row["rgn_nm"],
+        nation=row["nation"],
+        nation_name=store.nation_names.get(row["nation"], row["nation"]),
         urban_rural=row["ruc21nm"],
         population=row["population"],
         overall=_round(scores.get("overall")),
         overall_percentile=_round(pct, 0),
+        overall_percentile_nation=_round(scores.get("overall_pct_nation"), 0),
         band=None if pct is None else min(int(pct // 20) + 1, 5),
         overall_percentile_range=None if lo is None or hi is None else [round(lo), round(hi)],
         coverage=_round(scores.get("coverage"), 2),
@@ -95,5 +101,8 @@ def area_profile(
 
 
 def lsoas_in(store: Store, level: str, code: str) -> pl.Series:
-    column = {"msoa": "msoa21cd", "lad": "lad_cd", "region": "rgn_cd", "lsoa": "lsoa21cd"}[level]
+    column = {
+        "msoa": "msoa21cd", "lad": "lad_cd", "region": "rgn_cd", "nation": "ctry_cd",
+        "lsoa": "lsoa21cd",
+    }[level]  # fmt: skip
     return store.features.filter(pl.col(column) == code)["lsoa21cd"]

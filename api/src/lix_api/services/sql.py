@@ -17,9 +17,10 @@ MAX_ROWS = 5000
 TIMEOUT_S = 10.0
 
 TABLES = {
-    "lsoa": "Every England LSOA: geography, raw__/n__/q__ per indicator, default scores",
+    "lsoa": "Every LSOA in the build: geography (incl. nation), raw__/n__/q__ per indicator, "
+    "default scores with country-wide and within-nation percentiles",
     "pois": "Points of interest: category, name, lat, lon, source, licence, detail (JSON)",
-    "areas": "MSOAs, local authorities and regions with population and bounding box",
+    "areas": "MSOAs, local authorities, regions and nations with population and bounding box",
     "places": "Settlements from OS Open Names with their LSOA",
     "indicators": "The indicator catalogue",
 }

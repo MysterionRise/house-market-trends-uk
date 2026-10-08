@@ -8,8 +8,8 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-Level = Literal["lsoa", "msoa", "lad", "region"]
-PlaceKind = Literal["postcode", "place", "lsoa", "msoa", "lad", "region"]
+Level = Literal["lsoa", "msoa", "lad", "region", "nation"]
+PlaceKind = Literal["postcode", "place", "lsoa", "msoa", "lad", "region", "nation"]
 
 
 class Point(BaseModel):
@@ -35,8 +35,14 @@ class ThemeScore(BaseModel):
     theme: str
     label: str
     score: float | None = Field(None, description="0–100, higher is better")
-    percentile: float | None = Field(None, description="Better than this % of England's LSOAs")
-    england_median: float | None = Field(None, description="Median score across England")
+    percentile: float | None = Field(
+        None, description="Better than this % of the country's neighbourhoods"
+    )
+    percentile_nation: float | None = Field(
+        None, description="Better than this % of the neighbourhoods in the same nation"
+    )
+    country_median: float | None = Field(None, description="Median score across the country")
+    nation_median: float | None = Field(None, description="Median score across the nation")
     local_median: float | None = Field(None, description="Median score in the local authority")
 
 
@@ -49,6 +55,9 @@ class IndicatorValue(BaseModel):
     score: float | None = Field(None, description="0–100, higher is better")
     quality: str = "ok"
     role: str = "scored"
+    benchmark: Literal["uk", "nation"] = Field(
+        "uk", description="uk: ranked against the whole country · nation: within its nation"
+    )
 
 
 class AreaProfile(BaseModel):
@@ -58,16 +67,21 @@ class AreaProfile(BaseModel):
     msoa21cd: str
     local_authority: str
     region: str
+    nation: str = Field(description="Nation code: E, W, S or N")
+    nation_name: str
     urban_rural: str
     population: int
     overall: float | None
     overall_percentile: float | None
-    band: int | None = Field(None, description="1 (bottom fifth of England) … 5 (top fifth)")
+    overall_percentile_nation: float | None = Field(
+        None, description="Percentile among the neighbourhoods of the same nation"
+    )
+    band: int | None = Field(None, description="1 (bottom fifth of the country) … 5 (top fifth)")
     overall_percentile_range: list[float] | None = Field(
         None,
         min_length=2,
         max_length=2,
-        description="5–95% range of the England percentile when each theme weight is "
+        description="5–95% range of the country percentile when each theme weight is "
         "nudged by about a quarter (for presets; None with custom weights)",
     )
     coverage: float | None
@@ -184,5 +198,7 @@ class IndicatorInfo(BaseModel):
     role: str
     normalise: str
     weight: float
+    benchmark: Literal["uk", "nation"] = "uk"
+    coverage: list[str] = Field(default_factory=list, description="Nation codes it is built for")
     caveats: str | None = None
     sources: list[str]

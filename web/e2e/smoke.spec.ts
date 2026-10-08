@@ -41,7 +41,7 @@ test("the map loads and a postcode opens its profile", async ({ page }) => {
   const profile = page.getByTestId("area-profile").last();
   await expect(profile).toBeVisible({ timeout: 30_000 });
   await expect(profile.getByTestId("theme-bars")).toBeVisible();
-  await expect(profile.getByTestId("percentile-range")).toContainText("% of England");
+  await expect(profile.getByTestId("percentile-range")).toContainText("% of the UK");
 });
 
 test("without a key the assistant answers the suggested prompts from recordings", async ({ page, request }) => {

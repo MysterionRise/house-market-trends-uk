@@ -15,7 +15,9 @@ def client(store):
 
 
 def test_health(client):
-    assert client.get("/health").json()["lsoas"] == 6
+    health = client.get("/health").json()
+    assert health["lsoas"] == 8
+    assert health["geography"] == {"active": ["E", "W"], "area_counts": {"E": 6, "W": 2}}
 
 
 def test_rest_routes(client):

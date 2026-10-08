@@ -28,15 +28,20 @@ from lix_api.models import (
 from lix_api.services import areas, catalogue, compare, explain, pois, ranking, search
 from lix_api.services.scoring import match_preset, match_themes, resolve_weights
 from lix_api.store import get_store
+from lix_core.config import NATION_NAMES
 
 Deps = StateDeps[LiveabilityState]
 
 INSTRUCTIONS = """\
-You help people find and understand neighbourhoods in England using the UK Liveability
-Index: open data scored for each of England's 33,755 neighbourhoods (LSOAs, about
-1,600 residents each) across eight themes — safety, environment, health services,
-schools & childcare, transport, amenities & nightlife, housing & affordability, and
-community & wellbeing. Scores are 0–100 (higher is better) with an England percentile.
+You help people find and understand neighbourhoods in the UK using the UK Liveability
+Index: open data scored for every neighbourhood (LSOAs, about 1,600 residents each)
+across eight themes — safety, environment, health services, schools & childcare,
+transport, amenities & nightlife, housing & affordability, and community & wellbeing.
+Scores are 0–100 (higher is better) with a percentile against every scored
+neighbourhood and one within the area's own nation. Some indicators are benchmarked
+within the nation because the nations measure them differently (crime recording,
+school inspections, deprivation indices); a few are not available in every nation and
+the tools say so.
 
 How to work:
 - Use the tools for every fact and number. Never estimate scores, prices or distances.
@@ -52,7 +57,6 @@ How to work:
   "lsoa" level when the user wants street-scale detail.
 - Mention caveats the tools return (estimated crime for Greater Manchester, few house
   sales, distances being straight-line) when they matter to the answer.
-- Coverage is England only. Scotland, Wales and Northern Ireland aren't scored yet.
 - Never rank or describe areas by ethnicity, religion or any other protected
   characteristic, and decline requests to steer people towards or away from areas on
   those grounds. The index doesn't contain such data.
@@ -87,11 +91,24 @@ def _recoverable(fn):
     return wrapper
 
 
+def coverage_note(store=None) -> str:
+    """Which nations this build covers, from the manifest (the data pack decides)."""
+    store = store or get_store()
+    geo = store.geography
+    covered = [geo["nations"][n]["name"] for n in geo["active"]]
+    missing = [name for code, name in NATION_NAMES.items() if code not in geo["active"]]
+    counts = sum(geo.get("area_counts", {}).values())
+    note = f"Coverage: {' and '.join(covered)} ({counts:,} neighbourhoods)."
+    if missing:
+        note += f" {', '.join(missing)} {'is' if len(missing) == 1 else 'are'} not scored yet."
+    return note
+
+
 @agent.instructions
 def current_state(ctx: RunContext[Deps]) -> str:
     """Per-turn state, after the static instructions (so the cached prefix holds)."""
     s = ctx.deps.state
-    lines = [f"Current weighting: preset '{s.preset}'"]
+    lines = [coverage_note(), f"Current weighting: preset '{s.preset}'"]
     if s.theme_weights:
         lines.append(f"  theme weights adjusted by the user: {s.theme_weights}")
     if s.indicator_weights:
@@ -333,7 +350,8 @@ def run_sql(ctx: RunContext[Deps], query: str) -> dict:
     """Run one read-only SELECT (DuckDB SQL) over the index's tables; at most 5,000 rows.
 
     Tables: lsoa (every LSOA with raw__<indicator>, n__<indicator> 0–100 scores,
-    q__<indicator> quality flags, theme__<theme>, overall, overall_pct, lad_nm, rgn_nm,
+    q__<indicator> quality flags, theme__<theme>, overall, overall_pct, overall_pct_nation,
+    nation (E/W/S/N), ruc_class (urban/town/rural), lad_nm, rgn_nm,
     msoa_name, population, ...), pois (category, name, lat, lon, source, detail),
     areas (msoa/lad/region with population and bbox), places, indicators.
     """

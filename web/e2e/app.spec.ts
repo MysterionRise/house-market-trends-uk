@@ -109,7 +109,7 @@ test("searching a postcode opens its profile with benchmarks", async ({ page }) 
   await expect(page.getByTestId("tab-area")).toHaveAttribute("aria-selected", "true");
   const bars = page.getByTestId("theme-bars");
   await expect(bars).toBeVisible({ timeout: 30_000 });
-  await expect(bars).toContainText("England median");
+  await expect(bars).toContainText("UK median");
 });
 
 test("the welcome card's personas set the weights", async ({ page }) => {

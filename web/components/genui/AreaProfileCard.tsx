@@ -78,7 +78,7 @@ export function AreaProfileCard({ profile }: { profile: AreaProfile }) {
           title="The 5–95% range of the England percentile when each theme's weight is nudged by about a quarter"
         >
           With slightly different weights: better than {profile.overall_percentile_range[0]}–
-          {profile.overall_percentile_range[1]}% of England
+          {profile.overall_percentile_range[1]}% of the UK
         </p>
       )}
 
@@ -89,10 +89,10 @@ export function AreaProfileCard({ profile }: { profile: AreaProfile }) {
             label={t.label}
             score={t.score}
             theme={t.theme}
-            hint={t.percentile != null ? `Better than ${t.percentile}% of England` : undefined}
+            hint={t.percentile != null ? `Better than ${t.percentile}% of the UK` : undefined}
             marks={[
               { value: t.local_median, kind: "local", label: `${profile.local_authority} median` },
-              { value: t.england_median, kind: "england", label: "England median" },
+              { value: t.country_median, kind: "england", label: "UK median" },
             ]}
           />
         ))}
@@ -101,7 +101,7 @@ export function AreaProfileCard({ profile }: { profile: AreaProfile }) {
             <span className="inline-block h-2.5 w-[2px] bg-[var(--text-primary)]" aria-hidden /> {profile.local_authority} median
           </span>
           <span className="inline-flex items-center gap-1">
-            <span className="inline-block h-2.5 w-px bg-[var(--text-muted)]" aria-hidden /> England median
+            <span className="inline-block h-2.5 w-px bg-[var(--text-muted)]" aria-hidden /> UK median
           </span>
         </p>
       </div>

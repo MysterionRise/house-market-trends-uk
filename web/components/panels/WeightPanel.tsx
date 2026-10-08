@@ -2,7 +2,7 @@
 
 import { useData, useLiveability } from "@/components/AppData";
 import { themeVar } from "@/lib/palette";
-import { effectiveWeights } from "@/lib/state";
+import { type CompareWithin, effectiveWeights } from "@/lib/state";
 
 /** Preset picker and one slider per theme. Moving a slider recolours the map at once,
  * and the assistant sees the new weights on its next turn. */
@@ -85,17 +85,33 @@ export function WeightPanel() {
         </select>
       </label>
 
-      <label className="flex items-start gap-2 text-xs">
-        <input
-          type="checkbox"
-          checked={state.compare_within_urban_rural}
-          onChange={(e) => update((s) => ({ ...s, compare_within_urban_rural: e.target.checked }))}
-        />
-        <span>
-          Compare like with like
-          <span className="block text-[var(--text-muted)]">
-            Rank each area against others of the same urban/rural type, so villages aren&apos;t judged against city centres.
-          </span>
+      <label className="block text-xs">
+        <span className="font-medium">Compare against</span>
+        <select
+          className="input mt-1 w-full"
+          data-testid="compare-within"
+          value={state.compare_within}
+          onChange={(e) => {
+            const compare_within = e.target.value as CompareWithin;
+            update((s) => ({
+              ...s,
+              compare_within,
+              compare_within_urban_rural: compare_within === "urban_rural",
+            }));
+          }}
+        >
+          <option value="uk">Every area in the index</option>
+          {(manifest.geography?.active ?? []).length > 1 && (
+            <option value="nation">Areas in the same nation</option>
+          )}
+          <option value="urban_rural">Areas of the same urban/rural type</option>
+        </select>
+        <span className="mt-1 block text-[var(--text-muted)]">
+          {state.compare_within === "urban_rural"
+            ? "Villages aren't judged against city centres."
+            : state.compare_within === "nation"
+              ? "Percentiles within each nation; scores stay the same."
+              : "Percentiles across every scored area."}
         </span>
       </label>
     </div>

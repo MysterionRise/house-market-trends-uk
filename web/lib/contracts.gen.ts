@@ -6,7 +6,7 @@
  */
 
 /**
- * 1 (bottom fifth of England) … 5 (top fifth)
+ * 1 (bottom fifth of the country) … 5 (top fifth)
  */
 export type Band = number | null;
 /**
@@ -21,6 +21,10 @@ export type Coverage = number | null;
  * Caveats that apply to this area
  */
 export type Flags = string[];
+/**
+ * uk: ranked against the whole country · nation: within its nation
+ */
+export type Benchmark = "uk" | "nation";
 export type Id = string;
 export type Label = string;
 export type Quality = string;
@@ -41,13 +45,22 @@ export type Lsoa21Cd = string;
 export type LsoaName = string;
 export type Msoa21Cd = string;
 /**
+ * Nation code: E, W, S or N
+ */
+export type Nation = string;
+export type NationName = string;
+/**
  * Friendly MSOA name
  */
 export type Neighbourhood = string | null;
 export type Overall = number | null;
 export type OverallPercentile = number | null;
 /**
- * 5–95% range of the England percentile when each theme weight is nudged by about a quarter (for presets; None with custom weights)
+ * Percentile among the neighbourhoods of the same nation
+ */
+export type OverallPercentileNation = number | null;
+/**
+ * 5–95% range of the country percentile when each theme weight is nudged by about a quarter (for presets; None with custom weights)
  */
 export type OverallPercentileRange = [number, number] | null;
 export type Population = number;
@@ -55,18 +68,26 @@ export type Preset = string;
 export type Region = string;
 export type Strengths = IndicatorValue[];
 /**
- * Median score across England
+ * Median score across the country
  */
-export type EnglandMedian = number | null;
+export type CountryMedian = number | null;
 export type Label1 = string;
 /**
  * Median score in the local authority
  */
 export type LocalMedian = number | null;
 /**
- * Better than this % of England's LSOAs
+ * Median score across the nation
+ */
+export type NationMedian = number | null;
+/**
+ * Better than this % of the country's neighbourhoods
  */
 export type Percentile = number | null;
+/**
+ * Better than this % of the neighbourhoods in the same nation
+ */
+export type PercentileNation = number | null;
 /**
  * 0–100, higher is better
  */
@@ -76,7 +97,7 @@ export type Themes = ThemeScore[];
 export type UrbanRural = string;
 export type Weaknesses = IndicatorValue[];
 export type Code = string;
-export type Level = "lsoa" | "msoa" | "lad" | "region";
+export type Level = "lsoa" | "msoa" | "lad" | "region" | "nation";
 export type Name = string;
 export type Overall1 = number | null;
 export type OverallPercentile1 = number | null;
@@ -118,7 +139,12 @@ export type Title = string;
  */
 export type Version = string | null;
 export type Sources = SourceRef[];
+export type Benchmark1 = "uk" | "nation";
 export type Caveats1 = string | null;
+/**
+ * Nation codes it is built for
+ */
+export type Coverage1 = string[];
 export type Description = string;
 export type Direction = string;
 export type Id2 = string;
@@ -129,6 +155,10 @@ export type Sources1 = string[];
 export type Theme3 = string;
 export type Unit1 = string;
 export type Weight = number;
+/**
+ * What percentiles on the map compare against
+ */
+export type CompareWithin = "uk" | "nation" | "urban_rural";
 export type CompareWithinUrbanRural = boolean;
 /**
  * west, south, east, north
@@ -170,7 +200,7 @@ export type Code2 = string | null;
  * Disambiguation, e.g. the local authority
  */
 export type Detail1 = string | null;
-export type Kind = "postcode" | "place" | "lsoa" | "msoa" | "lad" | "region";
+export type Kind = "postcode" | "place" | "lsoa" | "msoa" | "lad" | "region" | "nation";
 export type Lsoa21Cd2 = string | null;
 export type Name4 = string;
 export type Category1 = string;
@@ -181,10 +211,10 @@ export type Bbox3 = [unknown, unknown, unknown, unknown] | null;
  * Areas that passed the filters
  */
 export type Candidates = number;
-export type Level1 = "lsoa" | "msoa" | "lad" | "region";
+export type Level1 = "lsoa" | "msoa" | "lad" | "region" | "nation";
 export type Preset4 = string;
 export type Code3 = string;
-export type Level2 = "lsoa" | "msoa" | "lad" | "region";
+export type Level2 = "lsoa" | "msoa" | "lad" | "region" | "nation";
 export type LocalAuthority1 = string;
 export type MedianPrice = number | null;
 export type Name5 = string;
@@ -220,9 +250,12 @@ export interface AreaProfile {
   lsoa21cd: Lsoa21Cd;
   lsoa_name: LsoaName;
   msoa21cd: Msoa21Cd;
+  nation: Nation;
+  nation_name: NationName;
   neighbourhood?: Neighbourhood;
   overall: Overall;
   overall_percentile: OverallPercentile;
+  overall_percentile_nation?: OverallPercentileNation;
   overall_percentile_range?: OverallPercentileRange;
   population: Population;
   preset: Preset;
@@ -245,6 +278,7 @@ export interface Point {
  * via the `definition` "IndicatorValue".
  */
 export interface IndicatorValue {
+  benchmark?: Benchmark;
   id: Id;
   label: Label;
   quality?: Quality;
@@ -259,10 +293,12 @@ export interface IndicatorValue {
  * via the `definition` "ThemeScore".
  */
 export interface ThemeScore {
-  england_median?: EnglandMedian;
+  country_median?: CountryMedian;
   label: Label1;
   local_median?: LocalMedian;
+  nation_median?: NationMedian;
   percentile?: Percentile;
+  percentile_nation?: PercentileNation;
   score?: Score1;
   theme: Theme1;
 }
@@ -348,7 +384,9 @@ export interface SourceRef {
  * via the `definition` "IndicatorInfo".
  */
 export interface IndicatorInfo {
+  benchmark?: Benchmark1;
   caveats?: Caveats1;
+  coverage?: Coverage1;
   description: Description;
   direction: Direction;
   id: Id2;
@@ -365,6 +403,7 @@ export interface IndicatorInfo {
  * via the `definition` "LiveabilityState".
  */
 export interface LiveabilityState {
+  compare_within?: CompareWithin;
   compare_within_urban_rural?: CompareWithinUrbanRural;
   indicator_weights?: IndicatorWeights;
   map?: MapView;

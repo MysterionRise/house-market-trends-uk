@@ -54,7 +54,8 @@ class TestRanking:
 
     def test_price_filter_and_msoa_level(self, store):
         r = ranking.rank_areas(store, level="msoa", max_median_price=400_000)
-        assert {a.code for a in r.results} == {"E02000001", "E02000002"}
+        # Brighton's MSOA is over budget; Leeds and Cardiff pass
+        assert {a.code for a in r.results} == {"E02000001", "E02000002", "W02000384"}
 
     def test_weights_change_the_order(self, store):
         safety_only = {t: 0.0 for t in store.themes} | {"safety": 1.0}
@@ -110,7 +111,7 @@ class TestSqlGuard:
     def test_select(self, guard):
         r = guard.run("SELECT lad_nm, count(*) AS n FROM lsoa GROUP BY 1 ORDER BY 1")
         assert r.columns == ["lad_nm", "n"]
-        assert r.rows == [["Brighton and Hove", 2], ["Leeds", 4]]
+        assert r.rows == [["Brighton and Hove", 2], ["Cardiff", 2], ["Leeds", 4]]
 
     @pytest.mark.parametrize(
         "sql",
@@ -183,10 +184,26 @@ def test_rankings_say_how_stable_each_result_is(store):
     assert all(r.stability == 1 for r in rank_areas(store, level="lsoa", limit=10).results)
 
 
-def test_profile_themes_carry_england_and_local_medians(store):
+def test_profile_themes_carry_country_nation_and_local_medians(store):
     from lix_api.services.areas import area_profile
 
     p = area_profile(store, "E01000003")
+    assert (p.nation, p.nation_name) == ("E", "England")
     for t in p.themes:
         if t.score is not None:
-            assert t.england_median is not None and t.local_median is not None
+            assert t.country_median is not None and t.local_median is not None
+            assert t.nation_median is not None and t.percentile_nation is not None
+
+
+def test_welsh_area_is_profiled_within_its_nation(store):
+    from lix_api.services.areas import area_profile, lsoas_in
+    from lix_api.services.search import search_place
+
+    p = area_profile(store, "CF10 1AA")
+    assert (p.nation, p.nation_name, p.region) == ("W", "Wales", "Wales")
+    assert p.overall_percentile_nation in (0, 100)  # two Welsh areas: one of them is top
+    crime = next(v for v in p.key_facts if v.id == "crime_violence")
+    assert crime.benchmark == "nation"
+    assert lsoas_in(store, "nation", "W92000004").to_list() == ["W01001880", "W01001881"]
+    wales = search_place(store, "Wales")[0]
+    assert (wales.kind, wales.code) == ("nation", "W92000004")

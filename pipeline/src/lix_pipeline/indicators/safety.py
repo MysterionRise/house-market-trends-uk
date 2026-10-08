@@ -20,10 +20,12 @@ def crime_rate(ctx, types: list[str]) -> pl.DataFrame:
     annual = crimes.group_by("lsoa21cd").agg(
         (pl.col("n") / pl.col("force_months") * 12).sum().alias("annual")
     )
+    # The IoD crime domain (England only) is just the proxy for Greater Manchester, so it
+    # must not decide which areas get a rate: Welsh areas have no proxy and need none
     df = (
         ctx.geo.select("lsoa21cd", "population", "pfa_cd")
         .join(annual, on="lsoa21cd", how="left")
-        .join(ctx.staged("iod_2025").select("lsoa21cd", "crime_score"), on="lsoa21cd")
+        .join(ctx.staged("iod_2025").select("lsoa21cd", "crime_score"), on="lsoa21cd", how="left")
     )
     gmp = pl.col("pfa_cd") == GREATER_MANCHESTER
     df = df.with_columns(

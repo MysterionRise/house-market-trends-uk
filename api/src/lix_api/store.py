@@ -15,7 +15,7 @@ import polars as pl
 from pyproj import Transformer
 from scipy.spatial import cKDTree
 
-from lix_core.config import IndicatorSpec, Preset, ThemeSpec
+from lix_core.config import SERVE_SCHEMA_VERSION, IndicatorSpec, Preset, ThemeSpec
 from lix_core.paths import data_dir
 
 _TO_BNG = Transformer.from_crs(4326, 27700, always_xy=True)
@@ -32,7 +32,22 @@ class Store:
 
     @cached_property
     def manifest(self) -> dict:
-        return json.loads((self.serve_dir / "manifest.json").read_text())
+        manifest = json.loads((self.serve_dir / "manifest.json").read_text())
+        version = manifest.get("schema_version", 1)
+        if version != SERVE_SCHEMA_VERSION:
+            raise RuntimeError(
+                f"Data pack schema v{version} but this API needs v{SERVE_SCHEMA_VERSION}: "
+                "run make data-download"
+            )
+        return manifest
+
+    @property
+    def geography(self) -> dict:
+        return self.manifest["geography"]
+
+    @cached_property
+    def nation_names(self) -> dict[str, str]:
+        return {code: n["name"] for code, n in self.geography["nations"].items()}
 
     @cached_property
     def indicators(self) -> dict[str, IndicatorSpec]:
@@ -70,6 +85,12 @@ class Store:
     @cached_property
     def lsoa_index(self) -> dict[str, int]:
         return {code: i for i, code in enumerate(self.features["lsoa21cd"].to_list())}
+
+    @cached_property
+    def lsoa_tree(self) -> cKDTree:
+        """Population-weighted centroids on the working grid, for nearest-area lookups."""
+        f = self.features
+        return cKDTree(np.column_stack([f["pwc_x"].to_numpy(), f["pwc_y"].to_numpy()]))
 
     @cached_property
     def postcodes(self) -> pl.DataFrame:

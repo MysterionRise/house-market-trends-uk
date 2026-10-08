@@ -80,10 +80,11 @@ def resolve_weights(
 
 
 def scores_for(store: Store, themes: ThemeWeights, multipliers: dict[str, float]) -> pl.DataFrame:
-    """Per-LSOA theme scores, overall and percentiles for these weights.
+    """Per-LSOA theme scores, overall and percentiles (country-wide and within the
+    nation) for these weights.
 
-    Computing all 33,755 LSOAs takes a few milliseconds; results are cached on the
-    store per weighting, since a conversation reuses the same few.
+    Computing every LSOA takes a few milliseconds; results are cached on the store per
+    weighting, since a conversation reuses the same few.
     """
     key = (tuple(sorted(themes.items())), tuple(sorted(multipliers.items())))
     cache = store.score_cache
@@ -91,6 +92,6 @@ def scores_for(store: Store, themes: ThemeWeights, multipliers: dict[str, float]
         if len(cache) >= MAX_CACHED:
             cache.pop(next(iter(cache)))
         scored = [(i.id, i.theme, i.weight) for i in store.scored]
-        out = score_lsoas(store.features, scored, themes, multipliers)
+        out = score_lsoas(store.features, scored, themes, multipliers, group="nation")
         cache[key] = pl.concat([store.features.select("lsoa21cd"), out], how="horizontal")
     return cache[key]

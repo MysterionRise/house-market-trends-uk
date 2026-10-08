@@ -85,7 +85,7 @@ export function Band({ band, percentile }: { band?: number | null; percentile?: 
         ))}
       </span>
       {BAND_TEXT[band]}
-      {percentile != null && ` · better than ${Math.round(percentile)}% of England`}
+      {percentile != null && ` · better than ${Math.round(percentile)}% of the UK`}
     </span>
   );
 }

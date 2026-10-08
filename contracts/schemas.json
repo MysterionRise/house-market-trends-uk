@@ -12,7 +12,7 @@
             }
           ],
           "default": null,
-          "description": "1 (bottom fifth of England) \u2026 5 (top fifth)",
+          "description": "1 (bottom fifth of the country) \u2026 5 (top fifth)",
           "title": "Band"
         },
         "bbox": {
@@ -80,6 +80,15 @@
           "title": "Msoa21Cd",
           "type": "string"
         },
+        "nation": {
+          "description": "Nation code: E, W, S or N",
+          "title": "Nation",
+          "type": "string"
+        },
+        "nation_name": {
+          "title": "Nation Name",
+          "type": "string"
+        },
         "neighbourhood": {
           "anyOf": [
             {
@@ -115,6 +124,19 @@
           ],
           "title": "Overall Percentile"
         },
+        "overall_percentile_nation": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Percentile among the neighbourhoods of the same nation",
+          "title": "Overall Percentile Nation"
+        },
         "overall_percentile_range": {
           "anyOf": [
             {
@@ -130,7 +152,7 @@
             }
           ],
           "default": null,
-          "description": "5\u201395% range of the England percentile when each theme weight is nudged by about a quarter (for presets; None with custom weights)",
+          "description": "5\u201395% range of the country percentile when each theme weight is nudged by about a quarter (for presets; None with custom weights)",
           "title": "Overall Percentile Range"
         },
         "population": {
@@ -177,6 +199,8 @@
         "msoa21cd",
         "local_authority",
         "region",
+        "nation",
+        "nation_name",
         "urban_rural",
         "population",
         "overall",
@@ -219,7 +243,8 @@
             "lsoa",
             "msoa",
             "lad",
-            "region"
+            "region",
+            "nation"
           ],
           "title": "Level",
           "type": "string"
@@ -444,6 +469,15 @@
     },
     "IndicatorInfo": {
       "properties": {
+        "benchmark": {
+          "default": "uk",
+          "enum": [
+            "uk",
+            "nation"
+          ],
+          "title": "Benchmark",
+          "type": "string"
+        },
         "caveats": {
           "anyOf": [
             {
@@ -455,6 +489,14 @@
           ],
           "default": null,
           "title": "Caveats"
+        },
+        "coverage": {
+          "description": "Nation codes it is built for",
+          "items": {
+            "type": "string"
+          },
+          "title": "Coverage",
+          "type": "array"
         },
         "description": {
           "title": "Description",
@@ -517,6 +559,16 @@
     },
     "IndicatorValue": {
       "properties": {
+        "benchmark": {
+          "default": "uk",
+          "description": "uk: ranked against the whole country \u00b7 nation: within its nation",
+          "enum": [
+            "uk",
+            "nation"
+          ],
+          "title": "Benchmark",
+          "type": "string"
+        },
         "id": {
           "title": "Id",
           "type": "string"
@@ -581,6 +633,17 @@
     },
     "LiveabilityState": {
       "properties": {
+        "compare_within": {
+          "default": "uk",
+          "description": "What percentiles on the map compare against",
+          "enum": [
+            "uk",
+            "nation",
+            "urban_rural"
+          ],
+          "title": "Compare Within",
+          "type": "string"
+        },
         "compare_within_urban_rural": {
           "default": false,
           "title": "Compare Within Urban Rural",
@@ -775,7 +838,8 @@
             "lsoa",
             "msoa",
             "lad",
-            "region"
+            "region",
+            "nation"
           ],
           "title": "Kind",
           "type": "string"
@@ -941,7 +1005,8 @@
             "lsoa",
             "msoa",
             "lad",
-            "region"
+            "region",
+            "nation"
           ],
           "title": "Level",
           "type": "string"
@@ -1002,7 +1067,8 @@
             "lsoa",
             "msoa",
             "lad",
-            "region"
+            "region",
+            "nation"
           ],
           "title": "Level",
           "type": "string"
@@ -1203,7 +1269,7 @@
     },
     "ThemeScore": {
       "properties": {
-        "england_median": {
+        "country_median": {
           "anyOf": [
             {
               "type": "number"
@@ -1213,8 +1279,8 @@
             }
           ],
           "default": null,
-          "description": "Median score across England",
-          "title": "England Median"
+          "description": "Median score across the country",
+          "title": "Country Median"
         },
         "label": {
           "title": "Label",
@@ -1233,6 +1299,19 @@
           "description": "Median score in the local authority",
           "title": "Local Median"
         },
+        "nation_median": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Median score across the nation",
+          "title": "Nation Median"
+        },
         "percentile": {
           "anyOf": [
             {
@@ -1243,8 +1322,21 @@
             }
           ],
           "default": null,
-          "description": "Better than this % of England's LSOAs",
+          "description": "Better than this % of the country's neighbourhoods",
           "title": "Percentile"
+        },
+        "percentile_nation": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Better than this % of the neighbourhoods in the same nation",
+          "title": "Percentile Nation"
         },
         "score": {
           "anyOf": [

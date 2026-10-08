@@ -57,8 +57,8 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="UK Liveability Index API",
     version=VERSION,
-    description="Scores for England's neighbourhoods from open data. "
-    "See /api/v1/sources for attribution.",
+    description="Scores for UK neighbourhoods from open data (the data pack says which "
+    "nations are covered). See /api/v1/sources for attribution.",
     lifespan=lifespan,
 )
 app.add_middleware(
@@ -92,6 +92,10 @@ def health() -> dict:
         "status": "ok",
         "version": VERSION,
         "lsoas": len(store.lsoa_index),
+        "geography": {
+            "active": store.geography["active"],
+            "area_counts": store.geography.get("area_counts", {}),
+        },
         "built": store.manifest["generated_at"],
         "assistant": {
             "model": models.model_name(),

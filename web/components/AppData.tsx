@@ -147,8 +147,8 @@ export function useScores(state: LiveabilityState): LayerValues | null {
     let lsoa: Float64Array;
     let label: string;
     let theme: string | undefined;
-    // Colour by England percentile: scores bunch in the middle of 0–100, so percentiles
-    // use the whole colour ramp and read as "better than X% of England"
+    // Colour by percentile: scores bunch in the middle of 0–100, so percentiles use the
+    // whole colour ramp and read as "better than X% of the UK"
     if (layer.startsWith("theme:") && result.themes[layer.slice(6)]) {
       const t = layer.slice(6);
       lsoa = result.themes[t].percentile;
@@ -164,7 +164,10 @@ export function useScores(state: LiveabilityState): LayerValues | null {
       lsoa = result.overallPercentile;
       label = "Overall";
     }
-    if (state.compare_within_urban_rural) {
+    if (state.compare_within === "nation") {
+      lsoa = percentileWithin(lsoa, scores.nation);
+      label += " (within the nation)";
+    } else if (state.compare_within === "urban_rural") {
       lsoa = percentileWithin(lsoa, scores.rucClass);
       label += " (vs similar urban/rural areas)";
     }
@@ -176,5 +179,5 @@ export function useScores(state: LiveabilityState): LayerValues | null {
       label,
       theme,
     };
-  }, [manifest, scores, result, state.map.layer, state.compare_within_urban_rural]);
+  }, [manifest, scores, result, state.map.layer, state.compare_within]);
 }

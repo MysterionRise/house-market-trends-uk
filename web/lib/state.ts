@@ -21,17 +21,30 @@ export const DEFAULT_STATE: LiveabilityState = {
   preset: "balanced",
   theme_weights: {},
   indicator_weights: {},
+  compare_within: "uk",
   compare_within_urban_rural: false,
   mode: "consumer",
   map: { bbox: null, layer: "overall", highlighted: [], selected: null, pois: [] },
   shortlist: [],
 };
 
+/** What map percentiles compare against: the whole country, the area's nation, or areas
+ * of the same urban/rural class. The old boolean is read as "urban_rural". */
+export type CompareWithin = "uk" | "nation" | "urban_rural";
+
+export function compareWithin(s: Pick<WireState, "compare_within" | "compare_within_urban_rural">): CompareWithin {
+  if (s.compare_within && s.compare_within !== "uk") return s.compare_within;
+  return s.compare_within_urban_rural ? "urban_rural" : "uk";
+}
+
 /** The state with every field present (the assistant may send partial snapshots). */
 export function normaliseState(s: Partial<WireState> | undefined): LiveabilityState {
+  const within = compareWithin(s ?? {});
   return {
     ...DEFAULT_STATE,
     ...(s ?? {}),
+    compare_within: within,
+    compare_within_urban_rural: within === "urban_rural",
     map: { ...DEFAULT_STATE.map, ...(s?.map ?? {}) },
     theme_weights: s?.theme_weights ?? {},
     indicator_weights: s?.indicator_weights ?? {},

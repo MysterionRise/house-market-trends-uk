@@ -22,8 +22,10 @@ def _within(store: Store, within: str | None, radius_km: float | None):
     if not places:
         raise LookupError(f"Couldn't find {within!r}")
     place = places[0]
-    if place.kind in ("lad", "region", "msoa") and radius_km is None:
-        column = {"lad": "lad_cd", "region": "rgn_cd", "msoa": "msoa21cd"}[place.kind]
+    if place.kind in ("lad", "region", "nation", "msoa") and radius_km is None:
+        column = {"lad": "lad_cd", "region": "rgn_cd", "nation": "ctry_cd", "msoa": "msoa21cd"}[
+            place.kind
+        ]
         return pl.col(column) == place.code, place.name, place.bbox
     centre = place.centre
     km = radius_km or DEFAULT_RADIUS_KM

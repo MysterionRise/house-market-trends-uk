@@ -1,8 +1,9 @@
 # ruff: noqa: E501 (fixture tables read best unwrapped)
 """A tiny synthetic data/serve/ directory for API tests (no real data needed).
 
-Six LSOAs in two MSOAs: four in Leeds, two in Brighton. Indicator values follow the
-real catalogue in config/, so every service sees the shapes it sees in production.
+Eight LSOAs in four MSOAs: four in Leeds, two in Brighton, two in Cardiff. Indicator
+values follow the real catalogue in config/, so every service sees the shapes it sees
+in production.
 """
 
 import json
@@ -20,7 +21,15 @@ import pytest  # noqa: E402
 from pyproj import Transformer  # noqa: E402
 
 from lix_api.store import Store, set_store  # noqa: E402
-from lix_core.config import load_indicators, load_weights  # noqa: E402
+from lix_core.config import (  # noqa: E402
+    SERVE_SCHEMA_VERSION,
+    indicator_coverage,
+    load_indicators,
+    load_nations,
+    load_registry,
+    load_weights,
+)
+from lix_core.quality import QUALITY_LEVELS  # noqa: E402
 from lix_core.scoring import band, normalise, score_lsoas  # noqa: E402
 
 TO_BNG = Transformer.from_crs(4326, 27700, always_xy=True)
@@ -33,19 +42,27 @@ LSOAS = [
     ("E01000004", "Leeds 034B", "E02000002", "Chapel Allerton", "E08000035", "Leeds", "E12000003", 53.8320, -1.5350, False, 200_000),
     ("E01000005", "Brighton and Hove 010A", "E02000003", "Hanover", "E06000043", "Brighton and Hove", "E12000008", 50.8290, -0.1260, True, 450_000),
     ("E01000006", "Brighton and Hove 010B", "E02000003", "Hanover", "E06000043", "Brighton and Hove", "E12000008", 50.8310, -0.1230, True, 520_000),
+    ("W01001880", "Cardiff 032A", "W02000384", "Cathays", "W06000015", "Cardiff", "W92000004", 51.4850, -3.1790, True, 240_000),
+    ("W01001881", "Cardiff 032B", "W02000384", "Cathays", "W06000015", "Cardiff", "W92000004", 51.4880, -3.1750, True, 300_000),
 ]  # fmt: skip
+REGION_NAMES = {
+    "E12000003": "Yorkshire and The Humber",
+    "E12000008": "South East",
+    "W92000004": "Wales",
+}
+COUNTRY_CODES = {"E": "E92000001", "W": "W92000004"}
 
 
 def _raw_value(ind_id: str, i: int) -> float:
     """Deterministic, varied raw values; E01000003 is the safest and E01000006 the least."""
     if ind_id.startswith("crime_"):
-        return [40.0, 25.0, 5.0, 12.0, 30.0, 60.0][i]
+        return [40.0, 25.0, 5.0, 12.0, 30.0, 60.0, 20.0, 35.0][i]
     if ind_id == "house_price":
         return float(LSOAS[i][10])
     if ind_id in ("no2",):
-        return [18.0, 16.0, 12.0, 9.0, 14.0, 15.0][i]
+        return [18.0, 16.0, 12.0, 9.0, 14.0, 15.0, 13.0, 17.0][i]
     if ind_id.endswith("_distance"):
-        return [300.0, 450.0, 800.0, 2500.0, 350.0, 400.0][i]
+        return [300.0, 450.0, 800.0, 2500.0, 350.0, 400.0, 500.0, 650.0][i]
     return float((i * 7 + len(ind_id)) % 10) / 10 + 0.05
 
 
@@ -56,10 +73,11 @@ def build_serve_dir(path) -> None:
         x, y = TO_BNG.transform(lon, lat)
         row = {
             "lsoa21cd": code, "lsoa21nm": name, "msoa21cd": msoa, "msoa_name": msoa_nm,
-            "lad_cd": lad, "lad_nm": lad_nm, "rgn_cd": rgn,
-            "rgn_nm": "Yorkshire and The Humber" if rgn == "E12000003" else "South East",
+            "lad_cd": lad, "lad_nm": lad_nm, "rgn_cd": rgn, "rgn_nm": REGION_NAMES[rgn],
+            "nation": code[0], "ctry_cd": COUNTRY_CODES[code[0]],
             "pfa_nm": "x", "ruc21cd": "UN1" if urban else "RSN1",
             "ruc21nm": "Urban" if urban else "Smaller rural", "urban": urban,
+            "ruc_class": "urban" if urban else "rural",
             "population": 1500 + 100 * i, "area_km2": 0.5, "pwc_lon": lon, "pwc_lat": lat,
             "pwc_x": x, "pwc_y": y, "bbox_w": lon - 0.01, "bbox_s": lat - 0.005,
             "bbox_e": lon + 0.01, "bbox_n": lat + 0.005,
@@ -77,7 +95,7 @@ def build_serve_dir(path) -> None:
     )  # fmt: skip
     preset = weights.presets[weights.default_preset]
     scores = score_lsoas(df, [(i.id, i.theme, i.weight) for i in catalogue.scored()],
-                         preset.themes, preset.indicators)  # fmt: skip
+                         preset.themes, preset.indicators, group="nation")  # fmt: skip
     df = pl.concat([df, scores], how="horizontal").with_columns(
         band(pl.col("overall_pct")).alias("band")
     )
@@ -89,10 +107,26 @@ def build_serve_dir(path) -> None:
     )
     df.write_parquet(path / "lsoa_features.parquet")
 
+    nations = load_nations()
+    registry = load_registry()
     manifest = {
+        "schema_version": SERVE_SCHEMA_VERSION,
         "generated_at": "2026-10-07T00:00:00+00:00",
+        "geography": {
+            "country": nations.country.model_dump(),
+            "nations": {
+                code: {"name": n.name, "ctry_cd": n.ctry_cd, "bbox": list(n.bbox),
+                       "levels": {lv: {"official": s.official, "count": s.count}
+                                  for lv, s in n.levels.items()}}
+                for code, n in nations.nations.items()
+            },
+            "active": list(nations.nations),
+            "area_counts": {"E": 6, "W": 2},
+        },
+        "quality_levels": list(QUALITY_LEVELS),
         "scored_indicators": [i.id for i in catalogue.scored()],
-        "indicators": [i.model_dump() for i in catalogue.indicators],
+        "indicators": [{**i.model_dump(), "coverage": indicator_coverage(i, registry)}
+                       for i in catalogue.indicators],
         "themes": {k: v.model_dump() for k, v in catalogue.themes.items()},
         "default_preset": weights.default_preset,
         "presets": {k: v.model_dump() for k, v in weights.presets.items()},
@@ -102,36 +136,46 @@ def build_serve_dir(path) -> None:
     (path / "manifest.json").write_text(json.dumps(manifest, default=str))
 
     pl.DataFrame({
-        "postcode": ["LS6 3HN", "LS7 4PL", "BN2 9QA"],
-        "postcode_norm": ["LS63HN", "LS74PL", "BN29QA"],
-        "lsoa21cd": ["E01000001", "E01000003", "E01000005"],
-        "lat": [53.8196, 53.8290, 50.8290], "lon": [-1.5766, -1.5390, -0.1260],
+        "postcode": ["LS6 3HN", "LS7 4PL", "BN2 9QA", "CF10 1AA"],
+        "postcode_norm": ["LS63HN", "LS74PL", "BN29QA", "CF101AA"],
+        "lsoa21cd": ["E01000001", "E01000003", "E01000005", "W01001880"],
+        "lat": [53.8196, 53.8290, 50.8290, 51.4850], "lon": [-1.5766, -1.5390, -0.1260, -3.1790],
     }).write_parquet(path / "postcodes.parquet")  # fmt: skip
 
     pl.DataFrame({
-        "place_id": ["p1", "p2", "p3", "p4"],
-        "name": ["Headingley", "Leeds", "Leeds", "Brighton"],
-        "name_alt": [None] * 4,
-        "place_type": ["Suburban Area", "City", "Village", "Other Settlement"],
-        "postcode_district": ["LS6", "LS1", "ME17", "BN1"],
-        "local_authority": ["Leeds", "Leeds", "Maidstone", "Brighton and Hove"],
-        "region": ["Yorkshire", "Yorkshire", "South East", "South East"],
-        "lon": [-1.5766, -1.5500, 0.6070, -0.1370], "lat": [53.8196, 53.8000, 51.2467, 50.8220],
-        "lsoa21cd": ["E01000001", "E01000002", "E01000002", "E01000005"],
+        "place_id": ["p1", "p2", "p3", "p4", "p5"],
+        "name": ["Headingley", "Leeds", "Leeds", "Brighton", "Cardiff"],
+        "name_alt": [None, None, None, None, "Caerdydd"],
+        "place_type": ["Suburban Area", "City", "Village", "Other Settlement", "City"],
+        "postcode_district": ["LS6", "LS1", "ME17", "BN1", "CF10"],
+        "local_authority": ["Leeds", "Leeds", "Maidstone", "Brighton and Hove", "Cardiff"],
+        "region": ["Yorkshire", "Yorkshire", "South East", "South East", "Wales"],
+        "lon": [-1.5766, -1.5500, 0.6070, -0.1370, -3.1790],
+        "lat": [53.8196, 53.8000, 51.2467, 50.8220, 51.4850],
+        "lsoa21cd": ["E01000001", "E01000002", "E01000002", "E01000005", "W01001880"],
     }).write_parquet(path / "places.parquet")  # fmt: skip
 
+    df = df.with_columns(
+        pl.col("nation").replace_strict({"E": "England", "W": "Wales"}).alias("nation_name")
+    )
     areas = []
-    for level, code_col, name_col in (("msoa", "msoa21cd", "msoa_name"), ("lad", "lad_cd", "lad_nm"),
-                                      ("region", "rgn_cd", "rgn_nm")):  # fmt: skip
+    for level, code_col, name_col, keep in (
+        ("msoa", "msoa21cd", "msoa_name", pl.lit(True)),
+        ("lad", "lad_cd", "lad_nm", pl.lit(True)),
+        ("region", "rgn_cd", "rgn_nm", pl.col("rgn_cd") != pl.col("ctry_cd")),
+        ("nation", "ctry_cd", "nation_name", pl.lit(True)),
+    ):
         areas.append(
-            df.group_by(code_col).agg(
+            df.filter(keep).group_by(code_col).agg(
                 pl.col(name_col).first().alias("name"), pl.col("lad_nm").first(),
+                pl.col("nation").first(),
                 pl.col("population").sum(), pl.len().alias("lsoas"),
                 pl.col("bbox_w").min(), pl.col("bbox_s").min(),
                 pl.col("bbox_e").max(), pl.col("bbox_n").max(),
             ).rename({code_col: "code"}).with_columns(pl.lit(level).alias("level"))
         )  # fmt: skip
     pl.concat(areas, how="vertical_relaxed").write_parquet(path / "areas.parquet")
+    df = df.drop("nation_name")
 
     pois = [
         ("pub", "Well Run Arms", 53.8200, -1.5770, {"well_run": True, "rating": 5}),

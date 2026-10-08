@@ -22,9 +22,11 @@ from lix_api.store import get_store
 mcp = FastMCP(
     "UK Liveability Index",
     instructions=(
-        "Scores for England's 33,755 neighbourhoods (LSOAs) across eight themes, built from "
-        "open data. Scores are 0–100, higher is better, with England percentiles. Use "
-        "search_place to resolve names, then profile, rank, compare or explain areas."
+        "Scores for UK neighbourhoods (LSOAs) across eight themes, built from open data; "
+        "the data pack says which nations are covered (see get_area_profile.nation_name). "
+        "Scores are 0–100, higher is better, with country-wide and within-nation "
+        "percentiles. Use search_place to resolve names, then profile, rank, compare or "
+        "explain areas."
     ),
 )
 
