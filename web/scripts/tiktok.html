@@ -1,0 +1,340 @@
+<!doctype html>
+<!--
+  Composes the TikTok-style clip frame by frame (driven by scripts/tiktok.mjs): the phone
+  recording with speed ramps, zoom punches, flashes, captions that pop in word by word,
+  emoji stickers and an end card. Everything is a function of the output time, so each
+  frame is rendered exactly, however long the screenshot takes.
+-->
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      html,
+      body {
+        margin: 0;
+        width: 540px;
+        height: 960px;
+        overflow: hidden;
+        background: #000;
+        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+      }
+      #stage,
+      #endcard {
+        position: absolute;
+        inset: 0;
+        overflow: hidden;
+      }
+      #app,
+      #blur {
+        position: absolute;
+        inset: 0;
+        width: 540px;
+        height: 960px;
+        object-fit: cover;
+      }
+      #blur {
+        filter: blur(10px) brightness(0.45) saturate(1.2);
+        transform: scale(1.1);
+      }
+      #flash {
+        position: absolute;
+        inset: 0;
+        background: #fff;
+        opacity: 0;
+      }
+      .caption {
+        position: absolute;
+        left: 22px;
+        right: 22px;
+        text-align: center;
+        font-weight: 900;
+        font-size: 40px;
+        line-height: 1.12;
+        letter-spacing: -0.5px;
+        color: #fff;
+        text-shadow:
+          3px 3px 0 #000,
+          -3px 3px 0 #000,
+          3px -3px 0 #000,
+          -3px -3px 0 #000,
+          0 3px 0 #000,
+          0 -3px 0 #000,
+          3px 0 0 #000,
+          -3px 0 0 #000,
+          0 8px 18px rgba(0, 0, 0, 0.55);
+      }
+      .word {
+        display: inline-block;
+        margin: 0 0.11em;
+        transform-origin: 50% 75%;
+      }
+      .hl {
+        color: #ffe14d;
+      }
+      .sticker {
+        position: absolute;
+        font-size: 92px;
+        line-height: 1;
+        filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.45));
+      }
+      #speed {
+        position: absolute;
+        top: 20px;
+        right: 16px;
+        padding: 6px 13px;
+        border-radius: 999px;
+        background: rgba(0, 0, 0, 0.62);
+        color: #fff;
+        font-weight: 800;
+        font-size: 20px;
+      }
+      #progress {
+        position: absolute;
+        left: 0;
+        bottom: 0;
+        height: 6px;
+        background: #ffe14d;
+      }
+      #endcard .line {
+        position: absolute;
+        left: 0;
+        right: 0;
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="stage">
+      <img id="app" alt="" />
+      <div id="captions"></div>
+      <div id="stickers"></div>
+      <div id="speed" hidden></div>
+    </div>
+    <div id="endcard" hidden>
+      <img id="blur" alt="" />
+      <div id="lines"></div>
+    </div>
+    <div id="flash"></div>
+    <div id="progress"></div>
+
+    <script>
+      const FRAMES = new URL(location.href).searchParams.get("frames");
+      const END = 3.2; // seconds of end card
+      let fps, count, segs, clip, total, captions, stickers, zooms, flashes, shakes, M, F;
+
+      const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+      const backOut = (x) => {
+        const c1 = 1.9;
+        return 1 + (c1 + 1) * (x - 1) ** 3 + c1 * (x - 1) ** 2;
+      };
+      const smooth = (x) => x * x * (3 - 2 * x);
+
+      /** Output time of a source time (the speed ramps compress the slow parts). */
+      function srcToOut(s) {
+        for (const g of segs) if (s >= g.from && s <= g.to) return g.out + (s - g.from) / g.speed;
+        return s < segs[0].from ? 0 : clip;
+      }
+      function outToSrc(t) {
+        for (const g of segs) if (t >= g.out && t <= g.out + g.len) return { src: g.from + (t - g.out) * g.speed, speed: g.speed };
+        const last = segs[segs.length - 1];
+        return { src: last.to, speed: 1 };
+      }
+
+      window.setup = (marks, frameCount, rate) => {
+        fps = rate;
+        count = frameCount;
+        M = Object.fromEntries(Object.entries(marks).map(([k, v]) => [k, v.t]));
+        F = Object.fromEntries(Object.entries(marks).map(([k, v]) => [k, v.focus]));
+        // [from, to, speed] in source seconds
+        const plan = [
+          [M.start, M.persona - 0.3, 1],
+          [M.persona - 0.3, M.type, 1.4],
+          [M.type, M.asked, 3],
+          [M.asked, M.answered, 2.5],
+          [M.answered, M.pick, 1],
+          [M.pick, M.profile, 1.8],
+          [M.profile, M.search, 1.25],
+          [M.search, M.hebden, 2],
+          [M.hebden, M.end, 1.15],
+        ];
+        let out = 0;
+        segs = plan.map(([from, to, speed]) => {
+          const g = { from, to, speed, out, len: (to - from) / speed };
+          out += g.len;
+          return g;
+        });
+        clip = out;
+        total = clip + END;
+
+        const span = (a, b) => [srcToOut(a), srcToOut(b)];
+        // text with *highlighted* words; y is the caption's top edge
+        captions = [
+          { at: span(M.start, M.persona - 0.3), y: 690, text: "POV: you're house hunting in *England* 🏡" },
+          { at: span(M.persona - 0.3, M.persona + 0.45), y: 690, text: "pick *who you are* 👨‍👩‍👧" },
+          { at: span(M.persona + 0.45, M.type), y: 690, text: "…and the *whole country* recolours" },
+          { at: span(M.type, M.answered), y: 380, text: "now just *ask* it 💬" },
+          { at: span(M.answered, M.pick), y: 120, text: "top *family* areas under *£350k*" },
+          { at: span(M.pick, M.profile), y: 120, text: "tap one to *zoom in* 🔍" },
+          { at: span(M.profile, M.search), y: 120, text: "*every* score, explained 📊" },
+          { at: span(M.search, M.hebden), y: 380, text: "search *any* town or postcode 📍" },
+          { at: span(M.hebden, M.flood), y: 120, text: "what about *Hebden Bridge*?" },
+          { at: span(M.flood, M.end), y: 120, text: "flood risk? *it's in there* 🌊" },
+        ];
+        stickers = [
+          { at: srcToOut(M.persona + 0.45), x: 400, y: 250, emoji: "⚡", turn: 12 },
+          { at: srcToOut(M.answered + 0.1), x: 420, y: 240, emoji: "🏆", turn: -10 },
+          { at: srcToOut(M.flood + 0.15), x: 30, y: 300, emoji: "😱", turn: -12 },
+        ];
+        // zoom punches: [start, end] output seconds, scale, focus (0–1 of the screen)
+        zooms = [
+          { at: span(M.start, M.persona - 0.3), scale: 1.07, focus: [0.5, 0.4], push: true },
+          { at: span(M.persona + 0.1, M.type), scale: 1.16, focus: F.persona },
+          { at: span(M.answered, M.pick), scale: 1.2, focus: F.answered },
+          { at: span(M.bars - 0.15, M.search), scale: 1.12, focus: [0.5, F.bars[1]] },
+          { at: span(M.flood, M.end), scale: 1.38, focus: F.flood },
+        ];
+        flashes = [srcToOut(M.persona + 0.1), srcToOut(M.answered), srcToOut(M.hebden), clip];
+        shakes = [srcToOut(M.persona + 0.15), srcToOut(M.flood + 0.1)];
+        return total;
+      };
+
+      function zoomAt(t) {
+        for (const z of zooms) {
+          const [a, b] = z.at;
+          if (t < a || t > b) continue;
+          if (z.push) return { s: 1 + (z.scale - 1) * smooth(clamp((t - a) / (b - a))), focus: z.focus };
+          const inn = backOut(clamp((t - a) / 0.35));
+          const out = smooth(clamp((b - t) / 0.3));
+          return { s: 1 + (z.scale - 1) * inn * out, focus: z.focus };
+        }
+        return { s: 1, focus: [0.5, 0.5] };
+      }
+
+      function shakeAt(t) {
+        let x = 0;
+        let y = 0;
+        for (const s of shakes) {
+          const d = t - s;
+          if (d < 0 || d > 0.35) continue;
+          const k = 7 * (1 - d / 0.35);
+          x += Math.sin(d * 95) * k;
+          y += Math.cos(d * 71) * k;
+        }
+        return [x, y];
+      }
+
+      function renderCaption(c, t) {
+        const dt = t - c.at[0];
+        const parts = c.text.split(/(\*[^*]+\*)/).filter(Boolean);
+        let words = [];
+        for (const p of parts) {
+          const hl = p.startsWith("*");
+          for (const w of p.replace(/\*/g, "").split(" ").filter(Boolean)) words.push({ w, hl });
+        }
+        const el = document.createElement("div");
+        el.className = "caption";
+        el.style.top = c.y + "px";
+        // out: a quick shrink-and-fade in the last 0.12 s
+        const left = c.at[1] - t;
+        if (left < 0.12) {
+          el.style.opacity = String(clamp(left / 0.12));
+          el.style.transform = `scale(${0.92 + 0.08 * clamp(left / 0.12)})`;
+        }
+        words.forEach(({ w, hl }, k) => {
+          const d = dt - k * 0.085;
+          if (d < 0) return;
+          const span = document.createElement("span");
+          span.className = "word" + (hl ? " hl" : "");
+          span.textContent = w;
+          const p = clamp(d / 0.2);
+          span.style.transform = `scale(${0.35 + 0.65 * backOut(p)}) rotate(${(1 - p) * (k % 2 ? 6 : -6)}deg)`;
+          span.style.opacity = String(clamp(d / 0.06));
+          el.appendChild(span);
+        });
+        return el;
+      }
+
+      function renderSticker(s, t) {
+        const d = t - s.at;
+        if (d < 0 || d > 1.4) return null;
+        const el = document.createElement("div");
+        el.className = "sticker";
+        el.textContent = s.emoji;
+        el.style.left = s.x + "px";
+        el.style.top = s.y + "px";
+        const pop = backOut(clamp(d / 0.28));
+        const wobble = Math.sin(d * 9) * s.turn * Math.exp(-d * 1.5);
+        el.style.transform = `scale(${pop}) rotate(${s.turn + wobble}deg)`;
+        el.style.opacity = String(clamp((1.4 - d) / 0.2));
+        return el;
+      }
+
+      const endLines = [
+        { text: "UK Liveability Index", y: 250, size: 44, color: "#ffe14d" },
+        { text: "33,755 neighbourhoods 🏘️", y: 360, size: 36 },
+        { text: "~40 open datasets 📊", y: 420, size: 36 },
+        { text: "free & open source ⭐", y: 480, size: 36 },
+        { text: "github.com/MysterionRise/uk-liveability-index", y: 610, size: 19, weight: 700 },
+      ];
+
+      function setImage(img, index) {
+        const name = String(clamp(index, 1, count)).padStart(5, "0");
+        const src = `${FRAMES}/${name}.jpg`;
+        if (img.getAttribute("src") === src) return Promise.resolve();
+        img.src = src;
+        return img.decode();
+      }
+
+      window.frameAt = async (i) => {
+        const t = i / fps;
+        const stage = document.getElementById("stage");
+        const endcard = document.getElementById("endcard");
+        const flash = document.getElementById("flash");
+        let f = 0;
+        for (const ft of flashes) if (t >= ft && t - ft < 0.25) f = Math.max(f, 0.6 * Math.exp(-(t - ft) / 0.07));
+        flash.style.opacity = String(f);
+        document.getElementById("progress").style.width = `${(100 * t) / total}%`;
+
+        if (t >= clip) {
+          stage.hidden = true;
+          endcard.hidden = false;
+          await setImage(document.getElementById("blur"), count);
+          const lines = document.getElementById("lines");
+          lines.replaceChildren();
+          endLines.forEach((l, k) => {
+            const d = t - clip - 0.15 - k * 0.22;
+            if (d < 0) return;
+            const el = document.createElement("div");
+            el.className = "line caption";
+            el.style.top = l.y + "px";
+            el.style.fontSize = l.size + "px";
+            if (l.color) el.style.color = l.color;
+            if (l.weight) el.style.fontWeight = l.weight;
+            el.style.transform = `scale(${0.4 + 0.6 * backOut(clamp(d / 0.25))})`;
+            el.style.opacity = String(clamp(d / 0.08));
+            el.textContent = l.text;
+            lines.appendChild(el);
+          });
+          return;
+        }
+
+        stage.hidden = false;
+        endcard.hidden = true;
+        const { src, speed } = outToSrc(t);
+        const app = document.getElementById("app");
+        await setImage(app, Math.round(src * fps) + 1);
+        const z = zoomAt(t);
+        const [sx, sy] = shakeAt(t);
+        app.style.transformOrigin = `${z.focus[0] * 100}% ${z.focus[1] * 100}%`;
+        app.style.transform = `translate(${sx}px, ${sy}px) scale(${z.s})`;
+
+        const capEl = document.getElementById("captions");
+        capEl.replaceChildren(...captions.filter((c) => t >= c.at[0] && t < c.at[1]).map((c) => renderCaption(c, t)));
+        document.getElementById("stickers").replaceChildren(...stickers.map((s) => renderSticker(s, t)).filter(Boolean));
+        const badge = document.getElementById("speed");
+        badge.hidden = speed < 1.5;
+        badge.textContent = `⏩ ${speed % 1 ? speed.toFixed(1) : speed}x`;
+      };
+    </script>
+  </body>
+</html>

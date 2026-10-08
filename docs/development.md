@@ -87,7 +87,9 @@ make demo-record    # re-record them after changing data or prompts
 
 `LIX_DEMO=1 LIX_E2E_STACK=docker npx playwright test demo-storyline` (in `web/`) rehearses
 the storyline against a running demo and saves a screenshot per step. `make gif` records the
-README's GIFs and the release's walkthrough video the same way (needs ffmpeg).
+README's GIFs and the release's walkthrough video the same way (needs ffmpeg), and
+`make tiktok` the vertical, TikTok-style clip of the phone layout
+([web/scripts/tiktok.mjs](../web/scripts/tiktok.mjs)).
 
 ## Docker
 

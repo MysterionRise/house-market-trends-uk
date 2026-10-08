@@ -1,4 +1,4 @@
-.PHONY: up down up-demo gif quickstart data-download data-pack data-unpack eval demo demo-offline demo-check demo-record install resolve fetch stage indicators score tiles build-data validate demo-data docs schemas api web-install web web-test e2e dev test lint format
+.PHONY: up down up-demo gif tiktok quickstart data-download data-pack data-unpack eval demo demo-offline demo-check demo-record install resolve fetch stage indicators score tiles build-data validate demo-data docs schemas api web-install web web-test e2e dev test lint format
 
 PY_DIRS := core pipeline api
 APP_URL := http://localhost:$(or $(LIX_PORT),3000)
@@ -180,3 +180,10 @@ gif: demo-check
 	LIX_MODEL=replay LIX_REPLAY_DELAY=0.025 docker compose up -d --build --wait
 	cd web && LIX_RECORD=1 LIX_E2E_STACK=docker npx playwright test record
 	./scripts/make-gif.sh
+
+# A vertical, TikTok-style clip of the phone layout with captions, zooms and speed ramps
+# (docs/media/tiktok.gif, and dist/tiktok.mp4 for uploading)
+tiktok: demo-check
+	LIX_MODEL=replay LIX_REPLAY_DELAY=0.02 docker compose up -d --build --wait
+	cd web && node scripts/tiktok.mjs
+	cp dist/tiktok.gif docs/media/tiktok.gif

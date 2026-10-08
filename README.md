@@ -57,8 +57,12 @@ over every neighbourhood and CSV export.
 
 ![Analyst mode: the indicator overlap heatmap and a SQL query ranking local authorities](docs/media/analyst.gif)
 
-Also: a shortlist with side-by-side comparison, shareable links, light and dark mode,
-and a phone layout. A full walkthrough video comes with each
+**On your phone** it works the same way: pick who you are, ask, tap, search.
+
+<img src="docs/media/tiktok.gif" width="320" alt="The phone layout: choosing family with children recolours England, the assistant ranks family areas in Leeds under £350k, a tap opens a neighbourhood's scores, and a search for Hebden Bridge shows its flood risk">
+
+Also: a shortlist with side-by-side comparison, shareable links, and light and dark mode.
+A full walkthrough video comes with each
 [release](https://github.com/MysterionRise/uk-liveability-index/releases).
 
 ## How the scores work
