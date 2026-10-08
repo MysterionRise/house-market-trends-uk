@@ -36,6 +36,27 @@
       "version": null
     }
   },
+  "bods_gtfs_wales": {
+    "fetched": {
+      "bytes": 69415882,
+      "extracted": [
+        "agency.txt",
+        "stops.txt",
+        "routes.txt",
+        "calendar.txt",
+        "calendar_dates.txt",
+        "trips.txt",
+        "stop_times.txt"
+      ],
+      "fetched_at": "2026-10-08T17:41:49.937618+00:00",
+      "sha256": "0e320a5e592bcdb02014632b26c0bf31765586b24e0c95932156264e7d306880"
+    },
+    "resolved": {
+      "resolved_at": "2026-10-08T17:41:44+00:00",
+      "url": "https://data.bus-data.dft.gov.uk/timetable/download/gtfs-file/wales/",
+      "version": null
+    }
+  },
   "census_ts001": {
     "fetched": {
       "bytes": 1870128,
@@ -590,6 +611,30 @@
       "title": "CONSOL_PHARMACY_LIST_202606Q1",
       "url": "https://opendata.nhsbsa.net/dataset/240d142d-df82-4e97-b051-12371519e4e1/resource/ce6c7ad3-a3b5-442f-bb0a-a45d7c962944/download/consol_pharmacy_list_202606q1.csv",
       "version": "https://opendata.nhsbsa.net/dataset/240d142d-df82-4e97-b051-12371519e4e1/resource/ce6c7ad3-a3b5-442f-bb0a-a45d7c962944/download/consol_pharmacy_list_202606q1.csv"
+    }
+  },
+  "nrw_fraw_rivers": {
+    "fetched": {
+      "bytes": 930791424,
+      "fetched_at": "2026-10-08T17:44:35.773964+00:00",
+      "sha256": "b209a42648093420fffc1a4e177a2777319094af28ef6734846abcf681bbdbee"
+    },
+    "resolved": {
+      "resolved_at": "2026-10-08T17:43:23+00:00",
+      "url": "https://datamap.gov.wales/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typename=inspire-nrw%3ANRW_FLOOD_RISK_FROM_RIVERS&outputFormat=gpkg&srs=EPSG%3A27700",
+      "version": null
+    }
+  },
+  "nrw_fraw_sea": {
+    "fetched": {
+      "bytes": 135921664,
+      "fetched_at": "2026-10-08T17:42:43.136894+00:00",
+      "sha256": "8e8f8522aca9907b9b047d9fa4826bbf79fb22f1eb03e01899b5847288729c1c"
+    },
+    "resolved": {
+      "resolved_at": "2026-10-08T17:42:33+00:00",
+      "url": "https://datamap.gov.wales/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typename=inspire-nrw%3ANRW_FLOOD_RISK_FROM_SEA&outputFormat=gpkg&srs=EPSG%3A27700",
+      "version": null
     }
   },
   "nspl": {
@@ -1595,6 +1640,20 @@
       "resolved_at": "2026-10-07T15:48:02+00:00",
       "url": "https://download.geofabrik.de/europe/united-kingdom/england-latest.osm.pbf",
       "version": "Wed, 07 Oct 2026 03:44:07 GMT"
+    }
+  },
+  "osm_wales": {
+    "fetched": {
+      "bytes": 148830213,
+      "etag": "\"8def805-65d57575a51ad\"",
+      "fetched_at": "2026-10-08T17:42:26.925465+00:00",
+      "last_modified": "Thu, 08 Oct 2026 17:12:49 GMT",
+      "sha256": "bb9388868ab95ea7a349e1ecbad8687551b5d3d27c879123194417e38ca5e694"
+    },
+    "resolved": {
+      "resolved_at": "2026-10-08T17:41:50+00:00",
+      "url": "https://download.geofabrik.de/europe/united-kingdom/wales-latest.osm.pbf",
+      "version": "Thu, 08 Oct 2026 17:12:49 GMT"
     }
   },
   "overture_pubs": {
@@ -3258,6 +3317,76 @@
       "title": "CTSOP4.1: number of properties by Council Tax band, property build period, local authority district and lower and middle layer super output area at 31 March 2026",
       "url": "https://assets.publishing.service.gov.uk/media/6aa93b422f29b388848184b8/CTSOP_4_1.zip",
       "version": "https://assets.publishing.service.gov.uk/media/6aa93b422f29b388848184b8/CTSOP_4_1.zip"
+    }
+  },
+  "wg_council_tax": {
+    "fetched": {
+      "bytes": 26893,
+      "etag": "\"69bc014c-690d\"",
+      "fetched_at": "2026-10-08T17:41:41.396879+00:00",
+      "last_modified": "Thu, 19 Mar 2026 13:59:40 GMT",
+      "sha256": "4c7513aef77b2d276c533e3289e730f324efade40adc9d2da9c2ad30d2a094a1"
+    },
+    "resolved": {
+      "release": "2027-03-01",
+      "resolved_at": "2026-10-08T17:41:40+00:00",
+      "url": "https://www.gov.wales/sites/default/files/statistics-and-research/2026-03/council-tax-levels-april-2026-march-2027-153478.xlsx",
+      "version": "https://www.gov.wales/sites/default/files/statistics-and-research/2026-03/council-tax-levels-april-2026-march-2027-153478.xlsx"
+    }
+  },
+  "wg_ks4_la": {
+    "fetched": {
+      "bytes": 77949,
+      "etag": "\"692ecff0-1307d\"",
+      "fetched_at": "2026-10-08T17:41:43.289728+00:00",
+      "last_modified": "Tue, 02 Dec 2025 11:39:28 GMT",
+      "sha256": "85ca1eb8fb96766c09933504d38a870e2525e5cbba3e3eb41927a2c97f15e8af"
+    },
+    "resolved": {
+      "release": "2025-08-01",
+      "resolved_at": "2026-10-08T17:41:42+00:00",
+      "url": "https://www.gov.wales/sites/default/files/statistics-and-research/2025-12/examination-results-september-2024-august-2025-081.ods",
+      "version": "https://www.gov.wales/sites/default/files/statistics-and-research/2025-12/examination-results-september-2024-august-2025-081.ods"
+    }
+  },
+  "wg_schools": {
+    "fetched": {
+      "bytes": 687117,
+      "fetched_at": "2026-10-08T17:41:39.499166+00:00",
+      "sha256": "de355e7b98ed4c0b47ce7e1e5acb22e5dcd20de3fed41f4f65b9f79135ebe1b7"
+    },
+    "resolved": {
+      "resolved_at": "2026-10-08T17:41:38+00:00",
+      "url": "https://datamap.gov.wales/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typename=geonode%3Amaintained_schools_wg&outputFormat=csv&srs=EPSG%3A27700",
+      "version": null
+    }
+  },
+  "wimd_2025_ranks": {
+    "fetched": {
+      "bytes": 242742,
+      "etag": "\"6926c7bc-3b436\"",
+      "fetched_at": "2026-10-08T17:41:37.528574+00:00",
+      "last_modified": "Wed, 26 Nov 2025 09:26:20 GMT",
+      "sha256": "755870f8a82f463c2d6cbd079ace00620f299714dc830aef67583145396613dc"
+    },
+    "resolved": {
+      "resolved_at": "2026-10-08T17:41:36+00:00",
+      "url": "https://www.gov.wales/sites/default/files/statistics-and-research/2025-11/wimd-2025-index-and-domain-ranks-by-small-area.ods",
+      "version": "Wed, 26 Nov 2025 09:26:20 GMT"
+    }
+  },
+  "wimd_2025_scores": {
+    "fetched": {
+      "bytes": 327195,
+      "etag": "\"6937faa4-4fe1b\"",
+      "fetched_at": "2026-10-08T17:41:36.126579+00:00",
+      "last_modified": "Tue, 09 Dec 2025 10:32:04 GMT",
+      "sha256": "fea4c483c261e8b4ff88d86a948395ca1a2b09a24447eece14910f6057677e28"
+    },
+    "resolved": {
+      "resolved_at": "2026-10-08T17:41:35+00:00",
+      "url": "https://www.gov.wales/sites/default/files/statistics-and-research/2025-12/wimd-2025-index-and-domain-scores-by-small-area.ods",
+      "version": "Tue, 09 Dec 2025 10:32:04 GMT"
     }
   }
 }

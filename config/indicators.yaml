@@ -128,8 +128,9 @@ indicators:
     unit: score
     direction: lower_better
     benchmark: nation
-    sources: [iod_2025]
-    builder: common:iod
+    coverage: [E, W]  # IoD in England, WIMD in Wales (see stage/deprivation.py)
+    sources: [iod_2025, wimd_2025_scores, wimd_2025_ranks]
+    builder: common:deprivation
     params: {column: crime_score}
     role: diagnostic
     overlap_group: crime
@@ -195,13 +196,14 @@ indicators:
     description: Share of homes at high or medium risk of flooding from rivers or the sea (at least a 1% chance a year).
     unit: "% of homes"
     direction: lower_better
-    sources: [ea_flood_postcodes, voa_ctsop, nspl]
+    coverage: [E, W]  # EA postcode counts in England, NRW risk areas in Wales
+    sources: [ea_flood_postcodes, nrw_fraw_rivers, nrw_fraw_sea, voa_ctsop, nspl]
     builder: environment:flood_risk
     params: {bands: [high, medium]}
     normalise: threshold
     good: 0
     bad: 25
-    caveats: Rivers and the sea only, not surface water or groundwater; the Environment Agency's model takes flood defences into account.
+    caveats: Rivers and the sea only, not surface water or groundwater; the Environment Agency's model takes flood defences into account. In Wales, NRW publishes risk areas rather than postcode counts, so homes at risk are estimated from the share of an LSOA's residential postcodes inside the high and medium areas.
 
   - id: iod_outdoors
     theme: environment
@@ -210,9 +212,10 @@ indicators:
     unit: score
     direction: lower_better
     benchmark: nation
-    sources: [iod_2025]
-    builder: common:iod
-    params: {column: sub_outdoors_score}
+    coverage: [E, W]  # IoD in England, WIMD in Wales (see stage/deprivation.py)
+    sources: [iod_2025, wimd_2025_scores, wimd_2025_ranks]
+    builder: common:deprivation
+    params: {column: outdoors_score}
     role: diagnostic
 
   # ----------------------------------------------------------------------- health
@@ -276,15 +279,16 @@ indicators:
     description: Average straight-line distance from homes to the nearest NHS community pharmacy.
     unit: metres
     direction: lower_better
-    sources: [nhsbsa_pharmacies, nspl]
+    coverage: [E, W]  # NHSBSA in England, OpenStreetMap in Wales
+    sources: [nhsbsa_pharmacies, osm_wales, nspl]
     builder: common:nearest
-    params: {slug: nhsbsa_pharmacies}
+    params: {slug: pharmacies}
     normalise: threshold
     good: 1000
     bad: 8000
     log1p: true
     weight: 0.75
-    caveats: Rural GP practices that dispense medicines themselves aren't counted.
+    caveats: Rural GP practices that dispense medicines themselves aren't counted. Welsh pharmacies come from OpenStreetMap, since NWSSP's list is not machine-readable.
 
   - id: dentist_distance
     theme: health
@@ -310,6 +314,7 @@ indicators:
     unit: quality 0–1
     direction: higher_better
     benchmark: nation
+    coverage: [E]  # Wales publishes no primary results or grades
     sources: [gias, ofsted_schools, ks2_results, nspl]
     builder: education:school_quality_nearby
     params: {phases: [Primary, All-through, Middle deemed primary], results_slug: ks2_results, results_column: ks2_rwm_pct, k: 3, sigma_m: 1500, max_m: 5000}
@@ -317,7 +322,7 @@ indicators:
     good: 0.8
     bad: 0.4
     weight: 1.5
-    caveats: Quality blends Ofsted (60%) and key stage 2 results as a percentile (40%); results reflect intake as well as teaching. Distance isn't admission; oversubscribed schools admit by catchment or faith.
+    caveats: Quality blends Ofsted (60%) and key stage 2 results as a percentile (40%); results reflect intake as well as teaching. Distance isn't admission; oversubscribed schools admit by catchment or faith. Not available in Wales, which publishes no primary school results or inspection grades.
 
   - id: secondary_school_quality
     theme: education
@@ -326,14 +331,15 @@ indicators:
     unit: quality 0–1
     direction: higher_better
     benchmark: nation
-    sources: [gias, ofsted_schools, ks4_results, nspl]
+    coverage: [E, W]  # Wales: the authority's Capped 9 score, broadcast
+    sources: [gias, wg_schools, ofsted_schools, ks4_results, wg_ks4_la, nspl]
     builder: education:school_quality_nearby
-    params: {phases: [Secondary, All-through, Middle deemed secondary], results_slug: ks4_results, results_column: attainment8, k: 3, sigma_m: 4000, max_m: 15000}
+    params: {phases: [Secondary, All-through, Middle deemed secondary], results_slug: ks4_results, results_column: attainment8, k: 3, sigma_m: 4000, max_m: 15000, la_results_slug: wg_ks4_la, la_results_column: capped9}
     normalise: threshold
     good: 0.8
     bad: 0.4
     weight: 1.5
-    caveats: Quality blends Ofsted (60%) and Attainment 8 as a percentile (40%); Progress 8 isn't published for 2024/25.
+    caveats: Quality blends Ofsted (60%) and Attainment 8 as a percentile (40%); Progress 8 isn't published for 2024/25. In Wales, where no per-school results or inspection grades are published, the local authority's Capped 9 points score stands in for every school in it (flagged broadcast_lad).
 
   - id: school_choice
     theme: education
@@ -342,7 +348,8 @@ indicators:
     unit: index 0–1
     direction: higher_better
     benchmark: nation
-    sources: [gias, ofsted_schools, nspl]
+    coverage: [E, W]  # Welsh schools count as present but ungraded
+    sources: [gias, wg_schools, ofsted_schools, nspl]
     builder: education:school_choice
     params: {cap: 4}
     normalise: scale
@@ -380,11 +387,12 @@ indicators:
     description: Nurseries, pre-schools and school nursery classes within 1km, each weighted by its Ofsted grade and distance.
     unit: index 0–1
     direction: higher_better
-    sources: [ofsted_childcare, gias, nspl]
+    coverage: [E, W]  # Ofsted in England, OpenStreetMap nurseries in Wales
+    sources: [ofsted_childcare, osm_wales, gias, wg_schools, nspl]
     builder: education:nursery_access
     params: {radius_m: 1000, cap: 3}
     normalise: scale
-    caveats: Childminders aren't located (Ofsted withholds their addresses).
+    caveats: Childminders aren't located (Ofsted withholds their addresses). In Wales nurseries come from OpenStreetMap (CIW publishes no provider list) and count as average quality; school nursery classes are included from the Welsh schools list.
 
   # -------------------------------------------------------------------- transport
   - id: connectivity_overall
@@ -467,7 +475,8 @@ indicators:
     description: Buses an hour (weekdays, 07:00–19:00) at the busiest stop within 400m of homes.
     unit: buses an hour
     direction: higher_better
-    sources: [bods_gtfs, nspl]
+    coverage: [E, W]
+    sources: [bods_gtfs, bods_gtfs_wales, nspl]
     builder: common:nearby_max
     params: {slug: bods_gtfs, column: per_hour, radius_m: 400}
     normalise: threshold
@@ -509,7 +518,8 @@ indicators:
     description: Pubs within a 15-minute walk that hold a food hygiene rating of 4 or 5 from the last three years, weighted by distance, with a small bonus for real ale, food or outdoor seating.
     unit: index 0–1
     direction: higher_better
-    sources: [osm_england, fsa_fhrs, nspl]
+    coverage: [E, W]  # one OpenStreetMap extract per nation
+    sources: [osm_england, osm_wales, fsa_fhrs, nspl]
     builder: pubs:well_run_pub_access
     params: {radius_m: 1200, cap: 3}
     normalise: scale
@@ -521,7 +531,8 @@ indicators:
     description: Cafés and restaurants within 800m, weighted by distance.
     unit: index 0–1
     direction: higher_better
-    sources: [osm_england, nspl]
+    coverage: [E, W]  # one OpenStreetMap extract per nation
+    sources: [osm_england, osm_wales, nspl]
     builder: amenities:osm_access
     params: {values: [cafe, restaurant], radius_m: 800, cap: 6}
     normalise: scale
@@ -533,7 +544,8 @@ indicators:
     description: Average straight-line distance from homes to the nearest supermarket.
     unit: metres
     direction: lower_better
-    sources: [osm_england, nspl]
+    coverage: [E, W]  # one OpenStreetMap extract per nation
+    sources: [osm_england, osm_wales, nspl]
     builder: amenities:osm_nearest
     params: {values: [supermarket]}
     normalise: threshold
@@ -547,7 +559,8 @@ indicators:
     description: Shops of every kind within 800m, weighted by distance.
     unit: index 0–1
     direction: higher_better
-    sources: [osm_england, nspl]
+    coverage: [E, W]  # one OpenStreetMap extract per nation
+    sources: [osm_england, osm_wales, nspl]
     builder: amenities:osm_access
     params: {key: shop, radius_m: 800, cap: 30}
     normalise: scale
@@ -585,7 +598,8 @@ indicators:
     description: Libraries, cinemas, theatres, arts centres, museums and galleries within 2km.
     unit: index 0–1
     direction: higher_better
-    sources: [osm_england, nspl]
+    coverage: [E, W]  # one OpenStreetMap extract per nation
+    sources: [osm_england, osm_wales, nspl]
     builder: amenities:osm_access
     params: {values: [library, cinema, theatre, arts_centre, museum, gallery], radius_m: 2000, cap: 3}
     normalise: scale
@@ -597,7 +611,8 @@ indicators:
     description: Fast-food outlets within 800m.
     unit: index 0–1
     direction: lower_better
-    sources: [osm_england, nspl]
+    coverage: [E, W]  # one OpenStreetMap extract per nation
+    sources: [osm_england, osm_wales, nspl]
     builder: amenities:osm_access
     params: {values: [fast_food], radius_m: 800, cap: 15}
     normalise: scale
@@ -609,7 +624,8 @@ indicators:
     description: Betting shops, gambling venues and casinos within 800m.
     unit: index 0–1
     direction: lower_better
-    sources: [osm_england, nspl]
+    coverage: [E, W]  # one OpenStreetMap extract per nation
+    sources: [osm_england, osm_wales, nspl]
     builder: amenities:osm_access
     params: {values: [gambling, casino, bookmaker, lottery], radius_m: 800, cap: 5}
     normalise: scale
@@ -635,9 +651,10 @@ indicators:
     unit: score
     direction: lower_better
     benchmark: nation
-    sources: [iod_2025]
-    builder: common:iod
-    params: {column: sub_indoors_score}
+    coverage: [E, W]  # IoD in England, WIMD in Wales (see stage/deprivation.py)
+    sources: [iod_2025, wimd_2025_scores, wimd_2025_ranks]
+    builder: common:deprivation
+    params: {column: housing_score}
 
   - id: price_change
     theme: housing
@@ -659,11 +676,12 @@ indicators:
     unit: £ a year
     direction: lower_better
     benchmark: nation
-    sources: [council_tax]
+    coverage: [E, W]
+    sources: [council_tax, wg_council_tax]
     builder: housing:council_tax
     params: {band: d}
     weight: 0.5
-    caveats: The same for every neighbourhood in a council area; a home's bill depends on its band.
+    caveats: The same for every neighbourhood in a council area; a home's bill depends on its band. Welsh bands are derived from each authority's average band D using the statutory ratios.
 
   - id: price_to_income
     theme: housing
@@ -718,8 +736,9 @@ indicators:
     unit: rate
     direction: lower_better
     benchmark: nation
-    sources: [iod_2025]
-    builder: common:iod
+    coverage: [E, W]  # IoD in England, WIMD in Wales (see stage/deprivation.py)
+    sources: [iod_2025, wimd_2025_scores, wimd_2025_ranks]
+    builder: common:deprivation
     params: {column: income_score}
     overlap_group: income_work
 
@@ -730,8 +749,9 @@ indicators:
     unit: rate
     direction: lower_better
     benchmark: nation
-    sources: [iod_2025]
-    builder: common:iod
+    coverage: [E, W]  # IoD in England, WIMD in Wales (see stage/deprivation.py)
+    sources: [iod_2025, wimd_2025_scores, wimd_2025_ranks]
+    builder: common:deprivation
     params: {column: employment_score}
     role: context
     overlap_group: income_work
@@ -768,8 +788,9 @@ indicators:
     unit: score
     direction: lower_better
     benchmark: nation
-    sources: [iod_2025]
-    builder: common:iod
+    coverage: [E, W]  # IoD in England, WIMD in Wales (see stage/deprivation.py)
+    sources: [iod_2025, wimd_2025_scores, wimd_2025_ranks]
+    builder: common:deprivation
     params: {column: health_score}
     overlap_group: population_health
     caveats: Built to account for age, unlike self-reported health, which flatters areas of young adults.
@@ -807,8 +828,9 @@ indicators:
     unit: score
     direction: lower_better
     benchmark: nation
-    sources: [iod_2025]
-    builder: common:iod
+    coverage: [E, W]  # IoD in England, WIMD in Wales (see stage/deprivation.py)
+    sources: [iod_2025, wimd_2025_scores, wimd_2025_ranks]
+    builder: common:deprivation
     params: {column: imd_score}
     role: context
 

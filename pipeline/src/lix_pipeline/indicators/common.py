@@ -9,6 +9,11 @@ def column(ctx, slug: str, column: str) -> pl.DataFrame:
     return ctx.staged(slug).select("lsoa21cd", pl.col(column).alias("value"))
 
 
+def deprivation(ctx, column: str) -> pl.DataFrame:
+    """A harmonised deprivation column (IoD in England, WIMD in Wales): see stage/deprivation.py."""
+    return ctx.staged("deprivation").select("lsoa21cd", pl.col(column).alias("value"))
+
+
 def iod(ctx, column: str) -> pl.DataFrame:
     """A score from the English Indices of Deprivation 2025."""
     return ctx.staged("iod_2025").select("lsoa21cd", pl.col(column).alias("value"))

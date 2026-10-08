@@ -36,6 +36,35 @@ def _read(path) -> pl.DataFrame:
     return pl.read_csv(path, skip_rows=skip, infer_schema=False, encoding="utf8-lossy")
 
 
+def stage_childcare() -> pl.LazyFrame:
+    """Nurseries for every active nation: Ofsted's register in England, OpenStreetMap
+    kindergartens and childcare elsewhere (located to an LSOA, quality "expected")."""
+    from lix_core.codes import active_nations, nation_of
+    from lix_pipeline.geo.joins import points_to_lsoa
+
+    frames = []
+    if "E" in active_nations():
+        frames.append(
+            pl.read_parquet(data_dir("staged") / "ofsted_childcare.parquet").with_columns(
+                pl.lit("ofsted").alias("source")
+            )
+        )
+    others = [n for n in active_nations() if n != "E"]
+    if others:
+        osm = pl.read_parquet(data_dir("staged") / "osm_pois.parquet").filter(
+            pl.col("value").is_in(["kindergarten", "childcare"])
+        )
+        osm = points_to_lsoa(osm.select("name", "x", "y"), x="x", y="y")
+        osm = osm.filter(nation_of("lsoa21cd").is_in(others)).with_columns(
+            pl.lit(NEUTRAL).alias("quality"),
+            pl.lit("osm: not inspected").alias("quality_source"),
+            pl.lit("osm").alias("source"),
+        )
+        logger.info(f"{osm.height:,} OpenStreetMap nurseries in {others}")
+        frames.append(osm)
+    return pl.concat(frames, how="diagonal_relaxed").lazy()
+
+
 def stage_ofsted_childcare() -> pl.LazyFrame:
     raw = _read(data_dir("raw") / "ofsted_childcare" / "ofsted_childcare.csv")
     df = raw.filter(

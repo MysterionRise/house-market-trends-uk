@@ -38,6 +38,13 @@ STAGE_INPUTS: dict[str, list[str]] = {
     "ofsted_childcare": ["ofsted_childcare", "nspl"],
     "ea_flood_postcodes": ["ea_flood_postcodes", "nspl"],
     "ofcom_broadband": ["ofcom_broadband", "oa_lookup"],
+    "wg_schools": ["wg_schools", "lsoa_boundaries"],
+    "schools": ["gias", "lsoa_boundaries"],
+    "childcare": ["ofsted_childcare", "nspl"],
+    "pharmacies": ["nhsbsa_pharmacies", "nspl"],
+    "flood": ["ea_flood_postcodes", "nspl"],
+    "deprivation": ["iod_2025"],
+    "wg_ks4_la": ["wg_ks4_la"],
 }
 
 
@@ -72,6 +79,7 @@ def stagers() -> dict[str, Callable[[], pl.LazyFrame]]:
         transport,
     )
     from lix_pipeline.stage.census import stage_census_table
+    from lix_pipeline.stage.deprivation import stage_deprivation
     from lix_pipeline.stage.fsa import stage_active_places, stage_fsa, stage_overture_pubs
     from lix_pipeline.stage.iod import stage_iod
     from lix_pipeline.stage.nspl import stage_nspl
@@ -101,6 +109,9 @@ def stagers() -> dict[str, Callable[[], pl.LazyFrame]]:
         "gp_registrations": health.stage_gp_registrations,
         "gp_workforce": health.stage_gp_workforce,
         "gias": schools.stage_gias,
+        "wg_schools": schools.stage_wg_schools,
+        "schools": schools.stage_schools,  # needs staged gias and wg_schools
+        "wg_ks4_la": schools.stage_wg_ks4_la,  # needs staged geo_lsoa
         "ofsted_schools": schools.stage_ofsted_schools,
         "ks2_results": schools.stage_ks2_results,
         "ks4_results": schools.stage_ks4_results,
@@ -114,6 +125,8 @@ def stagers() -> dict[str, Callable[[], pl.LazyFrame]]:
         "nhsbsa_pharmacies": health.stage_nhsbsa_pharmacies,
         "cqc_locations": health.stage_cqc_locations,
         "ofsted_childcare": childcare.stage_ofsted_childcare,
+        "childcare": childcare.stage_childcare,  # needs staged ofsted_childcare and osm_pois
+        "pharmacies": health.stage_pharmacies,  # needs staged nhsbsa_pharmacies and osm_pois
         "os_greenspace": environment.stage_os_greenspace,
         "ea_flood_postcodes": environment.stage_ea_flood_postcodes,
         "naptan": transport.stage_naptan,
@@ -124,4 +137,7 @@ def stagers() -> dict[str, Callable[[], pl.LazyFrame]]:
         "voa_ctsop": housing.stage_voa_ctsop,
         "claimant_count": community.stage_claimant_count,
         "life_expectancy": community.stage_life_expectancy,
+        # Concept tables that union per-nation sources staged above
+        "flood": environment.stage_flood,  # needs staged ea_flood_postcodes and voa_ctsop
+        "deprivation": stage_deprivation,  # needs staged iod_2025
     }

@@ -126,6 +126,34 @@ def stage_ods_dentists() -> pl.LazyFrame:
 PHARMACY_CONTRACTS = ("Community", "LPS")
 
 
+def stage_pharmacies() -> pl.LazyFrame:
+    """Community pharmacies for every active nation: NHSBSA's list in England (with
+    opening hours), OpenStreetMap elsewhere (no hours; Wales has no machine-readable
+    list)."""
+    from lix_core.codes import active_nations, nation_of
+    from lix_pipeline.geo.joins import points_to_lsoa
+
+    frames = []
+    if "E" in active_nations():
+        frames.append(
+            pl.read_parquet(data_dir("staged") / "nhsbsa_pharmacies.parquet").with_columns(
+                pl.lit("nhsbsa").alias("source")
+            )
+        )
+    others = [n for n in active_nations() if n != "E"]
+    if others:
+        osm = pl.read_parquet(data_dir("staged") / "osm_pois.parquet").filter(
+            pl.col("value") == "pharmacy"
+        )
+        osm = points_to_lsoa(osm.select("name", "x", "y", "opening_hours"), x="x", y="y")
+        osm = osm.filter(nation_of("lsoa21cd").is_in(others)).with_columns(
+            pl.lit("osm").alias("source")
+        )
+        logger.info(f"{osm.height:,} OpenStreetMap pharmacies in {others}")
+        frames.append(osm)
+    return pl.concat(frames, how="diagonal_relaxed").lazy()
+
+
 def stage_nhsbsa_pharmacies() -> pl.LazyFrame:
     """Community pharmacies in England with their weekly and Sunday opening hours."""
     raw = pl.read_csv(

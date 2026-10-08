@@ -4,6 +4,34 @@ All notable changes to this project. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [0.3.0] - unreleased
+
+### Added
+
+- **Wales.** Every neighbourhood in England and Wales is scored: 35,672 LSOAs, with
+  Welsh sources where England's stop (WIMD 2025, the Welsh Government's schools list and
+  council tax levels, local-authority exam results, Natural Resources Wales flood risk
+  areas, the Wales bus timetable and OpenStreetMap extract). A few indicators are
+  England-only for now and say so in Welsh profiles.
+- **Benchmarks per indicator.** Measures that are the same everywhere are ranked across
+  both nations; those each nation records its own way (crime, deprivation indices,
+  schools, prices, council tax) are ranked within the nation. Profiles show which, and
+  carry nation and UK medians and percentiles. "Compare against" on the map now offers
+  every area, the same nation or the same urban/rural type.
+- Nation as configuration (`config/nations.yaml`, `LIX_NATIONS=E,W`), coverage per
+  source and `lix validate config`, which lists the themes still short of data in a
+  nation.
+
+### Changed
+
+- Data pack schema v2: per-indicator quality codes replace the 32-bit mask (which capped
+  the index at 32 scored indicators), the manifest carries the geography, and older
+  packs are refused with a message that says to run `make data-download`.
+- Population comes from the ONS mid-2024 estimates for both nations instead of IoD
+  2025's England-only mid-2022 figures.
+- `/health` reports the active nations; `ThemeScore.england_median` is now
+  `country_median`, beside `nation_median`.
+
 ## [0.2.0] - 2026-10-08
 
 ### Changed

@@ -1,4 +1,5 @@
-"""Schools: every open establishment (GIAS) and a blended inspection quality per school.
+"""Schools: every open establishment (GIAS in England, the Welsh Government's maintained
+schools list in Wales) and a blended inspection quality per English school.
 
 Ofsted changed frameworks twice in two years:
 
@@ -104,6 +105,99 @@ def stage_gias() -> pl.LazyFrame:
     # GIAS carries an LSOA code, but recompute it so the vintage is certainly 2021
     df = points_to_lsoa(df).filter(in_scope("lsoa21cd"))
     logger.info(f"{df.height:,} open schools and colleges")
+    return df.lazy()
+
+
+# Welsh Government sector names (the DataMapWales layer labels them in Welsh)
+WG_SECTOR_PHASE = {
+    "meithrin": "Nursery",
+    "cynradd": "Primary",
+    "canol": "All-through",
+    "uwchradd": "Secondary",
+    "pob oed": "All-through",
+    "oed cyfun": "All-through",
+    "arbennig": "Special",
+    "nursery": "Nursery",
+    "primary": "Primary",
+    "middle": "All-through",
+    "secondary": "Secondary",
+    "all-age": "All-through",
+    "all age": "All-through",
+    "special": "Special",
+}
+
+
+def wg_phase(sector: pl.Expr, school_type: pl.Expr) -> pl.Expr:
+    """GIAS-style phase from the Welsh list's sector, falling back on the type text."""
+    by_sector = (
+        sector.str.to_lowercase().str.strip_chars().replace_strict(WG_SECTOR_PHASE, default=None)
+    )
+    t = school_type.str.to_lowercase()
+    by_type = (
+        pl.when(t.str.contains("special"))
+        .then(pl.lit("Special"))
+        .when(t.str.contains("secondary") | t.str.contains("uwchradd"))
+        .then(pl.lit("Secondary"))
+        .when(t.str.contains("middle") | t.str.contains("canol"))
+        .then(pl.lit("All-through"))
+        .when(t.str.contains("nursery") & ~t.str.contains("infants") & ~t.str.contains("juniors"))
+        .then(pl.lit("Nursery"))
+        .when(t.str.contains("infants") | t.str.contains("juniors") | t.str.contains("primary"))
+        .then(pl.lit("Primary"))
+    )
+    return pl.coalesce(by_sector, by_type)
+
+
+def stage_wg_schools() -> pl.LazyFrame:
+    """Maintained schools in Wales, shaped like the GIAS table (no inspection grades)."""
+    raw = pl.read_csv(data_dir("raw") / "wg_schools" / "wg_schools.csv", infer_schema_length=0)
+    xy = raw["geom"].str.extract_all(r"[-\d.]+")
+    df = raw.select(
+        pl.col("school_code").cast(pl.Int64).alias("urn"),
+        pl.col("school_name").alias("name"),
+        wg_phase(pl.col("sector"), pl.col("school_type")).alias("phase"),
+        pl.col("school_type").alias("type"),
+        pl.when(pl.col("sector").str.to_lowercase().str.contains("arbennig|special"))
+        .then(pl.lit("Special schools"))
+        .otherwise(pl.lit("Welsh maintained schools"))
+        .alias("type_group"),
+        pl.lit(None, pl.Int16).alias("low_age"),
+        pl.lit(None, pl.Int16).alias("high_age"),
+        pl.lit(None, pl.Utf8).alias("gender"),
+        pl.lit(None, pl.Utf8).alias("admissions_policy"),
+        pl.when(pl.col("school_type").str.to_lowercase().str.contains("nursery|meithrin"))
+        .then(pl.lit("Has Nursery Classes"))
+        .otherwise(pl.lit("No Nursery Classes"))
+        .alias("nursery_provision"),
+        pl.lit(None, pl.Utf8).alias("sixth_form"),
+        pl.lit(None, pl.Int32).alias("capacity"),
+        pl.col("pupils").cast(pl.Int32, strict=False).alias("pupils"),
+        pl.col("postcode"),
+        xy.list.get(0).cast(pl.Float64).alias("x"),
+        xy.list.get(1).cast(pl.Float64).alias("y"),
+        pl.col("welsh_medium"),
+        pl.col("local_authority"),
+    )
+    unmapped = df.filter(pl.col("phase").is_null())
+    if unmapped.height:
+        kinds = unmapped.select("type").unique()["type"].to_list()[:8]
+        logger.warning(f"{unmapped.height} Welsh schools with no phase, e.g. types {kinds}")
+    df = points_to_lsoa(df).filter(in_scope("lsoa21cd"))
+    logger.info(f"{df.height:,} maintained schools in Wales")
+    return df.lazy()
+
+
+def stage_schools() -> pl.LazyFrame:
+    """One table of schools for every active nation: GIAS plus the Welsh list."""
+    from lix_core.codes import active_nations
+
+    frames = []
+    if "E" in active_nations():
+        frames.append(pl.read_parquet(data_dir("staged") / "gias.parquet"))
+    if "W" in active_nations():
+        frames.append(pl.read_parquet(data_dir("staged") / "wg_schools.parquet"))
+    df = pl.concat(frames, how="diagonal_relaxed").sort("urn")
+    logger.info(f"{df.height:,} schools across {active_nations()}")
     return df.lazy()
 
 
@@ -266,3 +360,47 @@ def stage_ks4_results() -> pl.LazyFrame:
         f"median Attainment 8 {df['attainment8'].median():.1f}"
     )
     return df.lazy()
+
+
+def stage_wg_ks4_la() -> pl.LazyFrame:
+    """Key Stage 4 attainment by Welsh local authority (Capped 9 points score).
+
+    Wales publishes no per-school results or inspection grades in open data, so the
+    authority's score stands in for its schools (flagged ``broadcast_lad``).
+    """
+    import fastexcel
+
+    reader = fastexcel.read_excel(data_dir("raw") / "wg_ks4_la" / "wg_ks4_la.ods")
+    sheet = next(s for s in reader.sheet_names if s.endswith("_GCSE_indicators_LA"))
+    probe = reader.load_sheet_by_name(sheet, header_row=None, n_rows=12).to_polars()
+    first = probe[probe.columns[0]].to_list()
+    header = next(i for i, v in enumerate(first) if str(v).startswith("Local authority code"))
+    df = reader.load_sheet_by_name(sheet, header_row=header).to_polars()
+    score = next(c for c in df.columns if c.startswith("Capped 9"))
+    df = df.select(
+        pl.col(df.columns[1]).str.strip_chars().alias("lad_nm"),
+        pl.col(score).cast(pl.Float64, strict=False).alias("capped9"),
+    ).filter(pl.col("capped9").is_not_null())
+    lads = (
+        pl.read_parquet(data_dir("staged") / "geo_lsoa.parquet")
+        .filter(in_scope("lad_cd", "upper", nations=("W",)))
+        .select("lad_cd", "lad_nm")
+        .unique()
+    )
+    # Spellings differ between publications ("Rhondda Cynon Taff" vs the ONS "Taf")
+    key = lambda c: (  # noqa: E731
+        pl.col(c)
+        .str.to_lowercase()
+        .str.replace_all(r"^the ", "")
+        .str.replace_all("taff", "taf")
+        .str.replace_all(r"\s+", "")
+    )
+    out = df.with_columns(key("lad_nm").alias("_key")).join(
+        lads.with_columns(key("lad_nm").alias("_key")).drop("lad_nm"), on="_key", how="left"
+    )
+    missing = out.filter(pl.col("lad_cd").is_null())["lad_nm"].to_list()
+    if missing:
+        logger.warning(f"Welsh authorities not matched to a code: {missing}")
+    out = out.filter(pl.col("lad_cd").is_not_null()).select("lad_cd", "lad_nm", "capped9")
+    logger.info(f"{out.height} Welsh authorities; Capped 9 median {out['capped9'].median():.1f}")
+    return out.lazy()

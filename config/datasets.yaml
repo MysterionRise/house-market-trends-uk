@@ -900,3 +900,148 @@ claimant_count:
   cadence: monthly
   size_hint: 2MB
 
+
+# ------------------------------------------------------------------ Wales (v0.3.0)
+
+wimd_2025_scores:
+  coverage: [W]
+  title: Welsh Index of Multiple Deprivation 2025, index and domain scores by LSOA
+  theme: community
+  access:
+    type: http
+    url: https://www.gov.wales/sites/default/files/statistics-and-research/2025-12/wimd-2025-index-and-domain-scores-by-small-area.ods
+  format: ods
+  landing_page: https://www.gov.wales/welsh-index-multiple-deprivation-2025
+  description: WIMD 2025 overall index score and the eight domain scores (income, employment, health, education, access to services, housing, community safety, physical environment) for the 1,917 Welsh LSOAs.
+  licence: OGL-3.0
+  attribution: "Welsh Government, Welsh Index of Multiple Deprivation 2025, licensed under the Open Government Licence v3.0."
+  cadence: static
+  size_hint: 320KB
+
+wimd_2025_ranks:
+  coverage: [W]
+  title: Welsh Index of Multiple Deprivation 2025, index and domain ranks by LSOA
+  theme: community
+  access:
+    type: http
+    url: https://www.gov.wales/sites/default/files/statistics-and-research/2025-11/wimd-2025-index-and-domain-ranks-by-small-area.ods
+  format: ods
+  landing_page: https://www.gov.wales/welsh-index-multiple-deprivation-2025
+  description: WIMD 2025 overall and domain ranks (1 = most deprived) for the 1,917 Welsh LSOAs, with deciles and quintiles.
+  licence: OGL-3.0
+  attribution: "Welsh Government, Welsh Index of Multiple Deprivation 2025, licensed under the Open Government Licence v3.0."
+  cadence: static
+  size_hint: 240KB
+
+wg_schools:
+  coverage: [W]
+  title: Schools in Wales, maintained (DataMapWales)
+  theme: education
+  access:
+    type: http
+    url: https://datamap.gov.wales/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typename=geonode%3Amaintained_schools_wg&outputFormat=csv&srs=EPSG%3A27700
+  format: csv
+  landing_page: https://datamap.gov.wales/layers/geonode:maintained_schools_wg
+  description: Every maintained nursery, primary, middle, secondary and special school in Wales with its sector, type, medium, pupil numbers, postcode and location (from the Welsh Government address list of schools, PLASC and OS AddressBase).
+  licence: OGL-3.0
+  attribution: "Welsh Government, Schools - Maintained (DataMapWales), licensed under the Open Government Licence v3.0."
+  cadence: quarterly
+  size_hint: 1MB
+
+nrw_fraw_rivers:
+  coverage: [W]
+  title: NRW Flood Risk Assessment Wales, risk from rivers
+  theme: environment
+  access:
+    type: http
+    url: https://datamap.gov.wales/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typename=inspire-nrw%3ANRW_FLOOD_RISK_FROM_RIVERS&outputFormat=gpkg&srs=EPSG%3A27700
+  format: gpkg
+  landing_page: https://datamap.gov.wales/layers/inspire-nrw:NRW_FLOOD_RISK_FROM_RIVERS
+  description: Areas of Wales at high, medium or low risk of flooding from rivers, allowing for defences (annual chance above 1 in 30, 1 in 30 to 1 in 100, 1 in 100 to 1 in 1000).
+  licence: OGL-3.0
+  attribution: "Natural Resources Wales, Flood Risk Assessment Wales, licensed under the Open Government Licence v3.0; contains Natural Resources Wales information © Natural Resources Wales and database right."
+  cadence: adhoc
+  size_hint: 150MB
+  notes: Polygons, not postcode counts as in England; homes at risk are estimated from the share of an LSOA's residential postcodes inside the risk areas.
+
+nrw_fraw_sea:
+  coverage: [W]
+  title: NRW Flood Risk Assessment Wales, risk from the sea
+  theme: environment
+  access:
+    type: http
+    url: https://datamap.gov.wales/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typename=inspire-nrw%3ANRW_FLOOD_RISK_FROM_SEA&outputFormat=gpkg&srs=EPSG%3A27700
+  format: gpkg
+  landing_page: https://datamap.gov.wales/layers/inspire-nrw:NRW_FLOOD_RISK_FROM_SEA
+  description: Areas of Wales at high, medium or low risk of flooding from the sea, allowing for defences.
+  licence: OGL-3.0
+  attribution: "Natural Resources Wales, Flood Risk Assessment Wales, licensed under the Open Government Licence v3.0; contains Natural Resources Wales information © Natural Resources Wales and database right."
+  cadence: adhoc
+  size_hint: 60MB
+
+wg_council_tax:
+  coverage: [W]
+  title: Council tax levels in Wales by billing authority
+  theme: housing
+  access:
+    type: html_link
+    page: https://www.gov.wales/council-tax-levels
+    steps:
+      - {pattern: 'href="(/council-tax-levels-april-\d{4}-march-\d{4})"', order: desc}
+      - {pattern: 'href="(https://www\.gov\.wales/sites/default/files/statistics-and-research/[^"]*council-tax-levels[^"]*\.(?:xlsx|ods))"'}
+  format: xlsx
+  landing_page: https://www.gov.wales/council-tax-levels
+  description: Average band D council tax set by each of the 22 Welsh unitary authorities for the financial year, including police and community council precepts.
+  licence: OGL-3.0
+  attribution: "Welsh Government, Council tax levels, licensed under the Open Government Licence v3.0."
+  cadence: annual
+  size_hint: 30KB
+
+bods_gtfs_wales:
+  coverage: [W]
+  title: Bus Open Data Service timetables (GTFS, Wales)
+  theme: transport
+  access:
+    type: http
+    url: https://data.bus-data.dft.gov.uk/timetable/download/gtfs-file/wales/
+  format: zip
+  extract: [stops.txt, stop_times.txt, trips.txt, calendar.txt, calendar_dates.txt, routes.txt, agency.txt]
+  landing_page: https://data.bus-data.dft.gov.uk/timetable/download/
+  description: Every registered local bus timetable in Wales, converted to GTFS by the DfT.
+  licence: OGL-3.0
+  attribution: "Department for Transport, Bus Open Data Service, licensed under the Open Government Licence v3.0."
+  cadence: weekly
+  size_hint: 60MB
+
+osm_wales:
+  coverage: [W]
+  title: OpenStreetMap Wales extract (Geofabrik)
+  theme: amenities
+  access:
+    type: http
+    url: https://download.geofabrik.de/europe/united-kingdom/wales-latest.osm.pbf
+  format: pbf
+  landing_page: https://download.geofabrik.de/europe/united-kingdom/wales.html
+  description: Every OpenStreetMap feature in Wales, read for pubs, shops, cafés, supermarkets, culture, nurseries, pharmacies and other points of interest.
+  licence: ODbL-1.0
+  attribution: "© OpenStreetMap contributors, Open Database Licence (ODbL) 1.0."
+  cadence: daily
+  size_hint: 70MB
+
+wg_ks4_la:
+  coverage: [W]
+  title: Examination results in Wales (Key Stage 4 interim measures by local authority)
+  theme: education
+  access:
+    type: html_link
+    page: https://www.gov.wales/examination-results
+    steps:
+      - {pattern: 'href="(/examination-results-september-\d{4}-august-\d{4})"', order: desc}
+      - {pattern: 'href="(https://www\.gov\.wales/sites/default/files/statistics-and-research/[^"]*examination-results[^"]*\.ods)"'}
+  format: ods
+  landing_page: https://www.gov.wales/examination-results
+  description: Year 11 attainment in Wales (Capped 9 points score and related interim measures) by local authority; Wales publishes no per-school results or inspection grades in open data, so this stands in for school quality, broadcast from the authority.
+  licence: OGL-3.0
+  attribution: "Welsh Government, Examination results, licensed under the Open Government Licence v3.0."
+  cadence: annual
+  size_hint: 80KB

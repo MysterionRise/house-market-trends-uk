@@ -14,6 +14,15 @@
 # What the review shows beyond the checks (written by hand; rendered into the page)
 observations:
   - >-
+    **Wales joins the index (v0.3.0).** Welsh neighbourhoods are scored on the same
+    indicators where the data are the same (distances, air, broadband, OpenStreetMap) and
+    within Wales where they are not (crime, WIMD deprivation, prices, council tax). Theme
+    scores are not built from identical parts in both nations: health in Wales lacks GP
+    capacity and ratings (the Welsh median is higher), and education in Wales rests on
+    each council's exam results and OpenStreetMap nurseries (the Welsh median is lower).
+    Welsh users should read the within-nation percentiles; the gaps are listed in each
+    profile as "not available in Wales".
+  - >-
     **Density no longer piles up points (changed 8 Oct 2026).** Access measures now
     saturate at a typical suburb's level (fewer cafés, pubs and venues needed for full
     marks; DfT connectivity full at 75). Middlesbrough Central fell from 62 to 61 and
@@ -33,6 +42,53 @@ observations:
     so a place search shows the neighbourhood around the named point.
 
 places:
+  # ------------------------------------------------------------------------ Wales
+  # Welsh areas are benchmarked within Wales for crime, deprivation, schools, prices
+  # and council tax; a few indicators are not available in Wales (flagged below)
+  - name: Pontcanna
+    local_authority: Cardiff
+    why: Affluent inner Cardiff, cafés and parks, expensive
+    checks:
+      - {theme: amenities, op: ge, value: 80, anchor: true}
+      - {theme: community, op: ge, value: 60, anchor: true}
+      - {theme: housing, op: le, value: 45}
+
+  - name: Rhyl
+    local_authority: Denbighshire
+    why: Seaside town with some of Wales's most deprived neighbourhoods; cheap homes
+    checks:
+      - {theme: community, op: le, value: 25, anchor: true}
+      - {theme: housing, op: ge, value: 50, anchor: true}
+      - {flag: broadcast_lad, anchor: true}
+      - {flag: not_available, anchor: true}
+
+  - name: Merthyr Tydfil
+    local_authority: Merthyr Tydfil
+    why: Valleys town, high deprivation, cheap homes
+    checks:
+      - {theme: community, op: le, value: 30, anchor: true}
+      - {theme: housing, op: ge, value: 50}
+
+  - name: Abergavenny
+    local_authority: Monmouthshire
+    why: Prosperous market town
+    checks:
+      - {theme: community, op: ge, value: 60, anchor: true}
+
+  - name: Penarth
+    local_authority: Vale of Glamorgan
+    why: Affluent seaside suburb of Cardiff
+    checks:
+      - {theme: community, op: ge, value: 55}
+      - {theme: housing, op: le, value: 50}
+
+  - name: Blaenau Ffestiniog
+    local_authority: Gwynedd
+    why: Remote slate town, cheap but with few amenities
+    checks:
+      - {theme: housing, op: ge, value: 50, anchor: true}
+      - {theme: amenities, op: le, value: 50}
+
   # ------------------------------------------------------------------ inner London
   - name: Hampstead
     local_authority: Camden

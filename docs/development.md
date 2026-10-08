@@ -13,7 +13,8 @@ The pipeline downloads, stages and joins the open datasets below:
 - `lix fetch` downloads what the lockfile pins (resumable, checksummed, rejects error pages served
   as data, waits out ArcGIS exports still being generated, extracts only the files it needs)
 - `lix stage` turns each raw file into tidy Parquet in `data/staged/`
-- `geo_lsoa` is the backbone every indicator joins onto: each England LSOA with its MSOA,
+- `geo_lsoa` is the backbone every indicator joins onto: each LSOA of the active nations
+  (`config/nations.yaml`; `LIX_NATIONS=E,W` narrows a build) with its nation, MSOA,
   local authority, region, friendly MSOA name, population-weighted centroid, urban/rural class,
   population, area and map bounding box; `lix validate geo` checks it
 - helpers bring other geographies onto LSOAs: points, output areas, MSOA/local-authority values,

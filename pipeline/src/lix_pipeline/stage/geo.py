@@ -102,13 +102,26 @@ def stage_places() -> pl.LazyFrame:
         )
         .select(
             pl.col("ID").str.strip_chars_start("﻿").alias("place_id"),
-            pl.col("NAME1").alias("name"),
-            pl.col("NAME2").alias("name_alt"),
+            # Bilingual places list the Welsh or Gaelic form first; until the search
+            # matches every name (#66), keep the English one as the name people type
+            pl.when(pl.col("NAME2_LANG") == "eng")
+            .then(pl.col("NAME2"))
+            .otherwise(pl.col("NAME1"))
+            .alias("name"),
+            pl.when(pl.col("NAME2_LANG") == "eng")
+            .then(pl.col("NAME1"))
+            .otherwise(pl.col("NAME2"))
+            .alias("name_alt"),
             pl.col("LOCAL_TYPE").alias("place_type"),
             pl.col("GEOMETRY_X").cast(pl.Float64).alias("x"),
             pl.col("GEOMETRY_Y").cast(pl.Float64).alias("y"),
             pl.col("POSTCODE_DISTRICT").alias("postcode_district"),
-            pl.coalesce("DISTRICT_BOROUGH", "COUNTY_UNITARY").alias("local_authority"),
+            # Welsh authorities come as "Sir Ddinbych - Denbighshire": keep the English form
+            pl.coalesce("DISTRICT_BOROUGH", "COUNTY_UNITARY")
+            .str.split(" - ")
+            .list.last()
+            .str.replace(r"^the ", "")
+            .alias("local_authority"),
             pl.col("REGION").alias("region"),
             pl.col("COUNTRY").alias("country"),
         )

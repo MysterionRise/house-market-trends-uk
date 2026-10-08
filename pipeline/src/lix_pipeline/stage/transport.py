@@ -125,17 +125,47 @@ def reference_tuesday(start: date, end: date) -> date:
     return min(day, end)
 
 
+def gtfs_feeds() -> list[str]:
+    """Registry slugs ``bods_gtfs*`` that cover an active nation and have been fetched."""
+    from lix_core.codes import active_nations
+    from lix_core.config import load_registry
+
+    active = set(active_nations())
+    return [
+        slug
+        for slug, spec in load_registry().items()
+        if slug.startswith("bods_gtfs")
+        and active & set(spec.coverage)
+        and (data_dir("raw") / slug / "stops.txt").exists()
+    ]
+
+
 def stage_bods_gtfs() -> pl.LazyFrame:
-    """Weekday daytime bus departures per stop from the national GTFS timetable.
+    """Weekday daytime bus departures per stop from the GTFS timetables in scope.
 
     Trips running on a reference Tuesday (calendar plus calendar_dates exceptions), with
-    departures between 07:00 and 19:00 where passengers can board.
+    departures between 07:00 and 19:00 where passengers can board. Feeds overlap at
+    borders; a stop in several feeds keeps its busiest count.
     """
+    feeds = gtfs_feeds()
+    if not feeds:
+        raise FileNotFoundError("No GTFS feed fetched for the active nations")
+    frames = [_gtfs_departures(data_dir("raw") / slug) for slug in feeds]
+    df = (
+        pl.concat(frames)
+        .sort("departures", descending=True)
+        .unique("stop_id", keep="first")
+        .sort("stop_id")
+    )
+    logger.info(f"{df.height:,} stops served across {feeds}")
+    return df.lazy()
+
+
+def _gtfs_departures(root) -> pl.DataFrame:
     import duckdb
 
     from lix_pipeline.stage.geo import lonlat_to_bng
 
-    root = data_dir("raw") / "bods_gtfs"
     con = duckdb.connect()
     cal = f"read_csv('{root / 'calendar.txt'}', all_varchar=true)"
     dates = f"read_csv('{root / 'calendar_dates.txt'}', all_varchar=true)"
@@ -175,7 +205,7 @@ def stage_bods_gtfs() -> pl.LazyFrame:
     x, y = lonlat_to_bng(df["lon"], df["lat"])
     df = df.with_columns(x=x, y=y)
     logger.info(
-        f"{df.height:,} stops served on {day:%a %d %b %Y}; "
+        f"{root.name}: {df.height:,} stops served on {day:%a %d %b %Y}; "
         f"median {df['per_hour'].median():.1f} departures an hour (07:00–19:00)"
     )
-    return df.lazy()
+    return df

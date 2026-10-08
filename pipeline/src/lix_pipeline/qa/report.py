@@ -36,12 +36,16 @@ def build_report() -> tuple[str, list[str]]:
         flagged = {
             r[f"q__{ind.id}"]: r["count"] for r in flags.to_dicts() if r[f"q__{ind.id}"] != "ok"
         }
-        coverage = raw.is_not_null().mean() * 100
+        # Coverage is judged where the indicator is built: not_available areas (another
+        # nation's) are expected gaps, and lix validate serve checks them separately
+        built = features[f"q__{ind.id}"] != "not_available"
+        coverage = raw.filter(built).is_not_null().mean() * 100 if built.any() else 0.0
+        nations = ", ".join(sorted(set(features.filter(built)["nation"].to_list())))
         minimum = COVERAGE_EXCEPTIONS.get(ind.id, MIN_SCORED_COVERAGE) * 100
         if ind.role == "scored" and coverage < minimum:
-            problems.append(f"{ind.id} covers only {coverage:.1f}% of LSOAs")
+            problems.append(f"{ind.id} covers only {coverage:.1f}% of LSOAs in {nations}")
         rows.append({
-            "indicator": ind.id, "role": ind.role, "theme": ind.theme,
+            "indicator": ind.id, "role": ind.role, "theme": ind.theme, "nations": nations,
             "coverage %": coverage, "median": raw.median(), "flags": str(flagged or ""),
         })  # fmt: skip
     out += ["## Indicators\n", _table(pl.DataFrame(rows)), ""]

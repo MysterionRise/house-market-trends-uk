@@ -1,9 +1,10 @@
 # Methodology
 
-How the UK Liveability Index turns open data into a score for each of England's
-33,755 neighbourhoods (LSOAs, 2021 boundaries). The indicator list itself lives in
-[`config/indicators.yaml`](../config/indicators.yaml), the presets in
-[`config/weights.yaml`](../config/weights.yaml), and the sources in
+How the UK Liveability Index turns open data into a score for each of the 35,672
+neighbourhoods of England and Wales (LSOAs, 2021 boundaries). The indicator list
+itself lives in [`config/indicators.yaml`](../config/indicators.yaml), the presets in
+[`config/weights.yaml`](../config/weights.yaml), the nations in
+[`config/nations.yaml`](../config/nations.yaml), and the sources in
 [data-sources.md](data-sources.md).
 
 ## 1. Unit: the LSOA
@@ -76,14 +77,29 @@ Every indicator is converted to 0–100, higher always better, by one of three m
 
 | Method | Used for | How |
 |---|---|---|
-| `rank` | relative measures with no "good enough" level: crime rates, prices, deprivation | England percentile, ties averaged |
+| `rank` | relative measures with no "good enough" level: crime rates, prices, deprivation | percentile, ties averaged, across every scored neighbourhood or within the nation (see [benchmarks](#benchmarks-the-whole-country-or-the-nation)) |
 | `scale` | indices already on a bounded scale: access indices (0–1), DfT connectivity (0–100) | mapped linearly to 0–100 |
 | `threshold` | distances and pollution | 100 at or better than `good`, 0 at or worse than `bad`, linear between (log scale for distances) |
 
 Percentile-ranking everything was tried first and rejected: it turns trivial
 differences (a GP 300m vs 900m away) into large score gaps and put most rural areas in
-England's bottom 10%. Thresholds say what "good enough" means: a GP within 1km, a
+the bottom 10%. Thresholds say what "good enough" means: a GP within 1km, a
 supermarket within 1km, NO₂ at the WHO guideline of 10 µg/m³.
+
+### Benchmarks: the whole country or the nation
+
+Each indicator declares a `benchmark`. `uk` means the measure is the same wherever it
+is taken (a distance, a pollution level, an OpenStreetMap count, a broadband share), so
+a `rank` indicator is ranked against every scored neighbourhood in the index. `nation`
+means the nations measure it differently or publish it from different sources: crime
+recording practices, inspection frameworks and school results, deprivation indices
+(IoD in England, WIMD in Wales), house prices and council tax. Those are ranked within
+the nation, so a Welsh neighbourhood's crime score says where it stands among Welsh
+neighbourhoods. The profile shows which benchmark each indicator uses.
+
+Theme and overall percentiles are reported both ways: against every scored
+neighbourhood (the headline, and the band) and within the nation ("compare against"
+on the map and in profiles). Scores themselves do not change with the comparison.
 
 ## 4. Themes and the overall score
 
@@ -91,9 +107,9 @@ supermarket within 1km, NO₂ at the WHO guideline of 10 µg/m³.
   If less than half of the theme's weight is available, the theme score is missing.
 - **Overall score**: weighted mean of theme scores, using the preset's theme weights.
 - **Percentiles** of each theme and of the overall score are reported alongside
-  ("better than 72% of England's neighbourhoods"). The consumer view shows a band of
-  1–5 (England quintiles) rather than a rank: a "#1 of 33,755" would claim far more
-  precision than the data have.
+  ("better than 72% of neighbourhoods in the index"), and again within the nation. The
+  consumer view shows a band of 1–5 (quintiles of every scored neighbourhood) rather
+  than a rank: a "#1 of 35,672" would claim far more precision than the data have.
 - **Coverage** is the share of the weight that was available; it is shown when below 70%.
 
 ### Presets and custom weights
@@ -117,6 +133,8 @@ with the same maths as the pipeline; both are tested against the same golden cas
 | Nurseries never inspected | Count as average (0.6), as do school nursery classes, which share their school's grade | — |
 | Childminders' addresses are withheld by Ofsted | Only nurseries and pre-schools on non-domestic premises are located | — |
 | Flood-risk file includes pseudo-postcodes that aren't in NSPL | Dropped; they hold under 0.1% of the homes at high or medium risk | — |
+| An indicator is not built for a nation (Active Places, OHID life expectancy, Ofsted childcare and GP capacity are England-only) | No value; the profile says "not available in Wales" and the theme uses the indicators it has | `not_available` |
+| Wales publishes no per-school results or inspection grades | Secondary school quality takes the local authority's Capped 9 points score, as a percentile among Welsh authorities, copied to its neighbourhoods; primary school quality has no Welsh value | `broadcast_lad` |
 
 ### School quality across Ofsted's framework changes
 
@@ -147,13 +165,38 @@ only Overture lists. Pubs tagged with real ale, food, outdoor seating or a micro
 count up to 30% more. Hygiene ratings say how well a pub is run, not how good the beer
 is, hence the name.
 
-## 6. Known limitations
+## 6. Nations
+
+Nation is configuration, not code: [`config/nations.yaml`](../config/nations.yaml)
+lists each nation's codes, expected counts and sources, every stager filters by the
+active nations, and each dataset declares which nations it covers. Where a nation
+publishes its own version of a source, the pipeline stages one "concept" table from
+both (`deprivation`, `schools`, `childcare`, `pharmacies`, `flood`, `council_tax`), so
+the indicator builders never know which nation a row came from.
+
+Wales (v0.3.0): most England & Wales sources already carried Wales (census, Price
+Paid, police.uk, FSA, VOA, DfT connectivity, claimant counts, ONS income, the ODS GP and
+dental lists, NaPTAN, Ofcom, Defra air quality, OS Open Greenspace). Welsh-only
+sources: WIMD 2025 for deprivation (its income and employment domains are rates of
+people affected, as in the IoD; the others are domain scores), the Welsh Government's
+maintained-schools list (no grades: schools count as present for choice and access),
+the examination results release for local-authority attainment, NRW's Flood Risk
+Assessment Wales (risk areas rather than postcode counts: an LSOA's homes at risk are
+estimated from the share of its residential postcodes inside the high, medium and low
+areas, for rivers and the sea), the Welsh Government's council tax levels (band D by
+authority; other bands follow the statutory ninths), the Bus Open Data Service's Wales
+timetable and the OpenStreetMap Wales extract. Nurseries and pharmacies in Wales come
+from OpenStreetMap, since neither CIW nor NWSSP publishes a machine-readable list; they
+count as "expected standard" and carry no opening hours. Population for both nations is
+the ONS mid-year estimate (mid-2024).
+
+## 7. Known limitations
 
 - **Urban bias in access measures.** Access indicators rise with density, so rural
   areas score lower on health services, transport and amenities. Saturation stops city
   centres piling up points beyond a suburb's level, and schools are judged by the
-  nearest, but small villages still sit near the bottom of England overall (median 3rd–
-  6th percentile) because they genuinely lack nearby GPs, shops and buses. Rural
+  nearest, but small villages still sit near the bottom overall (median 3rd–6th
+  percentile) because they genuinely lack nearby GPs, shops and buses. Rural
   strengths are under-measured: green space counts public parks and playing fields, not
   open countryside or footpaths, and quiet isn't measured yet. Compare within the same
   urban/rural class for like-for-like rankings, as the DfT advises for its

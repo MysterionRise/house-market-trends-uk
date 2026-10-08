@@ -1,4 +1,4 @@
-"""OpenStreetMap England extract → one row per point of interest.
+"""OpenStreetMap extracts (one per nation) → one row per point of interest.
 
 Amenities are mapped either as nodes or as building outlines (closed ways and
 multipolygons); outlines are reduced to a representative point. Only the keys listed
@@ -93,10 +93,31 @@ def extract_pois(pbf_path) -> pl.DataFrame:
     return df.rename({"fhrs:id": "fhrs_id"})
 
 
+def osm_extracts() -> list[str]:
+    """Registry slugs ``osm_*`` that cover an active nation and have been fetched."""
+    from lix_core.codes import active_nations
+    from lix_core.config import load_registry
+
+    active = set(active_nations())
+    return [
+        slug
+        for slug, spec in load_registry().items()
+        if slug.startswith("osm_")
+        and active & set(spec.coverage)
+        and (data_dir("raw") / slug / f"{slug}.pbf").exists()
+    ]
+
+
 def stage_osm() -> pl.LazyFrame:
-    pbf = data_dir("raw") / "osm_england" / "osm_england.pbf"
-    logger.info(f"Extracting points of interest from {pbf} (a few minutes)")
-    df = extract_pois(pbf)
+    frames = []
+    for slug in osm_extracts():
+        pbf = data_dir("raw") / slug / f"{slug}.pbf"
+        logger.info(f"Extracting points of interest from {pbf} (a few minutes)")
+        frames.append(extract_pois(pbf).with_columns(pl.lit(slug).alias("extract")))
+    if not frames:
+        raise FileNotFoundError("No OpenStreetMap extract fetched for the active nations")
+    # Extracts overlap along borders: one row per OSM object
+    df = pl.concat(frames).unique(["osm_type", "osm_id"], keep="first")
     x, y = lonlat_to_bng(df["lon"], df["lat"])
     df = df.with_columns(x=x, y=y)
     counts = df.group_by("key").len().sort("len", descending=True)

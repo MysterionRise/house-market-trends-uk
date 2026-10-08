@@ -2,7 +2,7 @@
 
 # Data sources
 
-56 datasets, all under open licences. Each is pinned to a concrete file in `config/datasets.lock.json` by `lix resolve`.
+65 datasets, all under open licences. Each is pinned to a concrete file in `config/datasets.lock.json` by `lix resolve`.
 
 
 ## Geography
@@ -38,6 +38,8 @@
 | `defra_pcm_pm10` (P1) | [Defra modelled background PM10 (1km grid, latest year)](https://uk-air.defra.gov.uk/data/pcm-data) | Annual mean particulate matter (PM10, gravimetric), µg/m³, on a 1km grid. | England, Wales, Scotland, Northern Ireland | annual | OGL-3.0 |
 | `os_greenspace` | [OS Open Greenspace (GB)](https://www.ordnancesurvey.co.uk/products/os-open-greenspace) | Public parks, playing fields, play spaces, allotments and other green spaces, with their access points. | England, Wales, Scotland | adhoc | OGL-3.0 |
 | `ea_flood_postcodes` | [Environment Agency flood risk from rivers and the sea, by postcode](https://www.data.gov.uk/dataset/risk-of-flooding-from-rivers-and-sea-postcodes-in-areas-at-risk2) | Residential and non-residential properties per postcode in each flood likelihood band (high, medium, low, very low). | England | adhoc | OGL-3.0 |
+| `nrw_fraw_rivers` | [NRW Flood Risk Assessment Wales, risk from rivers](https://datamap.gov.wales/layers/inspire-nrw:NRW_FLOOD_RISK_FROM_RIVERS) | Areas of Wales at high, medium or low risk of flooding from rivers, allowing for defences (annual chance above 1 in 30, 1 in 30 to 1 in 100, 1 in 100 to 1 in 1000). | Wales | adhoc | OGL-3.0 |
+| `nrw_fraw_sea` | [NRW Flood Risk Assessment Wales, risk from the sea](https://datamap.gov.wales/layers/inspire-nrw:NRW_FLOOD_RISK_FROM_SEA) | Areas of Wales at high, medium or low risk of flooding from the sea, allowing for defences. | Wales | adhoc | OGL-3.0 |
 
 ## Health access
 
@@ -59,6 +61,8 @@
 | `ks2_results` | [DfE key stage 2 results by school (Explore Education Statistics)](https://explore-education-statistics.service.gov.uk/find-statistics/key-stage-2-attainment) | Share of pupils at each state primary school meeting the expected standard in reading, writing and maths. | England | annual | OGL-3.0 |
 | `ks4_results` | [DfE key stage 4 results by school (Explore Education Statistics)](https://explore-education-statistics.service.gov.uk/find-statistics/key-stage-4-performance) | Average Attainment 8 score of pupils at each state secondary school. | England | annual | OGL-3.0 |
 | `ofsted_childcare` | Ofsted childcare providers and inspections | Every registered childcare provider with its type, places and latest inspection grade; nurseries and other non-domestic settings have a postcode. | England | quarterly | OGL-3.0 |
+| `wg_schools` | [Schools in Wales, maintained (DataMapWales)](https://datamap.gov.wales/layers/geonode:maintained_schools_wg) | Every maintained nursery, primary, middle, secondary and special school in Wales with its sector, type, medium, pupil numbers, postcode and location (from the Welsh Government address list of schools, PLASC and OS AddressBase). | Wales | quarterly | OGL-3.0 |
+| `wg_ks4_la` | [Examination results in Wales (Key Stage 4 interim measures by local authority)](https://www.gov.wales/examination-results) | Year 11 attainment in Wales (Capped 9 points score and related interim measures) by local authority; Wales publishes no per-school results or inspection grades in open data, so this stands in for school quality, broadcast from the authority. | Wales | annual | OGL-3.0 |
 
 ## Transport & connectivity
 
@@ -68,6 +72,7 @@
 | `naptan` | [NaPTAN public transport stops](https://www.data.gov.uk/dataset/ff93ffc1-6656-47d8-9155-85ea0b8f2251/national-public-transport-access-nodes-naptan) | Every bus stop, railway station, tram and metro stop, ferry terminal and coach station in Great Britain. | England, Wales, Scotland | daily | OGL-3.0 |
 | `bods_gtfs` | [Bus Open Data Service timetables (GTFS, England)](https://www.bus-data.dft.gov.uk/) | Every registered local bus timetable in England, converted to GTFS by the DfT. | England | daily | OGL-3.0 |
 | `ofcom_broadband` | [Ofcom Connected Nations fixed broadband coverage (output areas)](https://www.ofcom.org.uk/phones-and-broadband/coverage-and-speeds/connected-nations-update-spring-2026) | Share of premises in each output area that can get gigabit, superfast or decent broadband, and those below the universal service obligation. | England, Wales, Scotland, Northern Ireland | quarterly | OGL-3.0 |
+| `bods_gtfs_wales` | [Bus Open Data Service timetables (GTFS, Wales)](https://data.bus-data.dft.gov.uk/timetable/download/) | Every registered local bus timetable in Wales, converted to GTFS by the DfT. | Wales | weekly | OGL-3.0 |
 
 ## Amenities & nightlife
 
@@ -77,6 +82,7 @@
 | `overture_pubs` | [Overture Maps places, bars and pubs (England area)](https://docs.overturemaps.org/guides/places/) | Bars and pubs from Overture Maps Places (Meta, Microsoft, Foursquare, AllThePlaces), with a confidence that each still exists. | England, Wales | monthly | CDLA-Permissive-2.0 |
 | `active_places` | [Sport England Active Places (sports facilities)](https://www.activeplacespower.com/) | Every sports facility in England (pools, sports halls, gyms, pitches, courts, studios, ...) with its status and who can use it. | England | monthly | CC-BY-4.0 |
 | `fsa_fhrs` | [Food Standards Agency food hygiene ratings (all establishments)](https://ratings.food.gov.uk/open-data) | Every food business inspected in England, Wales and Northern Ireland with its 0–5 hygiene rating, type and location. | England, Wales, Northern Ireland | daily | OGL-3.0 |
+| `osm_wales` | [OpenStreetMap Wales extract (Geofabrik)](https://download.geofabrik.de/europe/united-kingdom/wales.html) | Every OpenStreetMap feature in Wales, read for pubs, shops, cafés, supermarkets, culture, nurseries, pharmacies and other points of interest. | Wales | daily | ODbL-1.0 |
 
 ## Housing & affordability
 
@@ -86,6 +92,7 @@
 | `msoa_income` | [ONS income estimates for small areas (MSOA)](https://www.ons.gov.uk/employmentandlabourmarket/peopleinwork/earningsandworkinghours/datasets/smallareaincomeestimatesformiddlelayersuperoutputareasenglandandwales) | Model-based mean household income per MSOA, total and net, before and after housing costs. | England, Wales | adhoc | OGL-3.0 |
 | `council_tax` | Council Tax levels set by local authorities in England | Average Band D council tax per billing authority, including adult social care and parish precepts. | England | annual | OGL-3.0 |
 | `voa_ctsop` | VOA Council Tax stock of properties by band and build period (LSOA) | Dwellings per LSOA by Council Tax band and the period they were built. | England, Wales | annual | OGL-3.0 |
+| `wg_council_tax` | [Council tax levels in Wales by billing authority](https://www.gov.wales/council-tax-levels) | Average band D council tax set by each of the 22 Welsh unitary authorities for the financial year, including police and community council precepts. | Wales | annual | OGL-3.0 |
 
 ## Community & socio-economic
 
@@ -105,3 +112,5 @@
 | `census_ts061` | [Census 2021 TS061 Method used to travel to work](https://www.nomisweb.co.uk/sources/census_2021_bulk) | Usual residents in employment by travel mode. Collected during COVID-19 restrictions. | England, Wales | static | OGL-3.0 |
 | `census_ts067` | [Census 2021 TS067 Highest level of qualification](https://www.nomisweb.co.uk/sources/census_2021_bulk) | Usual residents aged 16+ by highest qualification. | England, Wales | static | OGL-3.0 |
 | `claimant_count` | [Claimant count by LSOA (Nomis)](https://www.nomisweb.co.uk/datasets/ucjsa) | People claiming unemployment-related benefits (Universal Credit searching for work, or JSA), latest month. | England, Wales | monthly | OGL-3.0 |
+| `wimd_2025_scores` | [Welsh Index of Multiple Deprivation 2025, index and domain scores by LSOA](https://www.gov.wales/welsh-index-multiple-deprivation-2025) | WIMD 2025 overall index score and the eight domain scores (income, employment, health, education, access to services, housing, community safety, physical environment) for the 1,917 Welsh LSOAs. | Wales | static | OGL-3.0 |
+| `wimd_2025_ranks` | [Welsh Index of Multiple Deprivation 2025, index and domain ranks by LSOA](https://www.gov.wales/welsh-index-multiple-deprivation-2025) | WIMD 2025 overall and domain ranks (1 = most deprived) for the 1,917 Welsh LSOAs, with deciles and quintiles. | Wales | static | OGL-3.0 |

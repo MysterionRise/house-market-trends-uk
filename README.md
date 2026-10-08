@@ -1,14 +1,15 @@
 # UK Liveability Index
 
-Every neighbourhood in England, scored from open data. Choose what matters to you (safety,
+Every neighbourhood in England and Wales, scored from open data. Choose what matters to you (safety,
 schools, green space, transport, pubs, prices…), see the whole country recolour, and ask an
 assistant that answers with maps, profiles and comparisons instead of walls of text.
 
 ![Choosing "family with children", raising the weight on safety, then asking the assistant where to look around Leeds on a £350k budget: it sets the weights, ranks neighbourhoods and outlines them on the map](docs/media/hero.gif)
 
-- **33,755 neighbourhoods** (2021 LSOAs, 1,000–3,000 residents each), scored 0–100 on eight
-  themes from **about 40 open datasets**: police.uk, NHS, Ofsted, DfE, Land Registry, ONS,
-  Defra air quality, Environment Agency flood risk, Ofcom broadband, bus timetables,
+- **35,672 neighbourhoods** (2021 LSOAs, 1,000–3,000 residents each) across England and
+  Wales, scored 0–100 on eight themes from **about 60 open datasets**: police.uk, NHS,
+  Ofsted, DfE, the Welsh Government, Land Registry, ONS, Defra air quality, Environment
+  Agency and Natural Resources Wales flood risk, Ofcom broadband, bus timetables,
   OpenStreetMap and more.
 - **Your weights, computed in your browser**, from five ready-made personas or any
   weighting of your own, with an honest range for how much a result depends on them.
@@ -42,8 +43,8 @@ with no download.
 ## What you can do
 
 **Search a postcode or place** to see its profile: the score on each theme against the
-council and England medians, its strengths and weak spots, key facts, and how much the
-result depends on the weights.
+council, nation and UK medians, its strengths and weak spots, key facts, and how much
+the result depends on the weights.
 
 ![Searching for Hebden Bridge: its profile shows flood risk as a weak spot, with theme scores against the Calderdale and England medians](docs/media/search-profile.gif)
 
@@ -68,15 +69,17 @@ A full walkthrough video comes with each
 ## How the scores work
 
 Each neighbourhood gets 64 indicators. The 31 that count towards the score are turned into
-0–100 scores against the rest of England, averaged within eight themes (safety, environment,
-health services, schools and childcare, transport, amenities, housing and community), and
-the themes are weighted by what you choose. The other indicators are shown for context, so
-related measures aren't counted twice.
+0–100 scores, averaged within eight themes (safety, environment, health services, schools
+and childcare, transport, amenities, housing and community), and the themes are weighted
+by what you choose. Measures that are the same everywhere (distances, air quality,
+broadband) are ranked across both nations; those each nation records its own way
+(crime, deprivation, schools, prices) are ranked within the nation. The other indicators
+are shown for context, so related measures aren't counted twice.
 
 - **Fair to rural areas.** Access measures stop adding points beyond what a typical suburb
   has, and "compare like with like" ranks villages against villages.
 - **Uncertain where it should be.** Nudging every theme's weight shows how stable a result is:
-  "better than 72–95% of England" rather than a falsely precise 84%, and "close call" tags in
+  "better than 72–95% of the UK" rather than a falsely precise 84%, and "close call" tags in
   rankings.
 - **Checked.** A review of 25 contrasting places (49/49 checks, the key ones run on every
   build) is in [docs/validation.md](docs/validation.md).
@@ -111,7 +114,9 @@ The same tools are available to Claude Desktop and other clients over
 
 ## Limitations
 
-- **England only**, because the other nations publish different data.
+- **England and Wales**; Scotland and Northern Ireland publish different data and are the
+  next two releases. A few indicators are England-only for now (leisure centres, life
+  expectancy, GP capacity and ratings) and say so in Welsh profiles.
 - **Neighbourhoods, not streets.** Scores describe areas of 1,000–3,000 residents, and
   distances are straight-line.
 - **Data has dates.** Each source has its own (shown in the app); this release's data was
@@ -119,7 +124,9 @@ The same tools are available to Claude Desktop and other clients over
   force publishes none.
 - **Judgement calls.** The weights, thresholds and choice of indicators are explained,
   not objective. Use the scores to explore, not as property, financial or legal advice.
-- **Not yet included:** road and rail noise, surface-water flooding and tree cover.
+- **Not yet included:** road and rail noise, surface-water flooding and tree cover. Welsh
+  nurseries and pharmacies come from OpenStreetMap, and Welsh school quality from each
+  council's exam results, because Wales publishes no open per-provider lists or grades.
 
 ## Building the data yourself
 

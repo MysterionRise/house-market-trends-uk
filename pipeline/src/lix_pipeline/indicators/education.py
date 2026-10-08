@@ -12,7 +12,7 @@ def school_access(ctx, phases: list[str], radius_m: float, cap: float) -> pl.Dat
     are left out: they charge fees and aren't in Ofsted's state-funded data.
     """
     schools = (
-        ctx.staged("gias")
+        ctx.staged("schools")
         .filter(pl.col("phase").is_in(phases) & (pl.col("type_group") != "Independent schools"))
         .join(ctx.staged("ofsted_schools").select("urn", "quality"), on="urn", how="left")
         .with_columns(pl.col("quality").fill_null(NEUTRAL))
@@ -22,14 +22,15 @@ def school_access(ctx, phases: list[str], radius_m: float, cap: float) -> pl.Dat
 
 
 def nursery_access(ctx, radius_m: float, cap: float) -> pl.DataFrame:
-    """Nurseries and pre-schools (Ofsted) plus school nursery classes (GIAS), by quality.
+    """Nurseries and pre-schools (Ofsted in England, OpenStreetMap elsewhere) plus school
+    nursery classes, by quality.
 
-    Ofsted settings carry their inspection quality; nursery schools and classes count
-    as average, since their grade is the whole school's.
+    Ofsted settings carry their inspection quality; nursery schools, classes and
+    uninspected settings count as average.
     """
-    ofsted = ctx.staged("ofsted_childcare").select("x", "y", "quality")
+    ofsted = ctx.staged("childcare").select("x", "y", "quality")
     gias = (
-        ctx.staged("gias")
+        ctx.staged("schools")
         .filter(
             (pl.col("phase") == "Nursery") | (pl.col("nursery_provision") == "Has Nursery Classes")
         )
@@ -45,7 +46,7 @@ def school_results(ctx, slug: str, column: str, phases: list[str], radius_m: flo
     from lix_pipeline.geo.access import nearby_mean
 
     schools = (
-        ctx.staged("gias")
+        ctx.staged("schools")
         .filter(
             pl.col("phase").is_in(phases)
             & (pl.col("type_group") != "Independent schools")
@@ -61,16 +62,27 @@ RESULTS_WEIGHT = 0.4
 
 
 def state_schools(ctx, phases: list[str]) -> pl.DataFrame:
-    """State mainstream schools of these phases with their Ofsted quality (0–1)."""
+    """State mainstream schools of these phases with their Ofsted quality (0–1).
+
+    Schools in nations without inspection grades keep a null quality, so callers can
+    treat them as present (choice, access) but ungraded.
+    """
+    from lix_core.codes import nation_of
+
     return (
-        ctx.staged("gias")
+        ctx.staged("schools")
         .filter(
             pl.col("phase").is_in(phases)
             & (pl.col("type_group") != "Independent schools")
             & (pl.col("type_group") != "Special schools")
         )
         .join(ctx.staged("ofsted_schools").select("urn", "quality"), on="urn", how="left")
-        .with_columns(pl.col("quality").fill_null(NEUTRAL))
+        .with_columns(
+            pl.when(nation_of("lsoa21cd") == "E")
+            .then(pl.col("quality").fill_null(NEUTRAL))
+            .otherwise(pl.col("quality"))
+            .alias("quality")
+        )
     )
 
 
@@ -82,13 +94,21 @@ def school_quality_nearby(
     k: int,
     sigma_m: float,
     max_m: float,
+    la_results_slug: str | None = None,
+    la_results_column: str | None = None,
 ) -> pl.DataFrame:
     """Quality of the ``k`` nearest state schools, nearer ones counting more.
 
     Each school's quality blends its Ofsted judgement (0–1) with its results, as a
     percentile among schools of the same phase: (1 − RESULTS_WEIGHT) × Ofsted +
     RESULTS_WEIGHT × results. Schools without published results use Ofsted alone.
+
+    Nations with no per-school grades or results (Wales) take the local authority's
+    attainment instead, as a percentile among that nation's authorities, copied down
+    to its areas (quality ``broadcast_lad``) when ``la_results_slug`` names a staged
+    table with ``lad_cd`` and ``la_results_column``.
     """
+    from lix_core.codes import nation_of
     from lix_pipeline.geo.access import nearest_k_mean
 
     results = ctx.staged(results_slug).select("urn", pl.col(results_column).alias("_result"))
@@ -100,7 +120,29 @@ def school_quality_nearby(
         .otherwise(pl.col("quality"))
         .alias("combined")
     )
-    return nearest_k_mean(ctx.origins, schools, "combined", k=k, sigma_m=sigma_m, max_m=max_m)
+    graded = schools.filter(pl.col("combined").is_not_null())
+    out = nearest_k_mean(ctx.origins, graded, "combined", k=k, sigma_m=sigma_m, max_m=max_m)
+    if la_results_slug is None:
+        return out
+    la = ctx.staged(la_results_slug).select("lad_cd", pl.col(la_results_column).alias("_la"))
+    la = la.with_columns(
+        ((pl.col("_la").rank("average") - 1) / (pl.col("_la").count() - 1)).alias("_la_pct")
+    )
+    nations = la["lad_cd"].str.slice(0, 1).unique().to_list()
+    by_la = (
+        ctx.geo.select("lsoa21cd", "lad_cd")
+        .filter(nation_of("lsoa21cd").is_in(nations))
+        .join(la.select("lad_cd", "_la_pct"), on="lad_cd", how="inner")
+        .select(
+            "lsoa21cd",
+            pl.col("_la_pct").alias("value"),
+            pl.lit("broadcast_lad").alias("quality"),
+        )
+    )
+    if "quality" not in out.columns:
+        out = out.with_columns(pl.lit("ok").alias("quality"))
+    out = out.filter(~nation_of("lsoa21cd").is_in(nations)).select("lsoa21cd", "value", "quality")
+    return pl.concat([out, by_la], how="vertical_relaxed")
 
 
 def school_choice(ctx, cap: float) -> pl.DataFrame:

@@ -99,7 +99,7 @@ def build_pois() -> pl.DataFrame:
         )  # fmt: skip
     )
 
-    schools = pl.read_parquet(staged / "gias.parquet").join(
+    schools = pl.read_parquet(staged / "schools.parquet").join(
         pl.read_parquet(staged / "ofsted_schools.parquet").select(
             "urn", "quality", "framework", "inspection_date"
         ),
@@ -125,7 +125,10 @@ def build_pois() -> pl.DataFrame:
             "y",
             "lon",
             "lat",
-            pl.lit("DfE Get Information About Schools + Ofsted").alias("source"),
+            pl.when(pl.col("urn") >= 1_000_000)
+            .then(pl.lit("Welsh Government schools list"))
+            .otherwise(pl.lit("DfE Get Information About Schools + Ofsted"))
+            .alias("source"),
             pl.lit(OGL).alias("licence"),
             _detail(
                 [

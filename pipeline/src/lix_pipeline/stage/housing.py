@@ -4,7 +4,7 @@ housing stock by council tax band and build period (VOA, LSOA)."""
 import fastexcel
 import polars as pl
 
-from lix_core.codes import in_scope
+from lix_core.codes import active_nations, in_scope
 from lix_core.log import setup_logging
 from lix_core.paths import data_dir
 
@@ -59,8 +59,42 @@ def stage_council_tax() -> pl.LazyFrame:
         pl.col("Authority").alias("authority"),
         *[pl.col(f"Band {b}").cast(pl.Float64).alias(f"band_{b.lower()}") for b in BANDS],
     ).filter(in_scope("lad_cd", "upper"))
+    wales = data_dir("raw") / "wg_council_tax" / "wg_council_tax.xlsx"
+    if "W" in active_nations() and wales.exists():
+        out = pl.concat([out, _wg_council_tax(wales)], how="vertical_relaxed")
     logger.info(f"{out.height} billing authorities; Band D median £{out['band_d'].median():,.0f}")
     return out.lazy()
+
+
+# Council tax bands are fixed multiples of band D (ninths); Wales's band I (21/9) is left out
+BAND_RATIOS = {"a": 6, "b": 7, "c": 8, "d": 9, "e": 11, "f": 13, "g": 15, "h": 18}
+
+
+def _wg_council_tax(path) -> pl.DataFrame:
+    """Welsh authorities' average band D (all precepts) from the Welsh Government release,
+    the other bands derived from the statutory ratios."""
+    reader = fastexcel.read_excel(path)
+    header = _header_row(reader, "Table1", "Authority")
+    df = reader.load_sheet_by_name("Table1", header_row=header).to_polars()
+    band_d = next(c for c in df.columns if c.startswith("Overall average band D"))
+    df = df.select(
+        pl.col("Authority").str.strip_chars().alias("authority"),
+        pl.col(band_d).cast(pl.Float64, strict=False).alias("band_d"),
+    ).filter(pl.col("band_d").is_not_null())
+    lads = (
+        pl.read_parquet(data_dir("staged") / "geo_lsoa.parquet")
+        .filter(in_scope("lad_cd", "upper", nations=("W",)))
+        .select("lad_cd", pl.col("lad_nm").alias("authority"))
+        .unique()
+    )
+    out = df.join(lads, on="authority", how="inner")
+    if out.height != lads.height:
+        logger.warning(f"{lads.height - out.height} Welsh authorities missing from council tax")
+    return out.select(
+        "lad_cd",
+        "authority",
+        *[(pl.col("band_d") * r / 9).round(2).alias(f"band_{b}") for b, r in BAND_RATIOS.items()],
+    )
 
 
 BUILD_PERIODS = {

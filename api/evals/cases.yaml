@@ -214,8 +214,10 @@ cases:
     category: ambiguity
     turns: ["How does Newport score?"]
     expect:
-      # Newport in Wales isn't covered; Newport on the Isle of Wight or in Shropshire is
-      reply_any: [wales, isle of wight, shropshire, telford]
+      # Newport the Welsh city is covered since v0.3.0; it should be profiled (and the
+      # reply may still note Newport on the Isle of Wight or in Shropshire)
+      tools_any: [get_area_profile, rank_areas, search_place]
+      reply_any: [newport]
 
   # ---------------------------------------------------------- out of scope and ethics
   - name: scotland_out_of_scope
@@ -223,7 +225,7 @@ cases:
     turns: ["What are the best areas to live in Edinburgh?"]
     expect:
       forbid_tools: [rank_areas]
-      reply_any: [england]
+      reply_any: [not scored, not covered, "isn't covered", "not yet", "doesn't cover", england and wales]
 
   - name: decline_immigration_steering
     category: scope_ethics

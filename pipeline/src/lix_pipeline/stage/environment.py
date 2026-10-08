@@ -51,6 +51,84 @@ def stage_os_greenspace() -> pl.LazyFrame:
 
 
 FLOOD_BANDS = ("High", "Medium", "Low", "VeryLow")
+NRW_LAYERS = ("nrw_fraw_rivers", "nrw_fraw_sea")
+
+
+def _nrw_homes_at_risk() -> pl.DataFrame:
+    """Welsh homes at each flood likelihood, estimated from NRW's risk areas.
+
+    NRW publishes risk polygons, not postcode counts, so each residential postcode is
+    placed in its worst band across rivers and the sea, and an LSOA's dwellings (VOA)
+    are split in the proportion of its postcodes per band. Bands match the EA's: High
+    above 1 in 30 a year, Medium 1 in 30 to 1 in 100, Low 1 in 100 to 1 in 1000.
+    """
+    import geopandas as gpd
+
+    from lix_core.codes import nation_of
+    from lix_pipeline.geo.access import residential_postcodes
+
+    homes = residential_postcodes().filter(nation_of("lsoa21cd") == "W")
+    points = gpd.GeoDataFrame(
+        {"postcode": homes["postcode"].to_list(), "lsoa21cd": homes["lsoa21cd"].to_list()},
+        geometry=gpd.points_from_xy(homes["east1m"].to_numpy(), homes["north1m"].to_numpy()),
+        crs=27700,
+    )
+    rank = {"High": 3, "Medium": 2, "Low": 1}
+    worst = pl.DataFrame(
+        {"postcode": [], "band": []}, schema={"postcode": pl.Utf8, "band": pl.Int8}
+    )
+    for slug in NRW_LAYERS:
+        polys = gpd.read_file(data_dir("raw") / slug / f"{slug}.gpkg")[["risk", "geometry"]]
+        polys = polys.to_crs(27700)
+        hit = gpd.sjoin(points, polys, how="inner", predicate="intersects")
+        found = pl.DataFrame(
+            {
+                "postcode": hit["postcode"].to_list(),
+                "band": [rank.get(r, 0) for r in hit["risk"].to_list()],
+            },
+            schema={"postcode": pl.Utf8, "band": pl.Int8},
+        )
+        worst = pl.concat([worst, found])
+        logger.info(f"{slug}: {hit['postcode'].nunique():,} residential postcodes in risk areas")
+    worst = worst.group_by("postcode").agg(pl.col("band").max())
+    per_pc = homes.select("postcode", "lsoa21cd").join(worst, on="postcode", how="left")
+    shares = per_pc.group_by("lsoa21cd").agg(
+        (pl.col("band") == 3).mean().alias("share_high"),
+        (pl.col("band") == 2).mean().alias("share_medium"),
+        (pl.col("band") == 1).mean().alias("share_low"),
+    )
+    dwellings = pl.read_parquet(data_dir("staged") / "voa_ctsop.parquet").select(
+        "lsoa21cd", "dwellings"
+    )
+    return (
+        shares.join(dwellings, on="lsoa21cd", how="inner")
+        .select(
+            "lsoa21cd",
+            (pl.col("share_high") * pl.col("dwellings")).round().cast(pl.Int64).alias("res_high"),
+            (pl.col("share_medium") * pl.col("dwellings"))
+            .round()
+            .cast(pl.Int64)
+            .alias("res_medium"),
+            (pl.col("share_low") * pl.col("dwellings")).round().cast(pl.Int64).alias("res_low"),
+            pl.lit(0, pl.Int64).alias("res_verylow"),
+        )
+        .filter((pl.col("res_high") + pl.col("res_medium") + pl.col("res_low")) > 0)
+        .sort("lsoa21cd")
+    )
+
+
+def stage_flood() -> pl.LazyFrame:
+    """Homes per flood likelihood band per LSOA for every active nation (rivers and sea)."""
+    from lix_core.codes import active_nations
+
+    frames = []
+    if "E" in active_nations():
+        frames.append(pl.read_parquet(data_dir("staged") / "ea_flood_postcodes.parquet"))
+    if "W" in active_nations():
+        wales = _nrw_homes_at_risk()
+        logger.info(f"Wales: {wales.height:,} LSOAs with homes in NRW flood risk areas")
+        frames.append(wales)
+    return pl.concat(frames, how="diagonal_relaxed").sort("lsoa21cd").lazy()
 
 
 def stage_ea_flood_postcodes() -> pl.LazyFrame:
