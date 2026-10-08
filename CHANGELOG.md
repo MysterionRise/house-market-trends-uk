@@ -4,7 +4,7 @@ All notable changes to this project. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [0.2.0] - 2026-10-08
 
 ### Changed
 
@@ -79,4 +79,5 @@ Run it with `make quickstart` (Docker, make and curl; see the README).
 - Each source has its own date (shown in the app); the data pack was built on
   7 October 2026.
 
+[0.2.0]: https://github.com/MysterionRise/uk-liveability-index/releases/tag/v0.2.0
 [0.1.0]: https://github.com/MysterionRise/uk-liveability-index/releases/tag/v0.1.0
