@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 
 import { useData } from "@/components/AppData";
@@ -17,6 +18,7 @@ function fill(rho: number): string {
 /** How much the scored indicators overlap (Spearman ρ), grouped by theme along the diagonal. */
 export function CorrelationHeatmap() {
   const { manifest } = useData();
+  const t = useTranslations("Heatmap");
   const [hover, setHover] = useState<{ i: number; j: number } | null>(null);
   const c = manifest?.correlations;
   if (!manifest || !c || !c.ids.length) return null;
@@ -35,13 +37,13 @@ export function CorrelationHeatmap() {
   return (
     <figure data-testid="correlations">
       <figcaption className="mb-1 text-xs font-medium text-[var(--text-secondary)]">
-        How much scored indicators overlap (Spearman ρ across every scored neighbourhood)
+        {t("caption")}
       </figcaption>
       <svg
         width={LABEL_W + size}
         height={size}
         role="img"
-        aria-label="Correlation matrix of scored indicators"
+        aria-label={t("aria")}
         onMouseLeave={() => setHover(null)}
       >
         {c.ids.map((id, i) => (
@@ -92,7 +94,7 @@ export function CorrelationHeatmap() {
         />
         <span>+1</span>
         <span className="ml-auto min-h-[1em] text-[var(--text-secondary)]" aria-live="polite">
-          {h ? `${h.a} × ${h.b}: ρ ${h.rho.toFixed(2)}` : "Boxes group each theme"}
+          {h ? t("pair", { a: h.a, b: h.b, rho: h.rho.toFixed(2) }) : t("legendHint")}
         </span>
       </div>
     </figure>

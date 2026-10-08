@@ -1,29 +1,30 @@
 "use client";
 
 import { CopilotChat, useConfigureSuggestions } from "@copilotkit/react-core/v2";
+import { useTranslations } from "next-intl";
 import { useEffect, useRef } from "react";
 
-import { useData, useLiveability } from "@/components/AppData";
+import { useLiveability } from "@/components/AppData";
 import { type Tab, usePanel } from "@/components/PanelContext";
-import { coverageName } from "@/lib/data";
 import { AnalystPanel } from "@/components/panels/AnalystPanel";
 import { AreaPanel } from "@/components/panels/AreaPanel";
 import { ShortlistPanel } from "@/components/panels/ShortlistPanel";
 import { WeightPanel } from "@/components/panels/WeightPanel";
+import { useCoverageName } from "@/lib/copy";
 
-const SUGGESTIONS = [
-  { title: "Family-friendly near Leeds", message: "We have two young kids and a budget of £350k. Where should we look around Leeds?" },
-  { title: "Well-run pubs nearby", message: "Show me well-run pubs near SW1A 1AA" },
-  { title: "Compare two places", message: "Compare Headingley and Chapel Allerton" },
-  { title: "Explain a score", message: "Why does Manchester city centre score low on safety?" },
-];
+const SUGGESTION_KEYS = ["family", "pubs", "compare", "explain"] as const;
 
 export function SidePanel() {
-  const { manifest } = useData();
+  const t = useTranslations("SidePanel");
+  const coverage = useCoverageName();
   const { state, update } = useLiveability();
   const { tab, setTab } = usePanel();
 
-  useConfigureSuggestions({ suggestions: SUGGESTIONS, available: "before-first-message" }, []);
+  const suggestions = SUGGESTION_KEYS.map((k) => ({
+    title: t(`suggestions.${k}Title`),
+    message: t(`suggestions.${k}Message`),
+  }));
+  useConfigureSuggestions({ suggestions, available: "before-first-message" }, [suggestions]);
 
   // Selecting an area (on the map or from a list) opens its profile, unless chatting.
   // The tab lives in a parent context, so this runs after render, not during it.
@@ -36,11 +37,11 @@ export function SidePanel() {
   }, [selected, tab, setTab]);
 
   const tabs: [Tab, string][] = [
-    ["assistant", "Assistant"],
-    ["weights", "Weights"],
-    ["area", "Area"],
-    ["shortlist", `Shortlist${state.shortlist.length ? ` (${state.shortlist.length})` : ""}`],
-    ...(state.mode === "analyst" ? [["analyst", "Analyst"] as [Tab, string]] : []),
+    ["assistant", t("tabs.assistant")],
+    ["weights", t("tabs.weights")],
+    ["area", t("tabs.area")],
+    ["shortlist", state.shortlist.length ? t("shortlistCount", { count: state.shortlist.length }) : t("tabs.shortlist")],
+    ...(state.mode === "analyst" ? [["analyst", t("tabs.analyst")] as [Tab, string]] : []),
   ];
 
   return (
@@ -49,7 +50,7 @@ export function SidePanel() {
         <div
           className="flex items-center gap-1"
           role="tablist"
-          aria-label="Panels"
+          aria-label={t("panels")}
           onKeyDown={(e) => {
             // Arrow keys move between tabs (WAI-ARIA tabs pattern)
             if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
@@ -82,7 +83,7 @@ export function SidePanel() {
         {/* Outside the tablist: a tablist may only contain tabs */}
         <label
           className="ml-auto flex shrink-0 items-center gap-1.5 py-2 pl-2 text-xs text-[var(--text-secondary)]"
-          title="Analyst mode: distributions, indicator overlap and SQL"
+          title={t("analystTitle")}
         >
           <input
             type="checkbox"
@@ -95,7 +96,7 @@ export function SidePanel() {
             }}
           />
           {/* Once on, the Analyst tab names it; the word would crowd the tabs off a narrow panel */}
-          <span className={state.mode === "analyst" ? "sr-only" : ""}>Analyst</span>
+          <span className={state.mode === "analyst" ? "sr-only" : ""}>{t("tabs.analyst")}</span>
         </label>
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto">
@@ -103,9 +104,9 @@ export function SidePanel() {
         <div className={tab === "assistant" ? "h-full" : "hidden"} data-testid="chat" id="panel-assistant" role="tabpanel">
           <CopilotChat
             className="h-full"
-            labels={{ chatInputPlaceholder: `Ask about places in ${coverageName(manifest)}…` }}
+            labels={{ chatInputPlaceholder: t("chatPlaceholder", { coverage }) }}
             // CopilotKit's icon buttons have no accessible names of their own
-            input={{ sendButton: { "aria-label": "Send" }, addMenuButton: { "aria-label": "More options" } }}
+            input={{ sendButton: { "aria-label": t("send") }, addMenuButton: { "aria-label": t("moreOptions") } }}
           />
         </div>
         {tab !== "assistant" && (

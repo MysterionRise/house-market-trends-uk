@@ -1,9 +1,10 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useSyncExternalStore } from "react";
 
 import { useData, useLiveability } from "@/components/AppData";
-import { coverageName } from "@/lib/data";
+import { useCoverageName } from "@/lib/copy";
 
 const KEY = "lix.welcomed";
 const listeners = new Set<() => void>();
@@ -25,20 +26,16 @@ function dismiss() {
   listeners.forEach((l) => l());
 }
 
-// The manifest's labels, so the card can show before the manifest arrives (it is the
-// largest text on a first visit, and waiting for the fetch delays the first paint of it)
-const PERSONAS: Record<string, string> = {
-  family: "Family with children",
-  young_professional: "Young professional",
-  retiree: "Retired",
-  commuter: "Commuter",
-  balanced: "Balanced",
-};
+// Persona labels live in the catalogue, so the card can show before the manifest
+// arrives (it is the largest text on a first visit) and in the interface language
+const PERSONAS = ["family", "young_professional", "retiree", "commuter", "balanced"] as const;
 
 /** First visit: pick who you are (sets the weights) and how to read the map. */
 export function Onboarding() {
   const { manifest } = useData();
   const { update } = useLiveability();
+  const t = useTranslations("Onboarding");
+  const coverage = useCoverageName();
   const welcomed = useSyncExternalStore(
     (cb) => {
       listeners.add(cb);
@@ -48,7 +45,7 @@ export function Onboarding() {
     () => true, // server render: no card, so nothing flashes
   );
   if (welcomed) return null;
-  const presets = Object.keys(PERSONAS).filter((p) => !manifest || manifest.presets[p]);
+  const presets = PERSONAS.filter((p) => !manifest || manifest.presets[p]);
 
   return (
     <div
@@ -58,13 +55,10 @@ export function Onboarding() {
       data-testid="onboarding"
     >
       <h2 id="welcome-title" className="text-sm font-semibold">
-        Find a neighbourhood that suits you
+        {t("title")}
       </h2>
-      <p className="mt-1 text-xs text-[var(--text-secondary)]">
-        Every neighbourhood in {coverageName(manifest)}, scored from open data. Teal areas do better than
-        typical, orange ones worse. Zoom in and click an area to see why, or ask the assistant.
-      </p>
-      <p className="mt-3 text-xs font-medium text-[var(--text-secondary)]">Who&apos;s looking?</p>
+      <p className="mt-1 text-xs text-[var(--text-secondary)]">{t("blurb", { coverage })}</p>
+      <p className="mt-3 text-xs font-medium text-[var(--text-secondary)]">{t("whoIsLooking")}</p>
       <div className="mt-1.5 flex flex-wrap gap-1.5">
         {presets.map((id) => (
           <button
@@ -77,12 +71,12 @@ export function Onboarding() {
               dismiss();
             }}
           >
-            {manifest?.presets[id].label ?? PERSONAS[id]}
+            {t(`personas.${id}`)}
           </button>
         ))}
       </div>
       <button className="mt-3 text-xs text-[var(--text-muted)] underline" onClick={dismiss}>
-        Skip
+        {t("skip")}
       </button>
     </div>
   );

@@ -1,16 +1,17 @@
 "use client";
 
 import dynamic from "next/dynamic";
-
-import { coverageName } from "@/lib/data";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 
 import { useData } from "@/components/AppData";
+import { LocaleToggle } from "@/components/LocaleProvider";
 import { Onboarding } from "@/components/Onboarding";
 import { PanelProvider } from "@/components/PanelContext";
 import { SearchBox } from "@/components/SearchBox";
 import { SidePanel } from "@/components/SidePanel";
 import { ThemeToggle } from "@/components/ThemeProvider";
+import { useCoverageName } from "@/lib/copy";
 
 // MapLibre needs the browser
 const LiveabilityMap = dynamic(() => import("@/components/map/LiveabilityMap").then((m) => m.LiveabilityMap), {
@@ -19,47 +20,46 @@ const LiveabilityMap = dynamic(() => import("@/components/map/LiveabilityMap").t
 
 export default function Home() {
   const { error, manifest, scores } = useData();
-  const count = (manifest?.lsoa_count ?? 0).toLocaleString("en-GB");
+  const t = useTranslations("Header");
+  const coverage = useCoverageName();
+  const count = manifest?.lsoa_count ?? 0;
   return (
     <PanelProvider>
       {/* minmax(0, …) columns: content can't widen the page past a phone screen */}
       <main className="grid h-dvh grid-cols-[minmax(0,1fr)] grid-rows-[auto_1fr] bg-[var(--page)] text-[var(--text-primary)]">
         <header className="flex flex-wrap items-center gap-x-3 gap-y-1.5 border-b border-[var(--border)] bg-[var(--surface-1)] px-4 py-2">
-          <h1 className="text-base font-semibold">UK Liveability Index</h1>
+          <h1 className="text-base font-semibold">{t("title")}</h1>
           <span className="hidden text-xs text-[var(--text-secondary)] lg:inline">
-            {manifest?.demo
-              ? `Demo dataset: ${count} neighbourhoods`
-              : `${count} neighbourhoods in ${coverageName(manifest)}`}
-            , scored from open data
+            {manifest?.demo ? t("demoBlurb", { count }) : t("blurb", { count, coverage })}
           </span>
           {manifest?.demo && (
             <span
               className="rounded border border-[var(--border)] px-1.5 py-0.5 text-xs text-[var(--text-secondary)]"
               data-testid="demo-badge"
-              title="A small cut of the full build; percentiles on the map are relative to these areas"
+              title={t("demoBadgeTitle")}
             >
-              demo data
+              {t("demoBadge")}
             </span>
           )}
           <div className="order-last w-full sm:order-none sm:ml-auto sm:w-auto">
             <SearchBox />
           </div>
-          <nav className="ml-auto flex flex-wrap items-center gap-x-3 text-xs text-[var(--text-secondary)] sm:ml-0" aria-label="About">
+          <nav className="ml-auto flex flex-wrap items-center gap-x-3 text-xs text-[var(--text-secondary)] sm:ml-0" aria-label={t("about")}>
             <Link className="underline" href="/methodology">
-              How scores work
+              {t("howScoresWork")}
             </Link>
             <Link className="underline" href="/about">
-              Sources
+              {t("sources")}
             </Link>
-            <ThemeToggle />
+            <LocaleToggle label={t("language")} draftLabel={t("draft")} />
+            <ThemeToggle label={t("theme")} />
           </nav>
         </header>
         <div className="grid min-h-0 grid-cols-[minmax(0,1fr)] grid-rows-[45dvh_1fr] md:grid-cols-[minmax(0,1fr)_minmax(360px,440px)] md:grid-rows-1">
           <div className="relative min-h-0">
             {error ? (
               <div className="p-6 text-sm text-[var(--text-secondary)]" role="alert">
-                Couldn&apos;t load the scores ({error}). Is the API running (<code>make api</code>) and has{" "}
-                <code>make score tiles</code> been run?
+                {t.rich("loadError", { error, code: (chunks) => <code>{chunks}</code> })}
               </div>
             ) : (
               <>
@@ -70,7 +70,7 @@ export default function Home() {
                     role="status"
                     data-testid="map-loading"
                   >
-                    Loading the neighbourhoods…
+                    {t("loading")}
                   </div>
                 )}
                 <Onboarding />

@@ -6,6 +6,7 @@
  * the only place that knows about CopilotKit's renderer API.
  */
 import { useRenderTool } from "@copilotkit/react-core/v2";
+import { useTranslations } from "next-intl";
 import { z } from "zod";
 
 import { AreaProfileCard } from "@/components/genui/AreaProfileCard";
@@ -19,26 +20,18 @@ import type { AreaProfile, Comparison, Explanation, IndicatorInfo, Place, PoiRes
 
 const anyArgs = z.record(z.string(), z.unknown());
 
-const WORKING: Record<string, string> = {
-  rank_areas: "Ranking areas…",
-  get_area_profile: "Profiling the area…",
-  compare_areas: "Comparing…",
-  nearest_pois: "Finding places nearby…",
-  explain_score: "Working out the score…",
-  set_weights: "Adjusting the weights…",
-  show_on_map: "Moving the map…",
-  run_sql: "Running the query…",
-  search_place: "Looking up the place…",
-  list_indicators: "Listing indicators…",
-  add_to_shortlist: "Saving to your shortlist…",
-  remove_from_shortlist: "Updating your shortlist…",
-};
+const TOOLS = [
+  "rank_areas", "get_area_profile", "compare_areas", "nearest_pois", "explain_score", "set_weights",
+  "show_on_map", "run_sql", "search_place", "list_indicators", "add_to_shortlist", "remove_from_shortlist",
+] as const;
 
 function Pending({ name }: { name: string }) {
+  const t = useTranslations("Registry");
+  const known = (TOOLS as readonly string[]).includes(name);
   return (
     <div className="my-1 inline-flex items-center gap-2 rounded-full border border-[var(--border)] px-2.5 py-1 text-xs text-[var(--text-secondary)]">
       <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[var(--accent)]" />
-      {WORKING[name] ?? `Running ${name}…`}
+      {known ? t(`working.${name as (typeof TOOLS)[number]}`) : t("running", { name })}
     </div>
   );
 }
@@ -53,6 +46,7 @@ function Chip({ children }: { children: React.ReactNode }) {
 
 /** Register one renderer: pending chip while running, the component once there's a result. */
 function useToolCard<T>(name: string, render: (result: T, args: Record<string, unknown>) => React.ReactElement | null) {
+  const t = useTranslations("Registry");
   useRenderTool(
     {
       name,
@@ -60,7 +54,7 @@ function useToolCard<T>(name: string, render: (result: T, args: Record<string, u
       render: ({ status, result, parameters }) => {
         if (status !== "complete") return <Pending name={name} />;
         const data = parseResult<T>(result);
-        if (data == null) return <Chip>{name}: no result</Chip>;
+        if (data == null) return <Chip>{t("noResult", { name })}</Chip>;
         return render(data, (parameters ?? {}) as Record<string, unknown>);
       },
     },
@@ -69,6 +63,7 @@ function useToolCard<T>(name: string, render: (result: T, args: Record<string, u
 }
 
 export function GenerativeUI() {
+  const t = useTranslations("Registry");
   useToolCard<RankResult>("rank_areas", (r) => <RankedList result={r} />);
   useToolCard<AreaProfile>("get_area_profile", (p) => <AreaProfileCard profile={p} />);
   useToolCard<Comparison>("compare_areas", (c) => <ComparisonTable comparison={c} />);
@@ -77,7 +72,7 @@ export function GenerativeUI() {
   useToolCard<SqlData>("run_sql", (d, args) => <SqlResult data={d} query={String(args.query ?? "")} />);
   useToolCard<{ preset: string; theme_weights: Record<string, number> }>("set_weights", (w) => (
     <Chip>
-      Weights set: <strong className="font-medium text-[var(--text-primary)]">{w.preset}</strong>
+      {t("weightsSet")} <strong className="font-medium text-[var(--text-primary)]">{w.preset}</strong>
       {Object.entries(w.theme_weights)
         .filter(([, v]) => v !== 1)
         .map(([t, v]) => (
@@ -85,17 +80,19 @@ export function GenerativeUI() {
         ))}
     </Chip>
   ));
-  useToolCard<{ layer: string }>("show_on_map", (m) => <Chip>Map updated · colouring by {m.layer}</Chip>);
-  useToolCard<unknown[]>("add_to_shortlist", (items) => <Chip>Shortlist: {items.length} saved</Chip>);
-  useToolCard<unknown[]>("remove_from_shortlist", (items) => <Chip>Shortlist: {items.length} saved</Chip>);
+  useToolCard<{ layer: string }>("show_on_map", (m) => <Chip>{t("mapUpdated", { layer: m.layer })}</Chip>);
+  useToolCard<unknown[]>("add_to_shortlist", (items) => <Chip>{t("shortlistSaved", { count: items.length })}</Chip>);
+  useToolCard<unknown[]>("remove_from_shortlist", (items) => <Chip>{t("shortlistSaved", { count: items.length })}</Chip>);
   useToolCard<Place[]>("search_place", (places) => (
     <Chip>
-      Found: {places.slice(0, 3).map((p) => `${p.name}${p.detail ? ` (${p.detail})` : ""}`).join("; ") || "nothing"}
+      {t("found", {
+        places: places.slice(0, 3).map((p) => `${p.name}${p.detail ? ` (${p.detail})` : ""}`).join("; ") || t("nothing"),
+      })}
     </Chip>
   ));
   useToolCard<IndicatorInfo[]>("list_indicators", (items) => (
     <details className="my-1 text-xs">
-      <summary className="cursor-pointer text-[var(--text-secondary)]">{items.length} indicators</summary>
+      <summary className="cursor-pointer text-[var(--text-secondary)]">{t("indicatorsCount", { count: items.length })}</summary>
       <ul className="mt-1 space-y-1">
         {items.map((i) => (
           <li key={i.id}>

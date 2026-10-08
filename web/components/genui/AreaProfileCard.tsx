@@ -1,20 +1,23 @@
 "use client";
 
+import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 
 import { useLiveability } from "@/components/AppData";
-import { Band, Card, Muted, ScoreBar, formatValue, qualityNote } from "@/components/ui";
+import { Band, Card, Muted, ScoreBar, formatValue, useQualityNote } from "@/components/ui";
 import type { AreaProfile, IndicatorValue } from "@/lib/contracts.gen";
 import { bboxOf } from "@/lib/state";
 
 function Facts({ items }: { items: IndicatorValue[] }) {
+  const locale = useLocale();
+  const qualityNote = useQualityNote();
   return (
     <dl className="grid grid-cols-2 gap-x-3 gap-y-1">
       {items.map((f) => (
         <div key={f.id} className="min-w-0">
           <dt className="truncate text-xs text-[var(--text-muted)]">{f.label}</dt>
           <dd className="text-sm tabular-nums">
-            {formatValue(f.value, f.unit)}
+            {formatValue(f.value, f.unit, locale)}
             {qualityNote(f.quality) && (
               <span className="ml-1 text-xs text-[var(--text-muted)]">({qualityNote(f.quality)})</span>
             )}
@@ -27,6 +30,7 @@ function Facts({ items }: { items: IndicatorValue[] }) {
 
 /** Copies a link that opens this area with the current weights (the URL hash holds the view). */
 function CopyLink({ code }: { code: string }) {
+  const t = useTranslations("Profile");
   const [copied, setCopied] = useState(false);
   return (
     <button
@@ -44,17 +48,18 @@ function CopyLink({ code }: { code: string }) {
           setCopied(true);
           setTimeout(() => setCopied(false), 2000);
         } catch {
-          window.prompt("Copy this link", url.toString());
+          window.prompt(t("copyPrompt"), url.toString());
         }
       }}
     >
-      {copied ? "Link copied" : "Copy link"}
+      {copied ? t("linkCopied") : t("copyLink")}
     </button>
   );
 }
 
 export function AreaProfileCard({ profile }: { profile: AreaProfile }) {
   const { state, update } = useLiveability();
+  const t = useTranslations("Profile");
   const saved = state.shortlist.some((i) => i.code === profile.lsoa21cd);
   const title = profile.neighbourhood ? `${profile.neighbourhood}, ${profile.local_authority}` : profile.lsoa_name;
 
@@ -62,11 +67,11 @@ export function AreaProfileCard({ profile }: { profile: AreaProfile }) {
     <Card
       testId="area-profile"
       title={title}
-      subtitle={`${profile.lsoa_name} · ${profile.urban_rural} · ${profile.population.toLocaleString("en-GB")} residents`}
+      subtitle={t("subtitle", { area: profile.lsoa_name, ruc: profile.urban_rural, population: profile.population })}
     >
       <div className="flex flex-wrap items-baseline gap-2">
         <span className="text-3xl font-semibold tabular-nums">{profile.overall?.toFixed(0) ?? "–"}</span>
-        <span className="text-xs text-[var(--text-muted)]">/ 100 overall ({profile.preset})</span>
+        <span className="text-xs text-[var(--text-muted)]">{t("overallOf100", { preset: profile.preset })}</span>
       </div>
       <div className="mt-1">
         <Band band={profile.band} percentile={profile.overall_percentile} />
@@ -75,44 +80,44 @@ export function AreaProfileCard({ profile }: { profile: AreaProfile }) {
         <p
           className="mt-1 text-xs text-[var(--text-muted)]"
           data-testid="percentile-range"
-          title="The 5–95% range of the UK percentile when each theme's weight is nudged by about a quarter"
+          title={t("rangeTitle")}
         >
-          With slightly different weights: better than {profile.overall_percentile_range[0]}–
-          {profile.overall_percentile_range[1]}% of the UK
+          {t("range", { lo: profile.overall_percentile_range[0], hi: profile.overall_percentile_range[1] })}
         </p>
       )}
 
       <div className="mt-3" data-testid="theme-bars">
-        {profile.themes.map((t) => (
+        {profile.themes.map((th) => (
           <ScoreBar
-            key={t.theme}
-            label={t.label}
-            score={t.score}
-            theme={t.theme}
-            hint={t.percentile != null ? `Better than ${t.percentile}% of the UK` : undefined}
+            key={th.theme}
+            label={th.label}
+            score={th.score}
+            theme={th.theme}
+            hint={th.percentile != null ? t("betterThan", { pct: th.percentile }) : undefined}
             marks={[
-              { value: t.local_median, kind: "local", label: `${profile.local_authority} median` },
-              { value: t.country_median, kind: "england", label: "UK median" },
+              { value: th.local_median, kind: "local", label: t("localMedian", { area: profile.local_authority }) },
+              { value: th.country_median, kind: "england", label: t("ukMedian") },
             ]}
           />
         ))}
         <p className="mt-1 flex gap-3 text-[10px] text-[var(--text-muted)]">
           <span className="inline-flex items-center gap-1">
-            <span className="inline-block h-2.5 w-[2px] bg-[var(--text-primary)]" aria-hidden /> {profile.local_authority} median
+            <span className="inline-block h-2.5 w-[2px] bg-[var(--text-primary)]" aria-hidden />{" "}
+            {t("localMedian", { area: profile.local_authority })}
           </span>
           <span className="inline-flex items-center gap-1">
-            <span className="inline-block h-2.5 w-px bg-[var(--text-muted)]" aria-hidden /> UK median
+            <span className="inline-block h-2.5 w-px bg-[var(--text-muted)]" aria-hidden /> {t("ukMedian")}
           </span>
         </p>
       </div>
 
       <div className="mt-3 grid grid-cols-2 gap-3 text-xs">
         <div>
-          <div className="mb-1 font-medium text-[var(--text-secondary)]">Strengths</div>
+          <div className="mb-1 font-medium text-[var(--text-secondary)]">{t("strengths")}</div>
           {profile.strengths.map((s) => <div key={s.id}>{s.label}</div>)}
         </div>
         <div>
-          <div className="mb-1 font-medium text-[var(--text-secondary)]">Weaker spots</div>
+          <div className="mb-1 font-medium text-[var(--text-secondary)]">{t("weakerSpots")}</div>
           {profile.weaknesses.map((s) => <div key={s.id}>{s.label}</div>)}
         </div>
       </div>
@@ -137,7 +142,7 @@ export function AreaProfileCard({ profile }: { profile: AreaProfile }) {
             }))
           }
         >
-          Show on map
+          {t("showOnMap")}
         </button>
         <button
           className="btn"
@@ -149,11 +154,11 @@ export function AreaProfileCard({ profile }: { profile: AreaProfile }) {
             }))
           }
         >
-          {saved ? "In shortlist" : "Add to shortlist"}
+          {saved ? t("inShortlist") : t("addToShortlist")}
         </button>
         <CopyLink code={profile.lsoa21cd} />
       </div>
-      <Muted>Scores are 0–100 (higher is better). Distances are straight-line.</Muted>
+      <Muted>{t("note")}</Muted>
     </Card>
   );
 }

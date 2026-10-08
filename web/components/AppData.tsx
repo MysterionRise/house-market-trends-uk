@@ -7,6 +7,7 @@
  * - scores recomputed in the browser for the current weights (useScores)
  */
 import { UseAgentUpdate, useAgent } from "@copilotkit/react-core/v2";
+import { useTranslations } from "next-intl";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 
 import { type Manifest, type ScoreData, loadManifest, loadScores, scoredIndicators } from "@/lib/data";
@@ -119,6 +120,7 @@ export interface LayerValues {
 
 /** Scores for the current weights and the values the map colours by. */
 export function useScores(state: LiveabilityState): LayerValues | null {
+  const t = useTranslations("Map");
   const { manifest, scores } = useData();
   // Recompute only when the weighting changes, not on every map move
   const themeKey = JSON.stringify(state.theme_weights);
@@ -162,14 +164,14 @@ export function useScores(state: LiveabilityState): LayerValues | null {
       theme = info?.theme;
     } else {
       lsoa = result.overallPercentile;
-      label = "Overall";
+      label = t("overall");
     }
     if (state.compare_within === "nation") {
       lsoa = percentileWithin(lsoa, scores.nation);
-      label += " (within the nation)";
+      label = t("withinNation", { label });
     } else if (state.compare_within === "urban_rural") {
       lsoa = percentileWithin(lsoa, scores.rucClass);
-      label += " (vs similar urban/rural areas)";
+      label = t("withinUrbanRural", { label });
     }
     return {
       lsoa,
@@ -179,5 +181,5 @@ export function useScores(state: LiveabilityState): LayerValues | null {
       label,
       theme,
     };
-  }, [manifest, scores, result, state.map.layer, state.compare_within]);
+  }, [manifest, scores, result, state.map.layer, state.compare_within, t]);
 }

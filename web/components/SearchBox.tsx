@@ -1,25 +1,20 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 
-import { useData, useLiveability } from "@/components/AppData";
+import { useLiveability } from "@/components/AppData";
 import { usePanel } from "@/components/PanelContext";
 import { searchPlaces } from "@/lib/api";
-import { coverageName } from "@/lib/data";
 import type { Place } from "@/lib/contracts.gen";
+import { useCoverageName } from "@/lib/copy";
 
-const KIND_LABEL: Record<string, string> = {
-  postcode: "Postcode",
-  place: "Place",
-  lsoa: "Small area",
-  msoa: "Neighbourhood",
-  lad: "Council",
-  region: "Region",
-};
+const KINDS = ["postcode", "place", "lsoa", "msoa", "lad", "region", "nation"] as const;
 
 /** Postcode or place search: opens an area's profile without going through the chat. */
 export function SearchBox() {
-  const { manifest } = useData();
+  const t = useTranslations("Search");
+  const coverage = useCoverageName();
   const { update } = useLiveability();
   const { setTab } = usePanel();
   const [query, setQuery] = useState("");
@@ -44,10 +39,10 @@ export function SearchBox() {
           setOpen(true);
           setError(null);
         })
-        .catch(() => latest.current === q && setError("Search is unavailable"));
+        .catch(() => latest.current === q && setError(t("unavailable")));
     }, 200);
     return () => clearTimeout(timer);
-  }, [query]);
+  }, [query, t]);
 
   function choose(place: Place) {
     const box = place.bbox
@@ -79,8 +74,8 @@ export function SearchBox() {
       <input
         className="input w-full text-sm"
         type="search"
-        placeholder="Search a postcode or place"
-        aria-label="Search a postcode or place"
+        placeholder={t("placeholder")}
+        aria-label={t("placeholder")}
         role="combobox"
         aria-expanded={open}
         aria-controls="search-results"
@@ -110,7 +105,7 @@ export function SearchBox() {
         >
           {results.length === 0 && (
             <li className="px-3 py-2 text-[var(--text-muted)]">
-              {found.query === query.trim() ? `No matches in ${coverageName(manifest)}` : "Searching…"}
+              {found.query === query.trim() ? t("noMatches", { coverage }) : t("searching")}
             </li>
           )}
           {results.map((p, i) => (
@@ -128,7 +123,7 @@ export function SearchBox() {
             >
               <span className="shrink-0 font-medium">{p.name}</span>
               <span className="truncate text-xs text-[var(--text-muted)]">
-                {KIND_LABEL[p.kind] ?? p.kind}
+                {(KINDS as readonly string[]).includes(p.kind) ? t(`kinds.${p.kind as (typeof KINDS)[number]}`) : p.kind}
                 {p.detail ? ` · ${p.detail}` : ""}
               </span>
             </li>

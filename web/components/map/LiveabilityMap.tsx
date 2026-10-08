@@ -17,7 +17,10 @@ import { useTheme } from "@/components/ThemeProvider";
 import { fillColorExpression } from "@/lib/colors";
 import { absoluteDataUrl } from "@/lib/config";
 import { CHROME, FILL_OPACITY } from "@/lib/palette";
-import { activeBbox, coverageName } from "@/lib/data";
+import { useTranslations } from "next-intl";
+
+import { useCoverageName } from "@/lib/copy";
+import { activeBbox } from "@/lib/data";
 import { bboxOf } from "@/lib/state";
 
 const LAYERS = [
@@ -112,12 +115,10 @@ export function LiveabilityMap() {
   const dark = useTheme().mode === "dark";
   const { manifest, scores } = useData();
   const { state, update } = useLiveability();
-  const against =
-    state.compare_within === "nation"
-      ? "Against areas in the same nation"
-      : state.compare_within === "urban_rural"
-        ? "Against areas of the same urban/rural type"
-        : `Against every area in ${coverageName(manifest)}`;
+  const t = useTranslations("Map");
+  const tLegend = useTranslations("Legend");
+  const coverage = useCoverageName();
+  const against = tLegend(`against.${state.compare_within}`, { coverage });
   const values = useScores(state);
   const appliedBbox = useRef<string>("");
   const styleDark = useRef<boolean | null>(null);
@@ -260,7 +261,7 @@ export function LiveabilityMap() {
       const name = f?.properties?.name;
       setHover(
         f && typeof v === "number"
-          ? { x: e.point.x, y: e.point.y, text: `${name ? `${name}: ` : ""}better than ${Math.round(v)}% of the UK` }
+          ? { x: e.point.x, y: e.point.y, text: name ? t("hover", { name, pct: Math.round(v) }) : t("hoverNoName", { pct: Math.round(v) }) }
           : null,
       );
     };
@@ -271,7 +272,7 @@ export function LiveabilityMap() {
       map.off("click", onClick);
       map.off("mousemove", onMove);
     };
-  }, [ready, update]);
+  }, [ready, update, t]);
 
   return (
     <div className="relative h-full w-full" data-testid="map">

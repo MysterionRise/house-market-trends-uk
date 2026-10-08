@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
 import { useLiveability } from "@/components/AppData";
@@ -14,6 +15,7 @@ const KEY = "lix.shortlist";
 /** Saved areas; kept in this browser (localStorage) and shared with the assistant. */
 export function ShortlistPanel() {
   const { state, update } = useLiveability();
+  const t = useTranslations("Shortlist");
   const [comparison, setComparison] = useState<{
     key: string;
     result?: Comparison;
@@ -42,10 +44,7 @@ export function ShortlistPanel() {
 
   if (state.shortlist.length === 0) {
     return (
-      <p className="p-4 text-sm text-[var(--text-secondary)]">
-        No saved areas yet. Use “Add to shortlist” on an area, or ask the
-        assistant to save one.
-      </p>
+      <p className="p-4 text-sm text-[var(--text-secondary)]">{t("empty")}</p>
     );
   }
   const current = comparison?.key === key ? comparison : null;
@@ -67,9 +66,7 @@ export function ShortlistPanel() {
                   ...s,
                   map: {
                     ...s.map,
-                    selected: item.code.startsWith("E01")
-                      ? item.code
-                      : s.map.selected,
+                    selected: /^[EWSN]01\d{6}$/.test(item.code) ? item.code : s.map.selected,
                     bbox: item.centre
                       ? [
                           item.centre.lon - 0.02,
@@ -98,7 +95,7 @@ export function ShortlistPanel() {
                 }))
               }
             >
-              Remove
+              {t("remove")}
             </button>
           </li>
         ))}
@@ -116,14 +113,11 @@ export function ShortlistPanel() {
                 )
             }
           >
-            Compare{" "}
-            {codes.length === state.shortlist.length
-              ? "these"
-              : `the first ${MAX_COMPARE}`}
+            {codes.length === state.shortlist.length ? t("compareThese") : t("compareFirst", { count: MAX_COMPARE })}
           </button>
           {current?.error && (
             <p className="mt-2 text-xs text-[var(--critical)]">
-              Couldn&apos;t compare: {current.error}
+              {t("compareError", { error: current.error })}
             </p>
           )}
           {current?.result && (

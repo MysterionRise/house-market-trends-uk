@@ -17,7 +17,8 @@
     "e2e": "playwright test",
     "predev": "node scripts/gen-tokens.mjs && node scripts/copy-maplibre-worker.mjs && node scripts/copy-docs.mjs",
     "prebuild": "node scripts/gen-tokens.mjs && node scripts/copy-maplibre-worker.mjs && node scripts/copy-docs.mjs",
-    "tokens": "node scripts/gen-tokens.mjs"
+    "tokens": "node scripts/gen-tokens.mjs",
+    "i18n:check": "node scripts/i18n-check.mjs"
   },
   "dependencies": {
     "@ag-ui/client": "1.0.2",
@@ -27,6 +28,7 @@
     "hyparquet": "1.31.2",
     "maplibre-gl": "6.13.0",
     "next": "16.4.0",
+    "next-intl": "^4.14.9",
     "pmtiles": "4.5.0",
     "react": "19.3.0",
     "react-dom": "19.3.0",

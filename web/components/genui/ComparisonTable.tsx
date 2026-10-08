@@ -1,5 +1,7 @@
 "use client";
 
+import { useLocale, useTranslations } from "next-intl";
+
 import { useData } from "@/components/AppData";
 import { Card, Muted, formatValue } from "@/components/ui";
 import type { Comparison } from "@/lib/contracts.gen";
@@ -7,13 +9,15 @@ import { themeVar } from "@/lib/palette";
 
 export function ComparisonTable({ comparison }: { comparison: Comparison }) {
   const { manifest } = useData();
+  const t = useTranslations("Comparison");
+  const locale = useLocale();
   const units = new Map(manifest?.indicators.map((i) => [i.id, i.unit]));
   const areas = comparison.areas;
   const themeRows = Object.entries(comparison.theme_labels);
   const best = (values: (number | null)[]) => Math.max(...values.map((v) => v ?? -Infinity));
 
   return (
-    <Card testId="comparison" title="Side by side" subtitle={`Weighting: ${comparison.preset}`}>
+    <Card testId="comparison" title={t("title")} subtitle={t("subtitle", { preset: comparison.preset })}>
       <div className="overflow-x-auto">
         <table className="w-full text-xs">
           <thead>
@@ -26,7 +30,7 @@ export function ComparisonTable({ comparison }: { comparison: Comparison }) {
           </thead>
           <tbody className="tabular-nums">
             <tr className="border-t border-[var(--border)]">
-              <td className="py-1 pr-2 font-medium">Overall</td>
+              <td className="py-1 pr-2 font-medium">{t("overall")}</td>
               {areas.map((a) => {
                 const top = a.overall === best(areas.map((x) => x.overall));
                 return <td key={a.code} className={`py-1 pr-2 text-sm ${top ? "font-semibold" : ""}`}>{a.overall?.toFixed(0) ?? "–"}</td>;
@@ -56,7 +60,7 @@ export function ComparisonTable({ comparison }: { comparison: Comparison }) {
                 <td className="py-1 pr-2 text-[var(--text-secondary)]">{label}</td>
                 {areas.map((a) => (
                   <td key={a.code} className="py-1 pr-2">
-                    {formatValue((a.indicators as Record<string, number | null>)[id], units.get(id) ?? "")}
+                    {formatValue((a.indicators as Record<string, number | null>)[id], units.get(id) ?? "", locale)}
                   </td>
                 ))}
               </tr>
@@ -64,7 +68,7 @@ export function ComparisonTable({ comparison }: { comparison: Comparison }) {
           </tbody>
         </table>
       </div>
-      <Muted>Bold marks the best score in each row. Neighbourhoods and local authorities are population-weighted averages.</Muted>
+      <Muted>{t("note")}</Muted>
     </Card>
   );
 }

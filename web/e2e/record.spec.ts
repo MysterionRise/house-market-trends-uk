@@ -1,5 +1,6 @@
 import { type Browser, type Locator, type Page, expect, test } from "@playwright/test";
 import fs from "node:fs";
+import en from "../messages/en.json" with { type: "json" };
 
 /**
  * Screen recordings of the interface for the README and the release (`make gif`).
@@ -227,7 +228,7 @@ test("analyst", async ({ browser }) => {
     { delay: 22 },
   );
   await page.waitForTimeout(400);
-  await click(page, page.getByRole("button", { name: "Run query" }));
+  await click(page, page.getByRole("button", { name: en.Analyst.run }));
   await expect(page.getByTestId("sql-result").last()).toBeVisible({ timeout: 15_000 });
   await page.waitForTimeout(800);
   await scrollPanel(page, page.getByTestId("analyst"), 360);
@@ -270,7 +271,7 @@ test("walkthrough", async ({ browser }) => {
   await click(page, page.getByTestId("analyst-toggle"));
   await click(page, page.getByTestId("tab-analyst"));
   await page.waitForTimeout(4000);
-  await click(page, page.getByRole("link", { name: "How scores work" }));
+  await click(page, page.getByRole("link", { name: en.Header.howScoresWork }));
   await page.waitForTimeout(3000);
   await done();
 });

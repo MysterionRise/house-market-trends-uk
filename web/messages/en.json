@@ -1,0 +1,283 @@
+{
+  "_meta": {
+    "status": "reviewed",
+    "reviewer": "project",
+    "date": "2026-10-08"
+  },
+  "Nations": {
+    "uk": "the UK",
+    "E": "England",
+    "W": "Wales",
+    "S": "Scotland",
+    "N": "Northern Ireland"
+  },
+  "Header": {
+    "title": "UK Liveability Index",
+    "blurb": "{count, number} neighbourhoods in {coverage}, scored from open data",
+    "demoBlurb": "Demo dataset: {count, number} neighbourhoods, scored from open data",
+    "demoBadge": "demo data",
+    "demoBadgeTitle": "A small cut of the full build; percentiles on the map are relative to these areas",
+    "howScoresWork": "How scores work",
+    "sources": "Sources",
+    "about": "About",
+    "loading": "Loading the neighbourhoods…",
+    "loadError": "Couldn't load the scores ({error}). Is the API running (<code>make api</code>) and has <code>make score tiles</code> been run?",
+    "language": "Language",
+    "draft": "draft",
+    "theme": "Theme"
+  },
+  "Theme": {
+    "system": "Auto",
+    "light": "Light",
+    "dark": "Dark"
+  },
+  "SidePanel": {
+    "tabs": {
+      "assistant": "Assistant",
+      "weights": "Weights",
+      "area": "Area",
+      "shortlist": "Shortlist",
+      "analyst": "Analyst"
+    },
+    "shortlistCount": "Shortlist ({count})",
+    "panels": "Panels",
+    "analystTitle": "Analyst mode: distributions, indicator overlap and SQL",
+    "chatPlaceholder": "Ask about places in {coverage}…",
+    "send": "Send",
+    "moreOptions": "More options",
+    "suggestions": {
+      "familyTitle": "Family-friendly near Leeds",
+      "familyMessage": "We have two young kids and a budget of £350k. Where should we look around Leeds?",
+      "pubsTitle": "Well-run pubs nearby",
+      "pubsMessage": "Show me well-run pubs near SW1A 1AA",
+      "compareTitle": "Compare two places",
+      "compareMessage": "Compare Headingley and Chapel Allerton",
+      "explainTitle": "Explain a score",
+      "explainMessage": "Why does Manchester city centre score low on safety?"
+    }
+  },
+  "Onboarding": {
+    "title": "Find a neighbourhood that suits you",
+    "blurb": "Every neighbourhood in {coverage}, scored from open data. Teal areas do better than typical, orange ones worse. Zoom in and click an area to see why, or ask the assistant.",
+    "whoIsLooking": "Who's looking?",
+    "skip": "Skip",
+    "personas": {
+      "family": "Family with children",
+      "young_professional": "Young professional",
+      "retiree": "Retired",
+      "commuter": "Commuter",
+      "balanced": "Balanced"
+    }
+  },
+  "Search": {
+    "placeholder": "Search a postcode or place",
+    "noMatches": "No matches in {coverage}",
+    "searching": "Searching…",
+    "unavailable": "Search is unavailable",
+    "kinds": {
+      "postcode": "Postcode",
+      "place": "Place",
+      "lsoa": "Small area",
+      "msoa": "Neighbourhood",
+      "lad": "Council",
+      "region": "Region",
+      "nation": "Nation"
+    }
+  },
+  "BuildInfo": {
+    "version": "Version {version}",
+    "dataBuilt": "data built {date}",
+    "demo": "demo dataset",
+    "sourceCode": "source code",
+    "disclaimer": "For exploring neighbourhoods, not property, financial or legal advice."
+  },
+  "Weights": {
+    "startFromPreset": "Start from a preset",
+    "howMuch": "How much each theme matters",
+    "reset": "Reset",
+    "weightOf": "{theme} weight",
+    "colourBy": "Colour the map by",
+    "overall": "Overall score",
+    "themes": "Themes",
+    "indicators": "Indicators",
+    "compareAgainst": "Compare against",
+    "compare": {
+      "uk": "Every area in the index",
+      "nation": "Areas in the same nation",
+      "urban_rural": "Areas of the same urban/rural type"
+    },
+    "compareHint": {
+      "uk": "Percentiles across every scored area.",
+      "nation": "Percentiles within each nation; scores stay the same.",
+      "urban_rural": "Villages aren't judged against city centres."
+    }
+  },
+  "Band": {
+    "1": "Bottom fifth",
+    "2": "Below average",
+    "3": "Middle",
+    "4": "Above average",
+    "5": "Top fifth",
+    "betterThan": "better than {pct, number}% of the UK"
+  },
+  "Quality": {
+    "imputed": "estimated",
+    "low_n": "few sales",
+    "broadcast_msoa": "wider area",
+    "broadcast_lad": "council-wide",
+    "not_available": "not available here",
+    "missing": "no data"
+  },
+  "Legend": {
+    "against": {
+      "uk": "Against every area in {coverage}",
+      "nation": "Against areas in the same nation",
+      "urban_rural": "Against areas of the same urban/rural type"
+    },
+    "worse": "worse",
+    "typical": "typical",
+    "better": "better",
+    "noData": "No data"
+  },
+  "Map": {
+    "hover": "{name}: better than {pct, number}% of the UK",
+    "hoverNoName": "better than {pct, number}% of the UK",
+    "overall": "Overall",
+    "withinNation": "{label} (within the nation)",
+    "withinUrbanRural": "{label} (vs similar urban/rural areas)"
+  },
+  "Docs": {
+    "nav": "Documentation",
+    "method": "Method",
+    "validation": "Validation",
+    "evals": "Assistant evals",
+    "sources": "Sources & licences",
+    "backToMap": "Back to the map",
+    "englishOnly": "This page is available in English only."
+  },
+  "Registry": {
+    "working": {
+      "rank_areas": "Ranking areas…",
+      "get_area_profile": "Profiling the area…",
+      "compare_areas": "Comparing…",
+      "nearest_pois": "Finding places nearby…",
+      "explain_score": "Working out the score…",
+      "set_weights": "Adjusting the weights…",
+      "show_on_map": "Moving the map…",
+      "run_sql": "Running the query…",
+      "search_place": "Looking up the place…",
+      "list_indicators": "Listing indicators…",
+      "add_to_shortlist": "Saving to your shortlist…",
+      "remove_from_shortlist": "Updating your shortlist…"
+    },
+    "running": "Running {name}…",
+    "noResult": "{name}: no result",
+    "weightsSet": "Weights set:",
+    "mapUpdated": "Map updated · colouring by {layer}",
+    "shortlistSaved": "Shortlist: {count, plural, one {# saved} other {# saved}}",
+    "found": "Found: {places}",
+    "nothing": "nothing",
+    "indicatorsCount": "{count, plural, one {# indicator} other {# indicators}}"
+  },
+  "Profile": {
+    "subtitle": "{area} · {ruc} · {population, number} residents",
+    "overallOf100": "/ 100 overall ({preset})",
+    "rangeTitle": "The 5–95% range of the UK percentile when each theme's weight is nudged by about a quarter",
+    "range": "With slightly different weights: better than {lo, number}–{hi, number}% of the UK",
+    "betterThan": "Better than {pct, number}% of the UK",
+    "localMedian": "{area} median",
+    "ukMedian": "UK median",
+    "strengths": "Strengths",
+    "weakerSpots": "Weaker spots",
+    "showOnMap": "Show on map",
+    "inShortlist": "In shortlist",
+    "addToShortlist": "Add to shortlist",
+    "copyLink": "Copy link",
+    "linkCopied": "Link copied",
+    "copyPrompt": "Copy this link",
+    "note": "Scores are 0–100 (higher is better). Distances are straight-line."
+  },
+  "Poi": {
+    "titles": {
+      "well_run_pub": "Well-run pubs",
+      "pub": "Pubs",
+      "gp": "GP practices",
+      "primary_school": "Primary schools",
+      "secondary_school": "Secondary schools",
+      "nursery": "Nurseries",
+      "supermarket": "Supermarkets"
+    },
+    "near": "{title} near {place}",
+    "found": "{count, plural, one {# found} other {# found}}",
+    "none": "None within range — try a larger radius.",
+    "hygiene": "Food hygiene rating {rating}/5",
+    "realAle": "real ale",
+    "inspection": "Inspection quality {score}/100",
+    "unnamed": "Unnamed",
+    "note": "Straight-line distance. Source: {sources}."
+  },
+  "Ranked": {
+    "titleMsoa": "Top {count, number} neighbourhoods {where}",
+    "titleLsoa": "Top {count, number} small areas {where}",
+    "inPlace": "in {place}",
+    "inCoverage": "in {coverage}",
+    "subtitle": "{count, number} matched · weighting: {preset}",
+    "closeCall": "close call",
+    "closeCallTitle": "Stays in this top {n, number} under {pct, number}% of plausible weightings",
+    "typicalPrice": "typical price {price}",
+    "note": "Click an area to show it on the map.",
+    "closeCallNote": "“Close call”: small changes to the weights could swap it out of this list."
+  },
+  "Comparison": {
+    "title": "Side by side",
+    "subtitle": "Weighting: {preset}",
+    "overall": "Overall",
+    "note": "Bold marks the best score in each row. Neighbourhoods and local authorities are population-weighted averages."
+  },
+  "Explainer": {
+    "title": "Why {name} scores {score}",
+    "subtitle": "Each theme adds its share of the weight × its score (weighting: {preset})",
+    "notScored": "(not scored)",
+    "caveats": "Caveats ({count, number})",
+    "sources": "Sources ({count, number})",
+    "dataAsOf": "data as of {date}",
+    "stale": "may be out of date",
+    "note": "Scores per indicator are 0–100 (higher is better)."
+  },
+  "Sql": {
+    "title": "Query result",
+    "rows": "{count, plural, one {# row} other {# rows}}",
+    "truncated": "(first 5,000)",
+    "download": "Download CSV",
+    "showing": "Showing 200 rows; the CSV has all."
+  },
+  "AreaPanel": {
+    "empty": "Click an area on the map (zoom in to see neighbourhoods) or ask the assistant about a place.",
+    "loading": "Loading…",
+    "error": "Couldn't load this area: {error}"
+  },
+  "Shortlist": {
+    "empty": "No saved areas yet. Use “Add to shortlist” on an area, or ask the assistant to save one.",
+    "remove": "Remove",
+    "compareThese": "Compare these",
+    "compareFirst": "Compare the first {count, number}",
+    "compareError": "Couldn't compare: {error}"
+  },
+  "Analyst": {
+    "sqlLabel": "SQL (DuckDB, read-only) over tables lsoa, pois, areas, places, indicators",
+    "running": "Running…",
+    "run": "Run query"
+  },
+  "Histogram": {
+    "caption": "{label}: neighbourhoods by score",
+    "aria": "Histogram of {label}",
+    "selected": "selected {value, number}",
+    "hover": "{lo}–{hi}: {count, plural, one {# neighbourhood} other {# neighbourhoods}}"
+  },
+  "Heatmap": {
+    "caption": "How much scored indicators overlap (Spearman ρ across every scored neighbourhood)",
+    "aria": "Correlation matrix of scored indicators",
+    "legendHint": "Boxes group each theme",
+    "pair": "{a} × {b}: ρ {rho}"
+  }
+}

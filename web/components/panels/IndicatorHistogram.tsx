@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 
 import { themeVar } from "@/lib/palette";
@@ -18,6 +19,7 @@ export function IndicatorHistogram({
   theme?: string | null;
 }) {
   const BINS = 20;
+  const t = useTranslations("Histogram");
   const [hover, setHover] = useState<number | null>(null);
   const counts = useMemo(() => {
     const c = new Array(BINS).fill(0);
@@ -30,8 +32,8 @@ export function IndicatorHistogram({
 
   return (
     <figure className="text-xs" data-testid="histogram">
-      <figcaption className="mb-1 font-medium">{label}: neighbourhoods by score</figcaption>
-      <svg viewBox={`0 0 ${W} ${H + 18}`} className="w-full" role="img" aria-label={`Histogram of ${label}`}>
+      <figcaption className="mb-1 font-medium">{t("caption", { label })}</figcaption>
+      <svg viewBox={`0 0 ${W} ${H + 18}`} className="w-full" role="img" aria-label={t("aria", { label })}>
         <line x1={PAD} x2={W} y1={H} y2={H} stroke="var(--baseline)" />
         {counts.map((c, i) => {
           const h = (c / max) * (H - 8);
@@ -65,7 +67,7 @@ export function IndicatorHistogram({
               paintOrder="stroke"
               fontSize={10}
             >
-              selected {Math.round(marker)}
+              {t("selected", { value: Math.round(marker) })}
             </text>
           </g>
         )}
@@ -74,7 +76,7 @@ export function IndicatorHistogram({
         ))}
       </svg>
       <div className="h-4 text-[var(--text-secondary)]">
-        {hover !== null && `${hover * 5}–${hover * 5 + 5}: ${counts[hover].toLocaleString("en-GB")} neighbourhoods`}
+        {hover !== null && t("hover", { lo: hover * 5, hi: hover * 5 + 5, count: counts[hover] })}
       </div>
     </figure>
   );

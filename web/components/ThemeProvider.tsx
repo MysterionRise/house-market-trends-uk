@@ -6,6 +6,7 @@
  * `dark` class (what CopilotKit's stylesheet keys on). `app/layout.tsx` runs the same
  * logic inline before the first paint, so there is no flash of the wrong theme.
  */
+import { useTranslations } from "next-intl";
 import { createContext, useCallback, useContext, useEffect, useSyncExternalStore, type ReactNode } from "react";
 
 export type ThemeChoice = "system" | "light" | "dark";
@@ -85,22 +86,23 @@ export function useTheme(): ThemeContext {
   return useContext(Context);
 }
 
-const LABELS: Record<ThemeChoice, string> = { system: "Auto", light: "Light", dark: "Dark" };
+const CHOICES: ThemeChoice[] = ["system", "light", "dark"];
 
 /** System / light / dark, as a compact select. */
-export function ThemeToggle() {
+export function ThemeToggle({ label }: { label: string }) {
   const { choice, setChoice } = useTheme();
+  const t = useTranslations("Theme");
   return (
     <select
       className="input py-0.5 text-xs"
-      aria-label="Theme"
+      aria-label={label}
       value={choice}
       data-testid="theme-toggle"
       onChange={(e) => setChoice(e.target.value as ThemeChoice)}
     >
-      {(Object.keys(LABELS) as ThemeChoice[]).map((c) => (
+      {CHOICES.map((c) => (
         <option key={c} value={c}>
-          {LABELS[c]}
+          {t(c)}
         </option>
       ))}
     </select>

@@ -1,4 +1,5 @@
 import { type Page, expect, test } from "@playwright/test";
+import en from "../messages/en.json" with { type: "json" };
 
 // A known LSOA (Leeds 034A, Chapel Allerton) to watch the map colour of; it is in both
 // the full build and the demo dataset (Leeds + Brighton) CI runs on
@@ -50,7 +51,7 @@ test("recolouring all areas is fast", async ({ page }) => {
 test("the assistant's set_weights moves the sliders", async ({ page }) => {
   await mapReady(page);
   await ask(page, "Use family weights please");
-  await expect(page.getByText("Weights set:")).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByText(en.Registry.weightsSet)).toBeVisible({ timeout: 30_000 });
   await page.getByTestId("tab-weights").click();
   await expect(page.getByTestId("preset-select")).toHaveValue("family");
   // Family preset weights education 2.5
@@ -76,9 +77,9 @@ test("area profile, comparison and pubs render as components", async ({ page }) 
   await ask(page, "Tell me about Headingley");
   await expect(page.getByTestId("area-profile").first()).toContainText("Headingley", { timeout: 30_000 });
   await ask(page, "Compare Headingley and Chapel Allerton");
-  await expect(page.getByTestId("comparison")).toContainText("Side by side", { timeout: 30_000 });
+  await expect(page.getByTestId("comparison")).toContainText(en.Comparison.title, { timeout: 30_000 });
   await ask(page, "Show me well-run pubs near LS6 3AA");
-  await expect(page.getByTestId("poi-list")).toContainText("Well-run pubs", { timeout: 30_000 });
+  await expect(page.getByTestId("poi-list")).toContainText(en.Poi.titles.well_run_pub, { timeout: 30_000 });
   await expect
     .poll(() => page.evaluate(() => (window as any).__map.getSource("pois").serialize().data.features.length))
     .toBeGreaterThan(0);
@@ -89,10 +90,10 @@ test("analyst mode runs guarded SQL", async ({ page }) => {
   await page.getByTestId("analyst-toggle").check();
   await page.getByTestId("tab-analyst").click();
   await expect(page.getByTestId("histogram")).toBeVisible();
-  await page.getByRole("button", { name: "Run query" }).click();
+  await page.getByRole("button", { name: en.Analyst.run }).click();
   await expect(page.getByTestId("sql-result")).toContainText("rows", { timeout: 15_000 });
   await page.locator("#sql").fill("COPY lsoa TO '/tmp/x.csv'");
-  await page.getByRole("button", { name: "Run query" }).click();
+  await page.getByRole("button", { name: en.Analyst.run }).click();
   await expect(page.getByTestId("analyst").getByRole("alert")).toContainText("Only SELECT");
 });
 
@@ -109,7 +110,7 @@ test("searching a postcode opens its profile with benchmarks", async ({ page }) 
   await expect(page.getByTestId("tab-area")).toHaveAttribute("aria-selected", "true");
   const bars = page.getByTestId("theme-bars");
   await expect(bars).toBeVisible({ timeout: 30_000 });
-  await expect(bars).toContainText("UK median");
+  await expect(bars).toContainText(en.Profile.ukMedian);
 });
 
 test("the welcome card's personas set the weights", async ({ page }) => {
@@ -128,17 +129,17 @@ test("two shortlisted areas can be compared", async ({ page }) => {
   await mapReady(page);
   for (const postcode of ["LS6 3AA", "LS7 3DJ"]) {
     await openFromSearch(page, postcode);
-    await page.getByTestId("area-profile").getByRole("button", { name: "Add to shortlist" }).click();
+    await page.getByTestId("area-profile").getByRole("button", { name: en.Profile.addToShortlist }).click();
   }
   await page.getByTestId("tab-shortlist").click();
   await page.getByTestId("compare-shortlist").click();
-  await expect(page.getByTestId("comparison")).toContainText("Side by side", { timeout: 15_000 });
+  await expect(page.getByTestId("comparison")).toContainText(en.Comparison.title, { timeout: 15_000 });
 });
 
 test("the method and sources pages render the docs", async ({ page }) => {
   await page.goto("/methodology");
   await expect(page.getByRole("heading", { level: 1 })).toContainText("Methodology");
-  await page.getByRole("link", { name: "Sources & licences" }).click();
+  await page.getByRole("link", { name: en.Docs.sources }).click();
   await expect(page.getByRole("heading", { name: "Data licence" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Data sources" })).toBeVisible();
   await expect(page.locator("article").nth(1)).toContainText("OGL-3.0");
@@ -152,8 +153,24 @@ test.describe("on a phone", () => {
     await mapReady(page);
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
     expect(overflow).toBeLessThanOrEqual(0);
-    await page.getByRole("button", { name: "Skip" }).click();
+    await page.getByRole("button", { name: en.Onboarding.skip }).click();
     await openFromSearch(page, "LS6 3AA");
     await expect(page.getByTestId("area-profile")).toBeVisible({ timeout: 30_000 });
   });
+});
+
+test("the interface switches to Cymraeg", async ({ page }) => {
+  await mapReady(page);
+  await page.getByTestId("locale-toggle").selectOption("cy");
+  await expect(page.locator("html")).toHaveAttribute("lang", "cy-GB");
+  await expect(page.locator("main header h1")).toContainText("Mynegai Byw yn y DU");
+  await expect(page.getByTestId("legend")).toContainText("Yn erbyn");
+  await expect(page.getByTestId("locale-toggle")).toHaveValue("cy");
+  // Documentation stays English, and says so in Welsh
+  await page.getByRole("link", { name: "Sut mae'r sgoriau'n gweithio" }).click();
+  await expect(page.getByTestId("english-only")).toContainText("Saesneg");
+  // The choice is remembered
+  await page.goto("/");
+  await expect(page.locator("html")).toHaveAttribute("lang", "cy-GB");
+  await page.getByTestId("locale-toggle").selectOption("en");
 });

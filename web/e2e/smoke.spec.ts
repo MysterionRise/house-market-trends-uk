@@ -1,4 +1,5 @@
 import { type Page, expect, test } from "@playwright/test";
+import en from "../messages/en.json" with { type: "json" };
 
 /**
  * Release smoke test: the published images and data pack, as a new user gets them
@@ -36,7 +37,7 @@ test("the API and the data pack agree on the build", async ({ request }) => {
 
 test("the map loads and a postcode opens its profile", async ({ page }) => {
   await open(page);
-  await page.getByTestId("onboarding").getByText("Skip").click();
+  await page.getByTestId("onboarding").getByText(en.Onboarding.skip).click();
   const search = page.getByTestId("search").locator("input");
   await search.fill("LS6 3AA");
   await expect(page.getByRole("option").first()).toContainText("LS6 3AA", { timeout: 15_000 });

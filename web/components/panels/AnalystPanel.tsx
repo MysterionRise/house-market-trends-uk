@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 
 import { useData, useLiveability, useScores } from "@/components/AppData";
@@ -18,6 +19,7 @@ LIMIT 20`;
 export function AnalystPanel() {
   const { scores } = useData();
   const { state } = useLiveability();
+  const t = useTranslations("Analyst");
   const values = useScores(state);
   const [query, setQuery] = useState(EXAMPLE);
   const [result, setResult] = useState<SqlData | null>(null);
@@ -39,7 +41,7 @@ export function AnalystPanel() {
       <CorrelationHeatmap />
       <div>
         <label className="mb-1 block text-xs font-medium text-[var(--text-secondary)]" htmlFor="sql">
-          SQL (DuckDB, read-only) over tables lsoa, pois, areas, places, indicators
+          {t("sqlLabel")}
         </label>
         <textarea
           id="sql"
@@ -63,7 +65,7 @@ export function AnalystPanel() {
             }
           }}
         >
-          {busy ? "Running…" : "Run query"}
+          {busy ? t("running") : t("run")}
         </button>
         {error && <p className="mt-1 text-xs text-[var(--critical)]" role="alert">⚠ {error}</p>}
       </div>

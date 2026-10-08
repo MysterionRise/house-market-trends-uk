@@ -1,10 +1,11 @@
 import fs from "node:fs";
 import path from "node:path";
 
-import Link from "next/link";
 import type { ReactNode } from "react";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+
+import { DocHeader } from "@/components/DocHeader";
 
 const REPO = "https://github.com/MysterionRise/uk-liveability-index/blob/master/";
 // Docs that have a page in the app; other repo files open on GitHub
@@ -33,13 +34,6 @@ function resolve(href: string | undefined, base: string): string {
   return REPO + path.posix.normalize(path.posix.join(base, href));
 }
 
-const PAGES = [
-  ["/methodology", "Method"],
-  ["/methodology/validation", "Validation"],
-  ["/methodology/evals", "Assistant evals"],
-  ["/about", "Sources & licences"],
-] as const;
-
 /** A documentation page: the map link, page tabs, an optional intro and rendered markdown. */
 export function DocPage({ current, sources, intro }: {
   current: string;
@@ -48,26 +42,7 @@ export function DocPage({ current, sources, intro }: {
 }) {
   return (
     <div className="min-h-dvh bg-[var(--page)] text-[var(--text-primary)]">
-      <header className="sticky top-0 z-10 flex flex-wrap items-center gap-x-4 gap-y-1 border-b border-[var(--border)] bg-[var(--surface-1)] px-4 py-2">
-        <Link href="/" className="text-base font-semibold">
-          UK Liveability Index
-        </Link>
-        <nav className="flex flex-wrap gap-3 text-sm" aria-label="Documentation">
-          {PAGES.map(([href, label]) => (
-            <Link
-              key={href}
-              href={href}
-              aria-current={href === current ? "page" : undefined}
-              className={href === current ? "font-medium underline" : "text-[var(--text-secondary)] hover:underline"}
-            >
-              {label}
-            </Link>
-          ))}
-        </nav>
-        <Link href="/" className="ml-auto text-sm text-[var(--text-secondary)] underline">
-          Back to the map
-        </Link>
-      </header>
+      <DocHeader current={current} />
       <main className="mx-auto max-w-3xl px-4 py-6">
         {intro}
         {sources.map((s, i) => (

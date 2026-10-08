@@ -154,13 +154,23 @@ export async function loadScores(manifest: Manifest): Promise<ScoreData> {
   };
 }
 
-/** The nations in this build for copy: "England and Wales"; all four read as "the UK". */
-export function coverageName(manifest: Manifest | null | undefined): string {
+/**
+ * The nations in this build for copy: "England and Wales"; all four read as "the UK".
+ * `name` translates a nation code (the "Nations" catalogue) and `list` joins names in
+ * the interface language; without them the manifest's English names are used.
+ */
+export function coverageName(
+  manifest: Manifest | null | undefined,
+  name?: (code: string) => string,
+  list?: (names: string[]) => string,
+): string {
   const geo = manifest?.geography;
-  if (!geo) return "the UK";
-  const names = geo.active.map((c) => geo.nations[c]?.name ?? c);
-  if (names.length === 0 || names.length >= 4) return "the UK";
+  const uk = name ? name("uk") : "the UK";
+  if (!geo) return uk;
+  const names = geo.active.map((c) => (name ? name(c) : (geo.nations[c]?.name ?? c)));
+  if (names.length === 0 || names.length >= 4) return uk;
   if (names.length === 1) return names[0];
+  if (list) return list(names);
   return `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
 }
 

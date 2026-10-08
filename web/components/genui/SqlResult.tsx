@@ -1,3 +1,5 @@
+import { useTranslations } from "next-intl";
+
 import { Card, Muted } from "@/components/ui";
 
 export interface SqlData {
@@ -19,6 +21,7 @@ function toCsv(data: SqlData): string {
 }
 
 export function SqlResult({ data, query }: { data: SqlData; query?: string }) {
+  const t = useTranslations("Sql");
   const download = () => {
     const url = URL.createObjectURL(new Blob([toCsv(data)], { type: "text/csv" }));
     const a = Object.assign(document.createElement("a"), { href: url, download: "liveability-query.csv" });
@@ -26,7 +29,7 @@ export function SqlResult({ data, query }: { data: SqlData; query?: string }) {
     URL.revokeObjectURL(url);
   };
   return (
-    <Card testId="sql-result" title="Query result" subtitle={`${data.rows.length.toLocaleString("en-GB")} rows${data.truncated ? " (first 5,000)" : ""}`}>
+    <Card testId="sql-result" title={t("title")} subtitle={`${t("rows", { count: data.rows.length })}${data.truncated ? ` ${t("truncated")}` : ""}`}>
       {query && <pre className="mb-2 overflow-x-auto rounded bg-[var(--hover)] p-2 text-[11px]">{query}</pre>}
       <div className="max-h-72 overflow-auto">
         <table className="w-full text-xs tabular-nums">
@@ -43,8 +46,8 @@ export function SqlResult({ data, query }: { data: SqlData; query?: string }) {
         </table>
       </div>
       <div className="mt-2 flex items-center gap-2">
-        <button className="btn" onClick={download}>Download CSV</button>
-        {data.rows.length > 200 && <span className="text-xs text-[var(--text-muted)]">Showing 200 rows; the CSV has all.</span>}
+        <button className="btn" onClick={download}>{t("download")}</button>
+        {data.rows.length > 200 && <span className="text-xs text-[var(--text-muted)]">{t("showing")}</span>}
       </div>
       <Muted>{ATTRIBUTION}</Muted>
     </Card>

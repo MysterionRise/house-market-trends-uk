@@ -1,25 +1,29 @@
 "use client";
 
+import { useFormatter, useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 
-import { Card, Muted, formatValue, qualityNote } from "@/components/ui";
+import { Card, Muted, formatValue, useQualityNote } from "@/components/ui";
 import type { Explanation } from "@/lib/contracts.gen";
 import { themeVar } from "@/lib/palette";
 
-function formatDate(iso: string): string {
-  const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? iso : d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
-}
-
 export function MethodExplainer({ explanation }: { explanation: Explanation }) {
+  const t = useTranslations("Explainer");
+  const locale = useLocale();
+  const format = useFormatter();
+  const qualityNote = useQualityNote();
+  const formatDate = (iso: string) => {
+    const d = new Date(iso);
+    return Number.isNaN(d.getTime()) ? iso : format.dateTime(d, { day: "numeric", month: "short", year: "numeric" });
+  };
   const [open, setOpen] = useState<string | null>(explanation.contributions.length === 1 ? explanation.contributions[0].theme : null);
   const maxContribution = Math.max(...explanation.contributions.map((c) => c.contribution ?? 0), 1);
 
   return (
     <Card
       testId="explainer"
-      title={`Why ${explanation.name} scores ${explanation.overall?.toFixed(0) ?? "–"}`}
-      subtitle={`Each theme adds its share of the weight × its score (weighting: ${explanation.preset})`}
+      title={t("title", { name: explanation.name, score: explanation.overall?.toFixed(0) ?? "–" })}
+      subtitle={t("subtitle", { preset: explanation.preset })}
     >
       <ul>
         {explanation.contributions.map((c) => (
@@ -45,8 +49,8 @@ export function MethodExplainer({ explanation }: { explanation: Explanation }) {
                 <tbody className="tabular-nums">
                   {c.indicators.map((i) => (
                     <tr key={i.id} className={i.role === "context" ? "text-[var(--text-muted)]" : ""}>
-                      <td className="py-0.5 pr-2">{i.label}{i.role === "context" && " (not scored)"}</td>
-                      <td className="py-0.5 pr-2 text-right">{formatValue(i.value, i.unit)}</td>
+                      <td className="py-0.5 pr-2">{i.label}{i.role === "context" && ` ${t("notScored")}`}</td>
+                      <td className="py-0.5 pr-2 text-right">{formatValue(i.value, i.unit, locale)}</td>
                       <td className="py-0.5 text-right">{i.score?.toFixed(0) ?? "–"}</td>
                       <td className="py-0.5 pl-1 text-[var(--text-muted)]">{qualityNote(i.quality) ?? ""}</td>
                     </tr>
@@ -59,23 +63,23 @@ export function MethodExplainer({ explanation }: { explanation: Explanation }) {
       </ul>
       {explanation.caveats.length > 0 && (
         <details className="mt-2 text-xs text-[var(--text-secondary)]">
-          <summary className="cursor-pointer">Caveats ({explanation.caveats.length})</summary>
+          <summary className="cursor-pointer">{t("caveats", { count: explanation.caveats.length })}</summary>
           <ul className="mt-1 list-disc pl-4">{explanation.caveats.map((c) => <li key={c}>{c}</li>)}</ul>
         </details>
       )}
       <details className="mt-1 text-xs text-[var(--text-muted)]" data-testid="sources">
-        <summary className="cursor-pointer">Sources ({explanation.sources.length})</summary>
+        <summary className="cursor-pointer">{t("sources", { count: explanation.sources.length })}</summary>
         <ul className="mt-1 list-disc pl-4">
           {explanation.sources.map((s) => (
             <li key={s.id} title={s.attribution}>
               {s.title}
-              {s.fetched_at && <> · data as of {formatDate(s.fetched_at)}</>}
-              {s.stale && <span className="text-[var(--critical)]"> · may be out of date</span>}
+              {s.fetched_at && <> · {t("dataAsOf", { date: formatDate(s.fetched_at) })}</>}
+              {s.stale && <span className="text-[var(--critical)]"> · {t("stale")}</span>}
             </li>
           ))}
         </ul>
       </details>
-      <Muted>Scores per indicator are 0–100 (higher is better).</Muted>
+      <Muted>{t("note")}</Muted>
     </Card>
   );
 }

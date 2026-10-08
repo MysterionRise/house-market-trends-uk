@@ -1,0 +1,283 @@
+{
+  "_meta": {
+    "status": "draft",
+    "reviewer": null,
+    "date": "2026-10-08"
+  },
+  "Nations": {
+    "uk": "y DU",
+    "E": "Lloegr",
+    "W": "Cymru",
+    "S": "yr Alban",
+    "N": "Gogledd Iwerddon"
+  },
+  "Header": {
+    "title": "Mynegai Byw yn y DU",
+    "blurb": "{count, number} o gymdogaethau yn {coverage}, wedi'u sgorio o ddata agored",
+    "demoBlurb": "Set ddata enghreifftiol: {count, number} o gymdogaethau, wedi'u sgorio o ddata agored",
+    "demoBadge": "data enghreifftiol",
+    "demoBadgeTitle": "Toriad bach o'r adeiladwaith llawn; mae canraddau'r map yn gymharol â'r ardaloedd hyn",
+    "howScoresWork": "Sut mae'r sgoriau'n gweithio",
+    "sources": "Ffynonellau",
+    "about": "Ynglŷn â",
+    "loading": "Yn llwytho'r cymdogaethau…",
+    "loadError": "Methwyd llwytho'r sgoriau ({error}). A yw'r API yn rhedeg (<code>make api</code>) ac a yw <code>make score tiles</code> wedi'i redeg?",
+    "language": "Iaith",
+    "draft": "drafft",
+    "theme": "Thema"
+  },
+  "Theme": {
+    "system": "Awtomatig",
+    "light": "Golau",
+    "dark": "Tywyll"
+  },
+  "SidePanel": {
+    "tabs": {
+      "assistant": "Cynorthwyydd",
+      "weights": "Pwysau",
+      "area": "Ardal",
+      "shortlist": "Rhestr fer",
+      "analyst": "Dadansoddwr"
+    },
+    "shortlistCount": "Rhestr fer ({count})",
+    "panels": "Paneli",
+    "analystTitle": "Modd dadansoddwr: dosraniadau, gorgyffwrdd dangosyddion a SQL",
+    "chatPlaceholder": "Gofynnwch am lefydd yn {coverage}…",
+    "send": "Anfon",
+    "moreOptions": "Mwy o opsiynau",
+    "suggestions": {
+      "familyTitle": "Addas i deuluoedd ger Caerdydd",
+      "familyMessage": "Mae gennym ddau o blant ifanc a chyllideb o £300k. Ble ddylen ni edrych o gwmpas Caerdydd?",
+      "pubsTitle": "Tafarndai da gerllaw",
+      "pubsMessage": "Dangoswch dafarndai sy'n cael eu rhedeg yn dda ger CF10 1AA",
+      "compareTitle": "Cymharu dau le",
+      "compareMessage": "Cymharwch Pontcanna a Cathays",
+      "explainTitle": "Esbonio sgôr",
+      "explainMessage": "Pam mae canol dinas Caerdydd yn sgorio'n isel ar ddiogelwch?"
+    }
+  },
+  "Onboarding": {
+    "title": "Dewch o hyd i gymdogaeth sy'n addas i chi",
+    "blurb": "Pob cymdogaeth yn {coverage}, wedi'i sgorio o ddata agored. Mae ardaloedd gwyrddlas yn gwneud yn well na'r arfer, rhai oren yn waeth. Chwyddwch i mewn a chliciwch ar ardal i weld pam, neu gofynnwch i'r cynorthwyydd.",
+    "whoIsLooking": "Pwy sy'n chwilio?",
+    "skip": "Hepgor",
+    "personas": {
+      "family": "Teulu â phlant",
+      "young_professional": "Gweithiwr proffesiynol ifanc",
+      "retiree": "Wedi ymddeol",
+      "commuter": "Cymudwr",
+      "balanced": "Cytbwys"
+    }
+  },
+  "Search": {
+    "placeholder": "Chwilio am god post neu le",
+    "noMatches": "Dim canlyniadau yn {coverage}",
+    "searching": "Yn chwilio…",
+    "unavailable": "Nid yw'r chwilio ar gael",
+    "kinds": {
+      "postcode": "Cod post",
+      "place": "Lle",
+      "lsoa": "Ardal fach",
+      "msoa": "Cymdogaeth",
+      "lad": "Cyngor",
+      "region": "Rhanbarth",
+      "nation": "Cenedl"
+    }
+  },
+  "BuildInfo": {
+    "version": "Fersiwn {version}",
+    "dataBuilt": "data wedi'i adeiladu {date}",
+    "demo": "set ddata enghreifftiol",
+    "sourceCode": "cod ffynhonnell",
+    "disclaimer": "I archwilio cymdogaethau, nid cyngor eiddo, ariannol na chyfreithiol."
+  },
+  "Weights": {
+    "startFromPreset": "Dechreuwch o ragosodiad",
+    "howMuch": "Faint mae pob thema'n ei olygu",
+    "reset": "Ailosod",
+    "weightOf": "Pwysau {theme}",
+    "colourBy": "Lliwio'r map yn ôl",
+    "overall": "Sgôr gyffredinol",
+    "themes": "Themâu",
+    "indicators": "Dangosyddion",
+    "compareAgainst": "Cymharu â",
+    "compare": {
+      "uk": "Pob ardal yn y mynegai",
+      "nation": "Ardaloedd yn yr un genedl",
+      "urban_rural": "Ardaloedd o'r un math trefol/gwledig"
+    },
+    "compareHint": {
+      "uk": "Canraddau ar draws pob ardal a sgoriwyd.",
+      "nation": "Canraddau o fewn pob cenedl; mae'r sgoriau'n aros yr un fath.",
+      "urban_rural": "Nid yw pentrefi'n cael eu barnu yn erbyn canol dinasoedd."
+    }
+  },
+  "Band": {
+    "1": "Pumed isaf",
+    "2": "Islaw'r cyfartaledd",
+    "3": "Canol",
+    "4": "Uwchlaw'r cyfartaledd",
+    "5": "Pumed uchaf",
+    "betterThan": "yn well na {pct, number}% o'r DU"
+  },
+  "Quality": {
+    "imputed": "amcangyfrif",
+    "low_n": "ychydig o werthiannau",
+    "broadcast_msoa": "ardal ehangach",
+    "broadcast_lad": "cyngor cyfan",
+    "not_available": "ddim ar gael yma",
+    "missing": "dim data"
+  },
+  "Legend": {
+    "against": {
+      "uk": "Yn erbyn pob ardal yn {coverage}",
+      "nation": "Yn erbyn ardaloedd yn yr un genedl",
+      "urban_rural": "Yn erbyn ardaloedd o'r un math trefol/gwledig"
+    },
+    "worse": "gwaeth",
+    "typical": "arferol",
+    "better": "gwell",
+    "noData": "Dim data"
+  },
+  "Map": {
+    "hover": "{name}: yn well na {pct, number}% o'r DU",
+    "hoverNoName": "yn well na {pct, number}% o'r DU",
+    "overall": "Cyffredinol",
+    "withinNation": "{label} (o fewn y genedl)",
+    "withinUrbanRural": "{label} (yn erbyn ardaloedd trefol/gwledig tebyg)"
+  },
+  "Docs": {
+    "nav": "Dogfennaeth",
+    "method": "Dull",
+    "validation": "Dilysu",
+    "evals": "Gwerthusiadau'r cynorthwyydd",
+    "sources": "Ffynonellau a thrwyddedau",
+    "backToMap": "Yn ôl i'r map",
+    "englishOnly": "Mae'r dudalen hon ar gael yn Saesneg yn unig."
+  },
+  "Registry": {
+    "working": {
+      "rank_areas": "Yn rhestru ardaloedd…",
+      "get_area_profile": "Yn proffilio'r ardal…",
+      "compare_areas": "Yn cymharu…",
+      "nearest_pois": "Yn chwilio am lefydd gerllaw…",
+      "explain_score": "Yn cyfrifo'r sgôr…",
+      "set_weights": "Yn addasu'r pwysau…",
+      "show_on_map": "Yn symud y map…",
+      "run_sql": "Yn rhedeg yr ymholiad…",
+      "search_place": "Yn chwilio am y lle…",
+      "list_indicators": "Yn rhestru dangosyddion…",
+      "add_to_shortlist": "Yn cadw i'ch rhestr fer…",
+      "remove_from_shortlist": "Yn diweddaru'ch rhestr fer…"
+    },
+    "running": "Yn rhedeg {name}…",
+    "noResult": "{name}: dim canlyniad",
+    "weightsSet": "Pwysau wedi'u gosod:",
+    "mapUpdated": "Map wedi'i ddiweddaru · lliwio yn ôl {layer}",
+    "shortlistSaved": "Rhestr fer: {count, plural, zero {# wedi'u cadw} one {# wedi'i gadw} two {# wedi'u cadw} few {# wedi'u cadw} many {# wedi'u cadw} other {# wedi'u cadw}}",
+    "found": "Wedi dod o hyd i: {places}",
+    "nothing": "dim byd",
+    "indicatorsCount": "{count, plural, zero {# dangosydd} one {# dangosydd} two {# ddangosydd} few {# dangosydd} many {# dangosydd} other {# dangosydd}}"
+  },
+  "Profile": {
+    "subtitle": "{area} · {ruc} · {population, number} o drigolion",
+    "overallOf100": "/ 100 cyffredinol ({preset})",
+    "rangeTitle": "Yr ystod 5–95% o ganradd y DU pan fydd pwysau pob thema'n cael ei symud tua chwarter",
+    "range": "Gyda phwysau ychydig yn wahanol: yn well na {lo, number}–{hi, number}% o'r DU",
+    "betterThan": "Yn well na {pct, number}% o'r DU",
+    "localMedian": "Canolrif {area}",
+    "ukMedian": "Canolrif y DU",
+    "strengths": "Cryfderau",
+    "weakerSpots": "Mannau gwannach",
+    "showOnMap": "Dangos ar y map",
+    "inShortlist": "Yn y rhestr fer",
+    "addToShortlist": "Ychwanegu at y rhestr fer",
+    "copyLink": "Copïo dolen",
+    "linkCopied": "Dolen wedi'i chopïo",
+    "copyPrompt": "Copïwch y ddolen hon",
+    "note": "Mae'r sgoriau rhwng 0 a 100 (uwch yn well). Pellteroedd mewn llinell syth."
+  },
+  "Poi": {
+    "titles": {
+      "well_run_pub": "Tafarndai da",
+      "pub": "Tafarndai",
+      "gp": "Practisau meddyg teulu",
+      "primary_school": "Ysgolion cynradd",
+      "secondary_school": "Ysgolion uwchradd",
+      "nursery": "Meithrinfeydd",
+      "supermarket": "Archfarchnadoedd"
+    },
+    "near": "{title} ger {place}",
+    "found": "{count, plural, zero {# wedi'u canfod} one {# wedi'i ganfod} two {# wedi'u canfod} few {# wedi'u canfod} many {# wedi'u canfod} other {# wedi'u canfod}}",
+    "none": "Dim o fewn cyrraedd — rhowch gynnig ar radiws mwy.",
+    "hygiene": "Sgôr hylendid bwyd {rating}/5",
+    "realAle": "cwrw go iawn",
+    "inspection": "Ansawdd arolygiad {score}/100",
+    "unnamed": "Dienw",
+    "note": "Pellter mewn llinell syth. Ffynhonnell: {sources}."
+  },
+  "Ranked": {
+    "titleMsoa": "Y {count, number} cymdogaeth orau {where}",
+    "titleLsoa": "Y {count, number} ardal fach orau {where}",
+    "inPlace": "yn {place}",
+    "inCoverage": "yn {coverage}",
+    "subtitle": "{count, number} yn cyfateb · pwysoli: {preset}",
+    "closeCall": "agos iawn",
+    "closeCallTitle": "Yn aros yn y {n, number} uchaf o dan {pct, number}% o bwysoliadau credadwy",
+    "typicalPrice": "pris arferol {price}",
+    "note": "Cliciwch ar ardal i'w dangos ar y map.",
+    "closeCallNote": "“Agos iawn”: gallai newidiadau bach i'r pwysau ei symud allan o'r rhestr hon."
+  },
+  "Comparison": {
+    "title": "Ochr yn ochr",
+    "subtitle": "Pwysoli: {preset}",
+    "overall": "Cyffredinol",
+    "note": "Mae print trwm yn nodi'r sgôr orau ym mhob rhes. Mae cymdogaethau ac awdurdodau lleol yn gyfartaleddau wedi'u pwysoli yn ôl poblogaeth."
+  },
+  "Explainer": {
+    "title": "Pam mae {name} yn sgorio {score}",
+    "subtitle": "Mae pob thema'n ychwanegu ei chyfran o'r pwysau × ei sgôr (pwysoli: {preset})",
+    "notScored": "(heb ei sgorio)",
+    "caveats": "Cafeatau ({count, number})",
+    "sources": "Ffynonellau ({count, number})",
+    "dataAsOf": "data fel ar {date}",
+    "stale": "gallai fod wedi dyddio",
+    "note": "Mae sgoriau pob dangosydd rhwng 0 a 100 (uwch yn well)."
+  },
+  "Sql": {
+    "title": "Canlyniad yr ymholiad",
+    "rows": "{count, plural, zero {# rhes} one {# rhes} two {# res} few {# rhes} many {# rhes} other {# rhes}}",
+    "truncated": "(y 5,000 cyntaf)",
+    "download": "Lawrlwytho CSV",
+    "showing": "Yn dangos 200 rhes; mae'r CSV yn cynnwys pob un."
+  },
+  "AreaPanel": {
+    "empty": "Cliciwch ar ardal ar y map (chwyddwch i mewn i weld cymdogaethau) neu gofynnwch i'r cynorthwyydd am le.",
+    "loading": "Yn llwytho…",
+    "error": "Methwyd llwytho'r ardal hon: {error}"
+  },
+  "Shortlist": {
+    "empty": "Dim ardaloedd wedi'u cadw eto. Defnyddiwch “Ychwanegu at y rhestr fer” ar ardal, neu gofynnwch i'r cynorthwyydd gadw un.",
+    "remove": "Tynnu",
+    "compareThese": "Cymharu'r rhain",
+    "compareFirst": "Cymharu'r {count, number} cyntaf",
+    "compareError": "Methwyd cymharu: {error}"
+  },
+  "Analyst": {
+    "sqlLabel": "SQL (DuckDB, darllen yn unig) dros y tablau lsoa, pois, areas, places, indicators",
+    "running": "Yn rhedeg…",
+    "run": "Rhedeg yr ymholiad"
+  },
+  "Histogram": {
+    "caption": "{label}: cymdogaethau yn ôl sgôr",
+    "aria": "Histogram o {label}",
+    "selected": "dewiswyd {value, number}",
+    "hover": "{lo}–{hi}: {count, plural, zero {# cymdogaeth} one {# gymdogaeth} two {# gymdogaeth} few {# cymdogaeth} many {# cymdogaeth} other {# cymdogaeth}}"
+  },
+  "Heatmap": {
+    "caption": "Faint mae dangosyddion a sgoriwyd yn gorgyffwrdd (ρ Spearman ar draws pob cymdogaeth a sgoriwyd)",
+    "aria": "Matrics cydberthynas y dangosyddion a sgoriwyd",
+    "legendHint": "Mae'r blychau'n grwpio pob thema",
+    "pair": "{a} × {b}: ρ {rho}"
+  }
+}

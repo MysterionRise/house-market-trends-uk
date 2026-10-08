@@ -1,4 +1,5 @@
 /** Small shared pieces: cards, score bars in their theme's colour, bands and number formatting. */
+import { useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 
 import { bandVar } from "@/lib/colors";
@@ -69,9 +70,8 @@ export function ScoreBar({
   );
 }
 
-const BAND_TEXT = ["", "Bottom fifth", "Below average", "Middle", "Above average", "Top fifth"];
-
 export function Band({ band, percentile }: { band?: number | null; percentile?: number | null }) {
+  const t = useTranslations("Band");
   if (!band) return null;
   return (
     <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--border)] px-2 py-0.5 text-xs text-[var(--text-secondary)]">
@@ -84,22 +84,21 @@ export function Band({ band, percentile }: { band?: number | null; percentile?: 
           />
         ))}
       </span>
-      {BAND_TEXT[band]}
-      {percentile != null && ` · better than ${Math.round(percentile)}% of the UK`}
+      {t(String(Math.min(5, Math.max(1, band))) as "1" | "2" | "3" | "4" | "5")}
+      {percentile != null && ` · ${t("betterThan", { pct: Math.round(percentile) })}`}
     </span>
   );
 }
 
-const QUALITY_NOTE: Record<string, string> = {
-  imputed: "estimated",
-  low_n: "few sales",
-  broadcast_msoa: "wider area",
-  broadcast_lad: "council-wide",
-};
+const QUALITY_KEYS = ["imputed", "low_n", "broadcast_msoa", "broadcast_lad", "not_available", "missing"] as const;
 
-/** Plain-English note for a value that isn't measured directly for the LSOA. */
-export function qualityNote(quality: string | null | undefined): string | undefined {
-  return quality ? QUALITY_NOTE[quality] : undefined;
+/** A short note for a value that isn't measured directly for the LSOA ("estimated"). */
+export function useQualityNote(): (quality: string | null | undefined) => string | undefined {
+  const t = useTranslations("Quality");
+  return (quality) =>
+    quality && (QUALITY_KEYS as readonly string[]).includes(quality) && quality !== "missing"
+      ? t(quality as (typeof QUALITY_KEYS)[number])
+      : undefined;
 }
 
 export function Muted({ children }: { children: ReactNode }) {

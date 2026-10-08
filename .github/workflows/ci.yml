@@ -65,6 +65,7 @@ jobs:
 
       - run: npm run typecheck
       - run: npm run lint
+      - run: npm run i18n:check
       - name: Unit tests (incl. scoring parity with Python)
         run: npm test
 

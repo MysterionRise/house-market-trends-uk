@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import { useData, useLiveability } from "@/components/AppData";
 import { themeVar } from "@/lib/palette";
 import { type CompareWithin, effectiveWeights } from "@/lib/state";
@@ -9,6 +11,7 @@ import { type CompareWithin, effectiveWeights } from "@/lib/state";
 export function WeightPanel() {
   const { manifest } = useData();
   const { state, update } = useLiveability();
+  const t = useTranslations("Weights");
   if (!manifest) return null;
   const weights = effectiveWeights(manifest, state).themes;
   const preset = manifest.presets[state.preset];
@@ -16,7 +19,7 @@ export function WeightPanel() {
   return (
     <div className="space-y-3 p-3 text-sm" data-testid="weights">
       <label className="block">
-        <span className="mb-1 block text-xs font-medium text-[var(--text-secondary)]">Start from a preset</span>
+        <span className="mb-1 block text-xs font-medium text-[var(--text-secondary)]">{t("startFromPreset")}</span>
         <select
           className="input w-full"
           value={state.preset}
@@ -34,10 +37,10 @@ export function WeightPanel() {
 
       <div>
         <div className="mb-1 flex items-baseline justify-between">
-          <span className="text-xs font-medium text-[var(--text-secondary)]">How much each theme matters</span>
+          <span className="text-xs font-medium text-[var(--text-secondary)]">{t("howMuch")}</span>
           {Object.keys(state.theme_weights).length > 0 && (
             <button className="text-xs underline" onClick={() => update((s) => ({ ...s, theme_weights: {} }))}>
-              Reset
+              {t("reset")}
             </button>
           )}
         </div>
@@ -54,7 +57,7 @@ export function WeightPanel() {
               max={3}
               step={0.25}
               value={weights[theme] ?? 0}
-              aria-label={`${meta.label} weight`}
+              aria-label={t("weightOf", { theme: meta.label })}
               data-testid={`weight-${theme}`}
               onChange={(e) =>
                 update((s) => ({ ...s, theme_weights: { ...s.theme_weights, [theme]: Number(e.target.value) } }))
@@ -66,18 +69,18 @@ export function WeightPanel() {
       </div>
 
       <label className="block">
-        <span className="mb-1 block text-xs font-medium text-[var(--text-secondary)]">Colour the map by</span>
+        <span className="mb-1 block text-xs font-medium text-[var(--text-secondary)]">{t("colourBy")}</span>
         <select
           className="input w-full"
           value={state.map.layer}
           data-testid="layer-select"
           onChange={(e) => update((s) => ({ ...s, map: { ...s.map, layer: e.target.value } }))}
         >
-          <option value="overall">Overall score</option>
-          <optgroup label="Themes">
+          <option value="overall">{t("overall")}</option>
+          <optgroup label={t("themes")}>
             {Object.entries(manifest.themes).map(([t, m]) => <option key={t} value={`theme:${t}`}>{m.label}</option>)}
           </optgroup>
-          <optgroup label="Indicators">
+          <optgroup label={t("indicators")}>
             {manifest.indicators
               .filter((i) => manifest.scored_indicators.includes(i.id))
               .map((i) => <option key={i.id} value={`indicator:${i.id}`}>{i.label}</option>)}
@@ -86,7 +89,7 @@ export function WeightPanel() {
       </label>
 
       <label className="block text-xs">
-        <span className="font-medium">Compare against</span>
+        <span className="font-medium">{t("compareAgainst")}</span>
         <select
           className="input mt-1 w-full"
           data-testid="compare-within"
@@ -100,19 +103,11 @@ export function WeightPanel() {
             }));
           }}
         >
-          <option value="uk">Every area in the index</option>
-          {(manifest.geography?.active ?? []).length > 1 && (
-            <option value="nation">Areas in the same nation</option>
-          )}
-          <option value="urban_rural">Areas of the same urban/rural type</option>
+          <option value="uk">{t("compare.uk")}</option>
+          {(manifest.geography?.active ?? []).length > 1 && <option value="nation">{t("compare.nation")}</option>}
+          <option value="urban_rural">{t("compare.urban_rural")}</option>
         </select>
-        <span className="mt-1 block text-[var(--text-muted)]">
-          {state.compare_within === "urban_rural"
-            ? "Villages aren't judged against city centres."
-            : state.compare_within === "nation"
-              ? "Percentiles within each nation; scores stay the same."
-              : "Percentiles across every scored area."}
-        </span>
+        <span className="mt-1 block text-[var(--text-muted)]">{t(`compareHint.${state.compare_within}`)}</span>
       </label>
     </div>
   );

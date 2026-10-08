@@ -1,26 +1,33 @@
 "use client";
 
-import { useData, useLiveability } from "@/components/AppData";
+import { useLocale, useTranslations } from "next-intl";
+
+import { useLiveability } from "@/components/AppData";
 import { Card, Muted, formatValue } from "@/components/ui";
 import type { RankResult } from "@/lib/contracts.gen";
-import { coverageName } from "@/lib/data";
+import { useCoverageName } from "@/lib/copy";
 
 // Below this share of plausible weightings keeping it in the list, a result is a close call
 const CLOSE_CALL = 0.6;
 
 export function RankedList({ result }: { result: RankResult }) {
   const { update } = useLiveability();
-  const { manifest } = useData();
+  const t = useTranslations("Ranked");
+  const locale = useLocale();
+  const coverage = useCoverageName();
+  // "within N km of X" comes from the API already phrased; a named area gets "in"
   const where = result.within
-    ? ` ${result.within.startsWith("within") ? "" : "in "}${result.within}`
-    : ` in ${coverageName(manifest)}`;
-  const level = result.level === "msoa" ? "neighbourhoods" : "small areas";
+    ? result.within.startsWith("within")
+      ? result.within
+      : t("inPlace", { place: result.within })
+    : t("inCoverage", { coverage });
+  const count = result.results.length;
 
   return (
     <Card
       testId="ranked-list"
-      title={`Top ${result.results.length} ${level}${where}`}
-      subtitle={`${result.candidates.toLocaleString("en-GB")} matched · weighting: ${result.preset}`}
+      title={result.level === "msoa" ? t("titleMsoa", { count, where }) : t("titleLsoa", { count, where })}
+      subtitle={t("subtitle", { count: result.candidates, preset: result.preset })}
     >
       <ol className="divide-y divide-[var(--border)]">
         {result.results.map((r) => (
@@ -46,15 +53,15 @@ export function RankedList({ result }: { result: RankResult }) {
                   {r.stability != null && r.stability < CLOSE_CALL && (
                     <span
                       className="shrink-0 rounded border border-[var(--border)] px-1 text-[10px] text-[var(--text-muted)]"
-                      title={`Stays in this top ${result.results.length} under ${Math.round(r.stability * 100)}% of plausible weightings`}
+                      title={t("closeCallTitle", { n: result.results.length, pct: Math.round(r.stability * 100) })}
                     >
-                      close call
+                      {t("closeCall")}
                     </span>
                   )}
                 </span>
                 <span className="block truncate text-xs text-[var(--text-secondary)]">
                   {r.local_authority}
-                  {r.median_price != null && ` · typical price ${formatValue(r.median_price, "£")}`}
+                  {r.median_price != null && ` · ${t("typicalPrice", { price: formatValue(r.median_price, "£", locale) })}`}
                 </span>
               </span>
               <span className="text-right">
@@ -68,9 +75,8 @@ export function RankedList({ result }: { result: RankResult }) {
         ))}
       </ol>
       <Muted>
-        Click an area to show it on the map.
-        {result.results.some((r) => r.stability != null && r.stability < CLOSE_CALL) &&
-          " “Close call”: small changes to the weights could swap it out of this list."}
+        {t("note")}
+        {result.results.some((r) => r.stability != null && r.stability < CLOSE_CALL) && ` ${t("closeCallNote")}`}
       </Muted>
     </Card>
   );
