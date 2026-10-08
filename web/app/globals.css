@@ -199,7 +199,9 @@ input[type="checkbox"] {
   color: var(--text-secondary);
 }
 
-/* Map credits: underlined, so the links don't rely on a slight colour difference */
-.maplibregl-ctrl-attrib a {
+/* Map credits: underlined, so the links don't rely on a slight colour difference.
+   MapLibre's stylesheet loads after this one, so the selector has to outrank its rule. */
+.maplibregl-ctrl.maplibregl-ctrl-attrib a,
+.maplibregl-ctrl-attrib .maplibregl-ctrl-attrib-inner a {
   text-decoration: underline;
 }
