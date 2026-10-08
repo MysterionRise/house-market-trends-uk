@@ -2,6 +2,7 @@
 
 import polars as pl
 
+from lix_core.codes import in_scope
 from lix_core.log import setup_logging
 from lix_core.paths import data_dir
 
@@ -12,7 +13,7 @@ SEVERITY = {"1": "fatal", "2": "serious", "3": "slight"}
 
 
 def stage_stats19() -> pl.LazyFrame:
-    """Collisions in England with BNG coordinates (a handful without a location dropped)."""
+    """Collisions in the active nations with BNG coordinates (a few without a location dropped)."""
     df = (
         pl.scan_csv(data_dir("raw") / "stats19" / "stats19.csv", infer_schema=False)
         .select(
@@ -23,9 +24,9 @@ def stage_stats19() -> pl.LazyFrame:
             pl.col("location_northing_osgr").cast(pl.Float64, strict=False).alias("y"),
             pl.col("local_authority_ons_district").alias("lad_cd"),
         )
-        .filter(pl.col("lad_cd").str.starts_with("E") & pl.col("x").is_not_null())
+        .filter(in_scope("lad_cd", "upper") & pl.col("x").is_not_null())
         .collect()
     )
     years = df["year"].unique().sort().to_list()
-    logger.info(f"{df.height:,} collisions in England, {years[0]}–{years[-1]}")
+    logger.info(f"{df.height:,} collisions, {years[0]}–{years[-1]}")
     return df.lazy()

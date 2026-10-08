@@ -159,6 +159,21 @@ Access = Annotated[
     Field(discriminator="type"),
 ]
 
+# The UK's nations, by the first letter of their ONS codes. config/nations.yaml configures
+# the ones a build can include; coverage declarations may name any of them.
+Nation = Literal["E", "W", "S", "N"]
+NATION_CODES: tuple[str, ...] = ("E", "W", "S", "N")
+NATION_NAMES = {"E": "England", "W": "Wales", "S": "Scotland", "N": "Northern Ireland"}
+
+
+def _nation_list(nations: list[str], what: str) -> list[str]:
+    if not nations:
+        raise ValueError(f"{what}: coverage must name at least one nation")
+    if len(set(nations)) != len(nations):
+        raise ValueError(f"{what}: coverage repeats a nation: {nations}")
+    return [n for n in NATION_CODES if n in nations]
+
+
 Theme = Literal[
     "geography",
     "safety",
@@ -177,6 +192,8 @@ class DatasetSpec(_Strict):
 
     title: str
     theme: Theme
+    # Which nations the file covers, whatever the stager currently keeps
+    coverage: list[Nation] = Field(default_factory=lambda: ["E"])
     priority: Literal["P0", "P1", "P2"] = "P0"
     access: Access
     format: Literal["csv", "zip", "gpkg", "xlsx", "ods", "parquet", "json", "geojson", "pbf"]
@@ -198,11 +215,14 @@ def load_registry() -> dict[str, DatasetSpec]:
     Top-level keys starting with ``x-`` hold YAML anchors (shared attribution text etc.)
     and are not datasets.
     """
-    return {
+    registry = {
         slug: DatasetSpec.model_validate(raw)
         for slug, raw in get_config("datasets").items()
         if not slug.startswith("x-")
     }
+    for slug, spec in registry.items():
+        _nation_list(spec.coverage, slug)
+    return registry
 
 
 # ---------------------------------------------------------------------------------------
@@ -240,6 +260,13 @@ class IndicatorSpec(_Strict):
     description: str
     unit: str
     direction: Literal["higher_better", "lower_better"]
+    # uk: comparable across nations, ranked against the whole country · nation: the measure
+    # or its source differs by nation (deprivation indices, school grades, crime recording),
+    # so rank-normalised values are percentiles within the nation
+    benchmark: Literal["uk", "nation"] = "uk"
+    # Nations the indicator is built for; by default every nation all its sources cover.
+    # Set it when a source is only a helper (the IoD imputation behind crime rates).
+    coverage: list[Nation] | None = None
     sources: list[str]
     builder: str  # "module:function" under lix_pipeline.indicators
     params: dict = Field(default_factory=dict)
@@ -266,6 +293,81 @@ class IndicatorCatalogue(_Strict):
         return {i.id: i for i in self.indicators}
 
 
+def indicator_coverage(indicator: IndicatorSpec, registry: dict[str, DatasetSpec]) -> list[str]:
+    """Nations an indicator covers: its own list, else every nation all its sources cover."""
+    if indicator.coverage is not None:
+        return _nation_list(indicator.coverage, indicator.id)
+    covered = set(NATION_CODES)
+    for slug in indicator.sources:
+        if slug in registry:
+            covered &= set(registry[slug].coverage)
+    return [n for n in NATION_CODES if n in covered]
+
+
+def catalogue_problems(
+    catalogue: IndicatorCatalogue, registry: dict[str, DatasetSpec]
+) -> list[str]:
+    """Structural checks on the indicator catalogue against the dataset registry."""
+    problems = []
+    ids = [i.id for i in catalogue.indicators]
+    if len(ids) != len(set(ids)):
+        problems.append("duplicate indicator ids")
+    groups: dict[str, list[tuple[str, list[str]]]] = {}
+    for ind in catalogue.indicators:
+        unknown = [s for s in ind.sources if s not in registry]
+        if unknown:
+            problems.append(f"{ind.id}: unknown sources {unknown}")
+        if ind.theme not in catalogue.themes:
+            problems.append(f"{ind.id}: unknown theme {ind.theme}")
+        if not unknown:
+            # An explicit list may exceed the intersection (a helper source such as the IoD
+            # imputation need not cover every nation) but never a nation no source covers
+            any_source = {n for slug in ind.sources for n in registry[slug].coverage}
+            beyond = [n for n in (ind.coverage or []) if n not in any_source]
+            if beyond:
+                problems.append(
+                    f"{ind.id}: coverage {beyond} beyond its sources' {sorted(any_source)}"
+                )
+            if ind.role == "scored" and ind.overlap_group:
+                groups.setdefault(ind.overlap_group, []).append(
+                    (ind.id, indicator_coverage(ind, registry))
+                )
+    # Within an overlap group, at most one scored indicator per nation
+    for group, members in groups.items():
+        for nation in NATION_CODES:
+            scored_here = [iid for iid, cov in members if nation in cov]
+            if len(scored_here) > 1:
+                problems.append(f"overlap group {group} scores {scored_here} in {nation}")
+    return problems
+
+
+def coverage_problems(
+    catalogue: IndicatorCatalogue, registry: dict[str, DatasetSpec], nations: tuple[str, ...]
+) -> list[str]:
+    """Every theme must keep at least MIN_THEME_COVERAGE of its scored weight in each nation.
+
+    Run by ``lix validate config``; a nation whose sources are still being added fails
+    here until enough of its indicators exist.
+    """
+    from lix_core.scoring import MIN_THEME_COVERAGE
+
+    problems = []
+    for theme in catalogue.themes:
+        members = [i for i in catalogue.scored() if i.theme == theme]
+        total = sum(i.weight for i in members)
+        if total <= 0:
+            continue
+        for nation in nations:
+            here = sum(i.weight for i in members if nation in indicator_coverage(i, registry))
+            if here / total < MIN_THEME_COVERAGE:
+                missing = [i.id for i in members if nation not in indicator_coverage(i, registry)]
+                problems.append(
+                    f"{theme} keeps {here / total:.0%} of its weight in {NATION_NAMES[nation]} "
+                    f"(< {MIN_THEME_COVERAGE:.0%}); not covered: {missing}"
+                )
+    return problems
+
+
 class Preset(_Strict):
     label: str
     description: str
@@ -282,21 +384,7 @@ class WeightsConfig(_Strict):
 def load_indicators() -> IndicatorCatalogue:
     """Load and cross-check config/indicators.yaml against the registry."""
     catalogue = IndicatorCatalogue.model_validate(get_config("indicators"))
-    registry = load_registry()
-    problems = []
-    ids = [i.id for i in catalogue.indicators]
-    if len(ids) != len(set(ids)):
-        problems.append("duplicate indicator ids")
-    groups: dict[str, list[str]] = {}
-    for ind in catalogue.indicators:
-        unknown = [s for s in ind.sources if s not in registry]
-        if unknown:
-            problems.append(f"{ind.id}: unknown sources {unknown}")
-        if ind.theme not in catalogue.themes:
-            problems.append(f"{ind.id}: unknown theme {ind.theme}")
-        if ind.role == "scored" and ind.overlap_group:
-            groups.setdefault(ind.overlap_group, []).append(ind.id)
-    problems += [f"overlap group {g} scores {v}" for g, v in groups.items() if len(v) > 1]
+    problems = catalogue_problems(catalogue, load_registry())
     if problems:
         raise ValueError("Invalid config/indicators.yaml: " + "; ".join(problems))
     return catalogue

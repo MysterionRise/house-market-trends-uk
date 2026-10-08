@@ -16,6 +16,7 @@ x-ons-attribution: &ons
 # ---------------------------------------------------------------------------------------
 
 nspl:
+  coverage: [E, W, S, N]
   title: National Statistics Postcode Lookup (latest)
   theme: geography
   access:
@@ -36,6 +37,7 @@ nspl:
   size_hint: 185MB zipped, 1GB extracted
 
 lsoa_boundaries:
+  coverage: [E, W]
   title: LSOA 2021 boundaries (BGC, generalised 20m, clipped)
   theme: geography
   access:
@@ -54,6 +56,7 @@ lsoa_boundaries:
   size_hint: 50MB
 
 lsoa_boundaries_bsc:
+  coverage: [E, W]
   title: LSOA 2021 boundaries (BSC, super generalised 200m, clipped)
   theme: geography
   priority: P1
@@ -73,6 +76,7 @@ lsoa_boundaries_bsc:
   size_hint: 16MB
 
 msoa_boundaries:
+  coverage: [E, W]
   title: MSOA 2021 boundaries (BGC, generalised 20m, clipped)
   theme: geography
   access:
@@ -92,6 +96,7 @@ msoa_boundaries:
   size_hint: 22MB
 
 lad_boundaries:
+  coverage: [E, W, S, N]
   title: Local Authority District boundaries (latest, BUC)
   theme: geography
   access:
@@ -110,6 +115,7 @@ lad_boundaries:
   size_hint: 1MB
 
 lsoa_centroids:
+  coverage: [E, W]
   title: LSOA 2021 population-weighted centroids
   theme: geography
   access:
@@ -129,6 +135,7 @@ lsoa_centroids:
   size_hint: 1MB
 
 oa_lookup:
+  coverage: [E, W]
   title: Output Area 2021 to LSOA to MSOA to LAD exact-fit lookup
   theme: geography
   access:
@@ -147,6 +154,7 @@ oa_lookup:
   size_hint: 10MB
 
 lsoa11_lsoa21:
+  coverage: [E, W]
   title: LSOA 2011 to LSOA 2021 exact-fit lookup
   theme: geography
   access:
@@ -165,6 +173,7 @@ lsoa11_lsoa21:
   size_hint: 2MB
 
 ruc_2021:
+  coverage: [E, W]
   title: Rural Urban Classification (2021) of LSOAs
   theme: geography
   access:
@@ -184,6 +193,7 @@ ruc_2021:
 
 
 pop_lsoa_mye:
+  coverage: [E, W]
   title: ONS mid-year population estimates for LSOAs (England and Wales)
   theme: geography
   access:
@@ -199,6 +209,7 @@ pop_lsoa_mye:
 
 
 msoa_names:
+  coverage: [E, W]
   title: House of Commons Library MSOA names
   theme: geography
   access:
@@ -214,6 +225,7 @@ msoa_names:
   notes: Published under the Open Parliament Licence, which mirrors OGL v3.0.
 
 os_open_names:
+  coverage: [E, W, S]
   title: OS Open Names
   theme: geography
   access:
@@ -229,6 +241,7 @@ os_open_names:
   size_hint: 103MB zipped
 
 life_expectancy:
+  coverage: [E]
   title: Life expectancy at birth by MSOA (OHID Fingertips)
   theme: community
   access:
@@ -247,6 +260,7 @@ life_expectancy:
 # ---------------------------------------------------------------------------------------
 
 price_paid:
+  coverage: [E, W]
   title: HM Land Registry Price Paid Data (complete)
   theme: housing
   access:
@@ -266,6 +280,7 @@ price_paid:
 # ---------------------------------------------------------------------------------------
 
 iod_2025:
+  coverage: [E]
   title: English Indices of Deprivation 2025 (File 7)
   theme: community
   access:
@@ -291,66 +306,77 @@ x-census: &census
   size_hint: 2-4MB zipped
 
 census_ts001:
+  coverage: [E, W]
   <<: *census
   title: Census 2021 TS001 Number of usual residents
   access: {type: http, url: "https://www.nomisweb.co.uk/output/census/2021/census2021-ts001.zip"}
   description: Usual residents, in households and communal establishments.
 
 census_ts003:
+  coverage: [E, W]
   <<: *census
   title: Census 2021 TS003 Household composition
   access: {type: http, url: "https://www.nomisweb.co.uk/output/census/2021/census2021-ts003.zip"}
   description: Households by composition, including those with dependent children.
 
 census_ts006:
+  coverage: [E, W]
   <<: *census
   title: Census 2021 TS006 Population density
   access: {type: http, url: "https://www.nomisweb.co.uk/output/census/2021/census2021-ts006.zip"}
   description: Usual residents per square kilometre.
 
 census_ts007a:
+  coverage: [E, W]
   <<: *census
   title: Census 2021 TS007A Age by five-year age bands
   access: {type: http, url: "https://www.nomisweb.co.uk/output/census/2021/census2021-ts007a.zip"}
   description: Usual residents by five-year age band.
 
 census_ts037:
+  coverage: [E, W]
   <<: *census
   title: Census 2021 TS037 General health
   access: {type: http, url: "https://www.nomisweb.co.uk/output/census/2021/census2021-ts037.zip"}
   description: Self-reported general health of usual residents.
 
 census_ts044:
+  coverage: [E, W]
   <<: *census
   title: Census 2021 TS044 Accommodation type
   access: {type: http, url: "https://www.nomisweb.co.uk/output/census/2021/census2021-ts044.zip"}
   description: Households by accommodation type (detached, terraced, flat, ...).
 
 census_ts045:
+  coverage: [E, W]
   <<: *census
   title: Census 2021 TS045 Car or van availability
   access: {type: http, url: "https://www.nomisweb.co.uk/output/census/2021/census2021-ts045.zip"}
   description: Households by number of cars or vans.
 
 census_ts054:
+  coverage: [E, W]
   <<: *census
   title: Census 2021 TS054 Tenure
   access: {type: http, url: "https://www.nomisweb.co.uk/output/census/2021/census2021-ts054.zip"}
   description: Households by tenure (owned, social rented, private rented).
 
 census_ts058:
+  coverage: [E, W]
   <<: *census
   title: Census 2021 TS058 Distance travelled to work
   access: {type: http, url: "https://www.nomisweb.co.uk/output/census/2021/census2021-ts058.zip"}
   description: Usual residents in employment by distance to work. Collected during COVID-19 restrictions.
 
 census_ts061:
+  coverage: [E, W]
   <<: *census
   title: Census 2021 TS061 Method used to travel to work
   access: {type: http, url: "https://www.nomisweb.co.uk/output/census/2021/census2021-ts061.zip"}
   description: Usual residents in employment by travel mode. Collected during COVID-19 restrictions.
 
 census_ts067:
+  coverage: [E, W]
   <<: *census
   title: Census 2021 TS067 Highest level of qualification
   access: {type: http, url: "https://www.nomisweb.co.uk/output/census/2021/census2021-ts067.zip"}
@@ -361,6 +387,7 @@ census_ts067:
 # ---------------------------------------------------------------------------------------
 
 police_crime:
+  coverage: [E, W]
   title: police.uk street-level crime (latest 36 months)
   theme: safety
   access: {type: http, url: "https://data.police.uk/data/archive/latest.zip"}
@@ -376,6 +403,7 @@ police_crime:
   notes: Greater Manchester Police has supplied no data since mid-2019; its area is imputed.
 
 stats19:
+  coverage: [E, W, S]
   title: DfT road collisions (STATS19, last 5 years)
   theme: safety
   access:
@@ -403,6 +431,7 @@ x-pcm: &pcm
   size_hint: 8MB
 
 defra_pcm_no2:
+  coverage: [E, W, S, N]
   <<: *pcm
   title: Defra modelled background NO2 (1km grid, latest year)
   access:
@@ -412,6 +441,7 @@ defra_pcm_no2:
   description: Annual mean nitrogen dioxide, µg/m³, on a 1km grid.
 
 defra_pcm_pm25:
+  coverage: [E, W, S, N]
   <<: *pcm
   title: Defra modelled background PM2.5 (1km grid, latest year)
   access:
@@ -421,6 +451,7 @@ defra_pcm_pm25:
   description: Annual mean fine particulate matter (PM2.5), µg/m³, on a 1km grid.
 
 defra_pcm_pm10:
+  coverage: [E, W, S, N]
   <<: *pcm
   title: Defra modelled background PM10 (1km grid, latest year)
   priority: P1
@@ -431,6 +462,7 @@ defra_pcm_pm10:
   description: Annual mean particulate matter (PM10, gravimetric), µg/m³, on a 1km grid.
 
 os_greenspace:
+  coverage: [E, W, S]
   title: OS Open Greenspace (GB)
   theme: environment
   access:
@@ -446,6 +478,7 @@ os_greenspace:
   size_hint: 60MB zipped
 
 ea_flood_postcodes:
+  coverage: [E]
   title: Environment Agency flood risk from rivers and the sea, by postcode
   theme: environment
   access:
@@ -465,6 +498,7 @@ ea_flood_postcodes:
 # ---------------------------------------------------------------------------------------
 
 ods_gp:
+  coverage: [E, W]
   title: NHS ODS GP practices
   theme: health
   access: {type: http, url: "https://www.odsdatasearchandexport.nhs.uk/api/getReport?report=epraccur"}
@@ -477,6 +511,7 @@ ods_gp:
   size_hint: 3MB
 
 cqc_locations:
+  coverage: [E]
   title: CQC registered locations with ratings (HSCA active locations)
   theme: health
   access:
@@ -492,6 +527,7 @@ cqc_locations:
   size_hint: 20MB
 
 ods_dentists:
+  coverage: [E, W]
   title: NHS ODS dental practices
   theme: health
   access: {type: http, url: "https://www.odsdatasearchandexport.nhs.uk/api/getReport?report=egdpprac"}
@@ -505,6 +541,7 @@ ods_dentists:
   notes: Practices with an NHS contract; whether one takes new NHS patients isn't published.
 
 nhsbsa_pharmacies:
+  coverage: [E]
   title: NHSBSA consolidated pharmaceutical list
   theme: health
   access:
@@ -521,6 +558,7 @@ nhsbsa_pharmacies:
   size_hint: 6MB
 
 gp_registrations:
+  coverage: [E]
   title: Patients registered at a GP practice, by LSOA
   theme: health
   access:
@@ -540,6 +578,7 @@ gp_registrations:
   size_hint: 14MB zipped
 
 gp_workforce:
+  coverage: [E]
   title: General Practice Workforce, practice level
   theme: health
   access:
@@ -561,6 +600,7 @@ gp_workforce:
 # ---------------------------------------------------------------------------------------
 
 gias:
+  coverage: [E]
   title: Get Information About Schools (all establishments)
   theme: education
   access:
@@ -576,6 +616,7 @@ gias:
   size_hint: 62MB
 
 ofsted_schools:
+  coverage: [E]
   title: Ofsted state-funded school inspections (latest per school)
   theme: education
   access:
@@ -591,6 +632,7 @@ ofsted_schools:
   size_hint: 16MB
 
 ks2_results:
+  coverage: [E]
   title: DfE key stage 2 results by school (Explore Education Statistics)
   theme: education
   access:
@@ -605,6 +647,7 @@ ks2_results:
   size_hint: 9MB gzipped
 
 ks4_results:
+  coverage: [E]
   title: DfE key stage 4 results by school (Explore Education Statistics)
   theme: education
   access:
@@ -620,6 +663,7 @@ ks4_results:
   notes: Progress 8 isn't published for 2024/25 and 2025/26 (no key stage 2 baseline after COVID), so results reflect intake as well as teaching.
 
 ofsted_childcare:
+  coverage: [E]
   title: Ofsted childcare providers and inspections
   theme: education
   access:
@@ -640,6 +684,7 @@ ofsted_childcare:
 # ---------------------------------------------------------------------------------------
 
 dft_connectivity:
+  coverage: [E, W]
   title: DfT Transport Connectivity Metric
   theme: transport
   access:
@@ -655,6 +700,7 @@ dft_connectivity:
   notes: Relative scores, not travel times; an official statistic in development.
 
 naptan:
+  coverage: [E, W, S]
   title: NaPTAN public transport stops
   theme: transport
   access: {type: http, url: "https://naptan.api.dft.gov.uk/v1/access-nodes?dataFormat=csv"}
@@ -667,6 +713,7 @@ naptan:
   size_hint: 100MB
 
 bods_gtfs:
+  coverage: [E]
   title: Bus Open Data Service timetables (GTFS, England)
   theme: transport
   access: {type: http, url: "https://data.bus-data.dft.gov.uk/timetable/download/gtfs-file/all/"}
@@ -680,6 +727,7 @@ bods_gtfs:
   size_hint: 1GB zipped
 
 ofcom_broadband:
+  coverage: [E, W, S, N]
   title: Ofcom Connected Nations fixed broadband coverage (output areas)
   theme: transport
   access:
@@ -701,6 +749,7 @@ ofcom_broadband:
 # ---------------------------------------------------------------------------------------
 
 osm_england:
+  coverage: [E]
   title: OpenStreetMap England extract (Geofabrik)
   theme: amenities
   access: {type: http, url: "https://download.geofabrik.de/europe/united-kingdom/england-latest.osm.pbf"}
@@ -713,6 +762,7 @@ osm_england:
   size_hint: 1.6GB
 
 overture_pubs:
+  coverage: [E, W]
   title: Overture Maps places, bars and pubs (England area)
   theme: amenities
   access:
@@ -739,6 +789,7 @@ overture_pubs:
   notes: The bounding box also covers Wales, southern Scotland and a corner of France; staging keeps England.
 
 active_places:
+  coverage: [E]
   title: Sport England Active Places (sports facilities)
   theme: amenities
   access:
@@ -759,6 +810,7 @@ active_places:
   size_hint: 10MB
 
 fsa_fhrs:
+  coverage: [E, W, N]
   title: Food Standards Agency food hygiene ratings (all establishments)
   theme: amenities
   access: {type: http, url: "https://safhrsprodstorage.blob.core.windows.net/opendatafileblobstorage/FHRS_All_en-GB.csv"}
@@ -775,6 +827,7 @@ fsa_fhrs:
 # ---------------------------------------------------------------------------------------
 
 msoa_income:
+  coverage: [E, W]
   title: ONS income estimates for small areas (MSOA)
   theme: housing
   access:
@@ -789,6 +842,7 @@ msoa_income:
   size_hint: 3MB
 
 council_tax:
+  coverage: [E]
   title: Council Tax levels set by local authorities in England
   theme: housing
   access:
@@ -804,6 +858,7 @@ council_tax:
   notes: The page path names the financial year; update it each April.
 
 voa_ctsop:
+  coverage: [E, W]
   title: VOA Council Tax stock of properties by band and build period (LSOA)
   theme: housing
   access:
@@ -823,6 +878,7 @@ voa_ctsop:
 # ---------------------------------------------------------------------------------------
 
 claimant_count:
+  coverage: [E, W]
   title: Claimant count by LSOA (Nomis)
   theme: community
   access:

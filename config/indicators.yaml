@@ -44,6 +44,8 @@ indicators:
     description: Recorded violence and sexual offences per 1,000 residents a year (36-month average).
     unit: per 1,000 residents a year
     direction: lower_better
+    benchmark: nation
+    coverage: [E, W]  # iod_2025 only imputes Greater Manchester
     sources: [police_crime, iod_2025]
     builder: safety:crime_rate
     params: {types: ["Violence and sexual offences"]}
@@ -58,6 +60,8 @@ indicators:
     description: Recorded burglaries per 1,000 residents a year.
     unit: per 1,000 residents a year
     direction: lower_better
+    benchmark: nation
+    coverage: [E, W]  # iod_2025 only imputes Greater Manchester
     sources: [police_crime, iod_2025]
     builder: safety:crime_rate
     params: {types: ["Burglary"]}
@@ -69,6 +73,8 @@ indicators:
     description: Reported anti-social behaviour incidents per 1,000 residents a year.
     unit: per 1,000 residents a year
     direction: lower_better
+    benchmark: nation
+    coverage: [E, W]  # iod_2025 only imputes Greater Manchester
     sources: [police_crime, iod_2025]
     builder: safety:crime_rate
     params: {types: ["Anti-social behaviour"]}
@@ -80,6 +86,8 @@ indicators:
     description: Robbery, theft from the person, vehicle crime and bicycle theft per 1,000 residents a year.
     unit: per 1,000 residents a year
     direction: lower_better
+    benchmark: nation
+    coverage: [E, W]  # iod_2025 only imputes Greater Manchester
     sources: [police_crime, iod_2025]
     builder: safety:crime_rate
     params: {types: ["Robbery", "Theft from the person", "Vehicle crime", "Bicycle theft"]}
@@ -91,6 +99,8 @@ indicators:
     description: Criminal damage, arson and public order offences per 1,000 residents a year.
     unit: per 1,000 residents a year
     direction: lower_better
+    benchmark: nation
+    coverage: [E, W]  # iod_2025 only imputes Greater Manchester
     sources: [police_crime, iod_2025]
     builder: safety:crime_rate
     params: {types: ["Criminal damage and arson", "Public order"]}
@@ -117,6 +127,7 @@ indicators:
     description: Modelled risk of personal and material victimisation (2021–2023 data).
     unit: score
     direction: lower_better
+    benchmark: nation
     sources: [iod_2025]
     builder: common:iod
     params: {column: crime_score}
@@ -198,6 +209,7 @@ indicators:
     description: Air quality and road traffic accidents (IoD 2025 sub-domain).
     unit: score
     direction: lower_better
+    benchmark: nation
     sources: [iod_2025]
     builder: common:iod
     params: {column: sub_outdoors_score}
@@ -223,6 +235,7 @@ indicators:
     description: Registered patients per full-time-equivalent qualified GP at the practices residents actually use.
     unit: patients per FTE GP
     direction: lower_better
+    benchmark: nation
     sources: [gp_registrations, gp_workforce]
     builder: health:patients_per_gp
     normalise: threshold
@@ -236,6 +249,7 @@ indicators:
     description: CQC ratings of the GP practices residents are registered with, weighted by how many use each.
     unit: rating 0–1 (Good = 0.75)
     direction: higher_better
+    benchmark: nation
     sources: [cqc_locations, gp_registrations]
     builder: health:gp_quality
     normalise: threshold
@@ -295,6 +309,7 @@ indicators:
     description: Quality of the three nearest state primary schools (Ofsted and results), nearer ones counting more.
     unit: quality 0–1
     direction: higher_better
+    benchmark: nation
     sources: [gias, ofsted_schools, ks2_results, nspl]
     builder: education:school_quality_nearby
     params: {phases: [Primary, All-through, Middle deemed primary], results_slug: ks2_results, results_column: ks2_rwm_pct, k: 3, sigma_m: 1500, max_m: 5000}
@@ -310,6 +325,7 @@ indicators:
     description: Quality of the three nearest state secondary schools (Ofsted and results), nearer ones counting more.
     unit: quality 0–1
     direction: higher_better
+    benchmark: nation
     sources: [gias, ofsted_schools, ks4_results, nspl]
     builder: education:school_quality_nearby
     params: {phases: [Secondary, All-through, Middle deemed secondary], results_slug: ks4_results, results_column: attainment8, k: 3, sigma_m: 4000, max_m: 15000}
@@ -325,6 +341,7 @@ indicators:
     description: Good state primaries within 2km and secondaries within 5km, weighted by quality and distance.
     unit: index 0–1
     direction: higher_better
+    benchmark: nation
     sources: [gias, ofsted_schools, nspl]
     builder: education:school_choice
     params: {cap: 4}
@@ -337,6 +354,7 @@ indicators:
     description: Share of pupils meeting the expected standard in reading, writing and maths at state primaries within 2km (3-year average), weighted by distance.
     unit: "% of pupils"
     direction: higher_better
+    benchmark: nation
     sources: [ks2_results, gias, nspl]
     builder: education:school_results
     params: {slug: ks2_results, column: ks2_rwm_pct, phases: [Primary, All-through, Middle deemed primary], radius_m: 2000}
@@ -349,6 +367,7 @@ indicators:
     description: Average Attainment 8 score at state secondaries within 5km, weighted by distance.
     unit: Attainment 8
     direction: higher_better
+    benchmark: nation
     sources: [ks4_results, gias, nspl]
     builder: education:school_results
     params: {slug: ks4_results, column: attainment8, phases: [Secondary, All-through, Middle deemed secondary], radius_m: 5000}
@@ -603,6 +622,7 @@ indicators:
     description: Median sale price over the last 12 months, steadied towards the surrounding area where sales are few.
     unit: £
     direction: lower_better
+    benchmark: nation
     sources: [price_paid, nspl]
     builder: housing:median_price
     weight: 2.0
@@ -614,6 +634,7 @@ indicators:
     description: IoD 2025 indoors sub-domain (homes in poor condition or without central heating).
     unit: score
     direction: lower_better
+    benchmark: nation
     sources: [iod_2025]
     builder: common:iod
     params: {column: sub_indoors_score}
@@ -624,6 +645,7 @@ indicators:
     description: Change in the median sale price, last 12 months against the 12 months before.
     unit: "%"
     direction: higher_better
+    benchmark: nation
     sources: [price_paid]
     builder: common:column
     params: {slug: price_paid, column: yoy_change_pct}
@@ -636,6 +658,7 @@ indicators:
     description: Annual council tax on a Band D home, including county, police, fire and average parish charges.
     unit: £ a year
     direction: lower_better
+    benchmark: nation
     sources: [council_tax]
     builder: housing:council_tax
     params: {band: d}
@@ -648,6 +671,7 @@ indicators:
     description: Typical house price divided by the area's mean net household income.
     unit: years of income
     direction: lower_better
+    benchmark: nation
     sources: [price_paid, msoa_income]
     builder: housing:price_to_income
     role: context
@@ -693,6 +717,7 @@ indicators:
     description: Share of residents on low incomes (IoD 2025 income domain).
     unit: rate
     direction: lower_better
+    benchmark: nation
     sources: [iod_2025]
     builder: common:iod
     params: {column: income_score}
@@ -704,6 +729,7 @@ indicators:
     description: Share of working-age residents involuntarily out of work (IoD 2025 employment domain).
     unit: rate
     direction: lower_better
+    benchmark: nation
     sources: [iod_2025]
     builder: common:iod
     params: {column: employment_score}
@@ -741,6 +767,7 @@ indicators:
     description: Premature death, illness and disability (IoD 2025 health deprivation and disability domain).
     unit: score
     direction: lower_better
+    benchmark: nation
     sources: [iod_2025]
     builder: common:iod
     params: {column: health_score}
@@ -779,6 +806,7 @@ indicators:
     description: Overall deprivation score; not scored because its domains overlap other indicators.
     unit: score
     direction: lower_better
+    benchmark: nation
     sources: [iod_2025]
     builder: common:iod
     params: {column: imd_score}

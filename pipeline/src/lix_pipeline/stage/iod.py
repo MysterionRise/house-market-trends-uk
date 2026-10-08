@@ -5,7 +5,7 @@ from pathlib import Path
 
 import polars as pl
 
-from lix_core.codes import ENGLAND_LSOA21
+from lix_core.codes import in_scope
 from lix_core.log import setup_logging
 from lix_core.paths import data_dir
 
@@ -97,7 +97,7 @@ def stage_iod(raw_path: Path | None = None) -> pl.LazyFrame:
         if c not in IOD_ID_COLUMNS.values()
     }
     df = df.with_columns(pl.col(c).cast(t) for c, t in numeric.items())
-    df = df.filter(pl.col("lsoa21cd").str.contains(ENGLAND_LSOA21))
+    df = df.filter(in_scope("lsoa21cd"))
 
     logger.info(f"IoD cleaned: {len(df):,} LSOAs, {len(df.columns)} columns")
     return df.lazy()

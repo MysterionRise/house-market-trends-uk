@@ -9,7 +9,7 @@ previous overall effectiveness grade, otherwise "expected standard".
 
 import polars as pl
 
-from lix_core.codes import ENGLAND_LSOA21
+from lix_core.codes import in_scope
 from lix_core.log import setup_logging
 from lix_core.paths import data_dir
 from lix_pipeline.stage.health import geocode_postcodes
@@ -63,7 +63,7 @@ def stage_ofsted_childcare() -> pl.LazyFrame:
         .otherwise(pl.lit("not yet inspected"))
         .alias("quality_source"),
     )
-    df = geocode_postcodes(df).filter(pl.col("lsoa21cd").str.contains(ENGLAND_LSOA21))
+    df = geocode_postcodes(df).filter(in_scope("lsoa21cd"))
     logger.info(
         f"{df.height:,} nurseries and pre-schools, {df['places'].sum():,} places; "
         f"{dict(df['quality_source'].value_counts().rows())}"

@@ -1,4 +1,4 @@
-"""Food Standards Agency hygiene ratings → England food businesses with location.
+"""Food Standards Agency hygiene ratings → food businesses with location.
 
 Ratings run 0–5 in England (Scotland's scheme uses Pass/Improvement Required and is
 dropped with the rest of Scotland). Non-numeric states such as "AwaitingInspection" or
@@ -9,7 +9,7 @@ better.
 
 import polars as pl
 
-from lix_core.codes import ENGLAND_LSOA21
+from lix_core.codes import in_scope
 from lix_core.log import setup_logging
 from lix_core.paths import data_dir
 from lix_pipeline.geo.joins import points_to_lsoa
@@ -50,10 +50,10 @@ def stage_fsa() -> pl.LazyFrame:
         pl.lit("postcode").alias("location_source")
     )
     df = pl.concat([df.filter(has_xy), fallback.drop("lsoa21cd")], how="diagonal_relaxed")
-    df = points_to_lsoa(df).filter(pl.col("lsoa21cd").str.contains(ENGLAND_LSOA21))
+    df = points_to_lsoa(df).filter(in_scope("lsoa21cd"))
 
     pubs = df.filter(pl.col("business_type_id") == PUB_BAR_NIGHTCLUB).height
-    logger.info(f"{df.height:,} England food businesses ({pubs:,} pubs, bars and nightclubs)")
+    logger.info(f"{df.height:,} food businesses ({pubs:,} pubs, bars and nightclubs)")
     return df.lazy()
 
 

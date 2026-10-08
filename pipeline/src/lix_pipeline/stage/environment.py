@@ -3,7 +3,7 @@
 import polars as pl
 import pyogrio
 
-from lix_core.codes import ENGLAND_LSOA21
+from lix_core.codes import in_scope
 from lix_core.log import setup_logging
 from lix_core.paths import data_dir
 from lix_pipeline.stage.health import geocode_postcodes
@@ -73,7 +73,7 @@ def stage_ea_flood_postcodes() -> pl.LazyFrame:
     located = df.filter(pl.col("lsoa21cd").is_not_null()).select(at_risk.sum()).item()
     located_share = located / max(df.select(at_risk.sum()).item(), 1)
     per_lsoa = (
-        df.filter(pl.col("lsoa21cd").str.contains(ENGLAND_LSOA21))
+        df.filter(in_scope("lsoa21cd"))
         .group_by("lsoa21cd")
         .agg(pl.col(f"res_{b.lower()}").sum() for b in FLOOD_BANDS)
         .sort("lsoa21cd")

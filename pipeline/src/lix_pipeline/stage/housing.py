@@ -4,7 +4,7 @@ housing stock by council tax band and build period (VOA, LSOA)."""
 import fastexcel
 import polars as pl
 
-from lix_core.codes import ENGLAND_LSOA21
+from lix_core.codes import in_scope
 from lix_core.log import setup_logging
 from lix_core.paths import data_dir
 
@@ -35,7 +35,7 @@ def stage_msoa_income() -> pl.LazyFrame:
         df = df.select(
             pl.col(df.columns[0]).alias("msoa21cd"),
             pl.col(df.columns[6]).cast(pl.Float64, strict=False).alias(name),
-        ).filter(pl.col("msoa21cd").str.starts_with("E02"))
+        ).filter(in_scope("msoa21cd", "mid"))
         out = df if out is None else out.join(df, on="msoa21cd", how="full", coalesce=True)
     logger.info(f"{out.height:,} MSOAs with income estimates")
     return out.lazy()
@@ -58,7 +58,7 @@ def stage_council_tax() -> pl.LazyFrame:
         pl.col("ONS Code").alias("lad_cd"),
         pl.col("Authority").alias("authority"),
         *[pl.col(f"Band {b}").cast(pl.Float64).alias(f"band_{b.lower()}") for b in BANDS],
-    ).filter(pl.col("lad_cd").str.starts_with("E"))
+    ).filter(in_scope("lad_cd", "upper"))
     logger.info(f"{out.height} billing authorities; Band D median £{out['band_d'].median():,.0f}")
     return out.lazy()
 
@@ -91,7 +91,7 @@ def stage_voa_ctsop() -> pl.LazyFrame:
     """
     path = next((data_dir("raw") / "voa_ctsop").glob("**/CTSOP4_1_*.csv"))
     raw = pl.read_csv(path, infer_schema=False, encoding="utf8-lossy")
-    raw = raw.filter((pl.col("geography") == "LSOA") & pl.col("ecode").str.contains(ENGLAND_LSOA21))
+    raw = raw.filter((pl.col("geography") == "LSOA") & in_scope("ecode"))
     num = [c for c in raw.columns if c.startswith("bp_") or c == "all_properties"]
     raw = raw.with_columns(pl.col(num).cast(pl.Float64, strict=False))
     new_build = [

@@ -202,4 +202,16 @@ def validate_places() -> list[str]:
     return anchor_problems()
 
 
-VALIDATORS = {"geo": validate_geo, "serve": validate_serve, "places": validate_places}
+def validate_config() -> list[str]:
+    """Every theme keeps enough scored weight in each active nation (see coverage_problems)."""
+    from lix_core.config import coverage_problems, load_registry
+
+    return coverage_problems(load_indicators(), load_registry(), active_nations())
+
+
+VALIDATORS = {
+    "config": validate_config,
+    "geo": validate_geo,
+    "serve": validate_serve,
+    "places": validate_places,
+}

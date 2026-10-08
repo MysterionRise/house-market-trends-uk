@@ -13,6 +13,7 @@ import json
 
 import polars as pl
 
+from lix_core.codes import in_scope
 from lix_core.log import setup_logging
 from lix_core.paths import data_dir
 from lix_pipeline.stage.geo import bng_to_lonlat
@@ -196,7 +197,7 @@ def build_lookups(features: pl.DataFrame) -> dict:
     files = {}
     postcodes = (
         pl.scan_parquet(staged / "nspl.parquet")
-        .filter(pl.col("live") & pl.col("lsoa21cd").str.starts_with("E01"))
+        .filter(pl.col("live") & in_scope("lsoa21cd"))
         .select("postcode", "postcode_norm", "lsoa21cd", pl.col("lat"), pl.col("long").alias("lon"))
         .collect()
     )

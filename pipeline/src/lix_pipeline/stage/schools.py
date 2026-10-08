@@ -15,7 +15,7 @@ from datetime import date
 
 import polars as pl
 
-from lix_core.codes import ENGLAND_LSOA21
+from lix_core.codes import in_scope
 from lix_core.log import setup_logging
 from lix_core.paths import data_dir
 from lix_pipeline.geo.joins import points_to_lsoa
@@ -102,8 +102,8 @@ def stage_gias() -> pl.LazyFrame:
         pl.col("Northing").cast(pl.Float64).alias("y"),
     )
     # GIAS carries an LSOA code, but recompute it so the vintage is certainly 2021
-    df = points_to_lsoa(df).filter(pl.col("lsoa21cd").str.contains(ENGLAND_LSOA21))
-    logger.info(f"{df.height:,} open schools and colleges in England")
+    df = points_to_lsoa(df).filter(in_scope("lsoa21cd"))
+    logger.info(f"{df.height:,} open schools and colleges")
     return df.lazy()
 
 

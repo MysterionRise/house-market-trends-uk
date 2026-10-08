@@ -4,6 +4,7 @@ lix resolve --all              # pin every dataset's current URL in datasets.loc
 lix resolve --check --all      # is every source still reachable? (nightly link check)
 lix fetch --theme geography    # download what the lockfile pins
 lix stage --all                # every stager whose inputs are fetched
+lix validate config            # every theme has enough indicators in each active nation
 lix validate geo               # check the geography backbone
 lix validate serve             # check data/serve (or --dir another serve directory)
 lix validate places            # anchor checks of the face-validity review
@@ -81,14 +82,27 @@ def _has_inputs(slug: str) -> bool:
     return all((raw / s / ".meta.json").exists() for s in STAGE_INPUTS.get(slug, [slug]))
 
 
+def _covers_active(slug: str, registry: dict) -> bool:
+    """False when none of the stager's registered inputs covers any active nation."""
+    from lix_core.codes import active_nations
+
+    inputs = [s for s in STAGE_INPUTS.get(slug, [slug]) if s in registry]
+    active = set(active_nations())
+    return not inputs or any(active & set(registry[s].coverage) for s in inputs)
+
+
 def _stage(args: argparse.Namespace) -> int:
     available = stagers()
     if args.slug and args.slug not in available:
         raise SystemExit(f"Unknown stager: {args.slug!r}. Available: {list(available)}")
 
+    registry = load_registry()
     for slug in [args.slug] if args.slug else list(available):
         if args.all and not _has_inputs(slug):
             logger.info(f"[{slug}] Inputs not fetched — skipping")
+            continue
+        if args.all and not _covers_active(slug, registry):
+            logger.info(f"[{slug}] Its sources cover none of the active nations — skipping")
             continue
         save_staged(available[slug](), slug)
     return 0
@@ -203,7 +217,7 @@ def main(argv: list[str] | None = None) -> None:
     stage.set_defaults(func=_stage)
 
     validate = sub.add_parser("validate", help="Check staged and serve outputs")
-    validate.add_argument("target", choices=["geo", "serve", "places"])
+    validate.add_argument("target", choices=["config", "geo", "serve", "places"])
     validate.add_argument("--dir", help="serve: the directory to check (default data/serve)")
     validate.set_defaults(func=_validate)
 

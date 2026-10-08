@@ -3,6 +3,13 @@
 import polars as pl
 import pytest
 
+
+@pytest.fixture(autouse=True)
+def _england_only(monkeypatch):
+    """Stagers filter by the active nations; tests that don't say otherwise build England."""
+    monkeypatch.setenv("LIX_NATIONS", "E")
+
+
 # Real NSPL Aug 2026 header (35 columns), so tests catch column renames
 NSPL_HEADER = (
     "pcd7,pcd8,pcds,dointr,doterm,usrtypind,east1m,north1m,gridind,oa21cd,cty26cd,ced25cd,"

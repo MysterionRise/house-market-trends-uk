@@ -11,7 +11,7 @@ import re
 
 import polars as pl
 
-from lix_core.codes import ENGLAND_LSOA21
+from lix_core.codes import in_scope
 from lix_core.log import setup_logging
 from lix_core.paths import data_dir
 
@@ -31,7 +31,7 @@ def census_column_name(label: str) -> str:
 
 
 def stage_census_table(slug: str) -> pl.LazyFrame:
-    """Stage one census_tsNNN table at LSOA level for England."""
+    """Stage one census_tsNNN table at LSOA level for the active nations."""
     files = sorted((data_dir("raw") / slug).glob("*-lsoa.csv"))
     if not files:
         raise FileNotFoundError(f"No LSOA file for {slug}")
@@ -53,7 +53,7 @@ def stage_census_table(slug: str) -> pl.LazyFrame:
     out = (
         df.select(list(rename))
         .rename(rename)
-        .filter(pl.col("lsoa21cd").str.contains(ENGLAND_LSOA21))
+        .filter(in_scope("lsoa21cd"))
         .with_columns(pl.exclude("lsoa21cd").cast(pl.Float64))
         .sort("lsoa21cd")
     )

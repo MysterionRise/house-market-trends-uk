@@ -11,7 +11,7 @@ from datetime import date, datetime, timedelta
 import fastexcel
 import polars as pl
 
-from lix_core.codes import ENGLAND_LSOA21
+from lix_core.codes import in_scope
 from lix_core.log import setup_logging
 from lix_core.paths import data_dir
 
@@ -32,7 +32,7 @@ def stage_dft_connectivity() -> pl.LazyFrame:
         sheet.rename(
             {code_col: "lsoa21cd", **{c: tcm_column(c) for c in sheet.columns if c != code_col}}
         )
-        .filter(pl.col("lsoa21cd").str.contains(ENGLAND_LSOA21))
+        .filter(in_scope("lsoa21cd"))
         .with_columns(pl.exclude("lsoa21cd").cast(pl.Float64, strict=False))
     )
     logger.info(f"{df.height:,} LSOAs, {df.width - 1} connectivity scores")
@@ -102,7 +102,7 @@ def stage_ofcom_broadband() -> pl.LazyFrame:
             pl.col(src).cast(pl.Float64, strict=False).alias(dst)
             for src, dst in OFCOM_COUNTS.items()
         ],
-    ).filter(pl.col("oa21cd").str.starts_with("E"))
+    ).filter(in_scope("oa21cd", "oa"))
     per_lsoa = oa_to_lsoa(df, list(OFCOM_COUNTS.values())).with_columns(
         (pl.col(c) / pl.col("premises") * 100).alias(f"{c}_pct")
         for c in ("gigabit", "superfast", "below_uso")

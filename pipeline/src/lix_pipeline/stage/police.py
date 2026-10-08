@@ -10,7 +10,7 @@ crime on the railway rather than where people live, so it is excluded.
 import duckdb
 import polars as pl
 
-from lix_core.codes import ENGLAND_LSOA21
+from lix_core.codes import area_code_regex
 from lix_core.log import setup_logging
 from lix_core.paths import data_dir
 
@@ -43,7 +43,7 @@ def stage_police() -> pl.LazyFrame:
         GROUP BY ALL
         ORDER BY c.lsoa21cd, c.crime_type, c.force
         """,
-        [list(EXCLUDED_FORCES), ENGLAND_LSOA21],
+        [list(EXCLUDED_FORCES), area_code_regex()],
     ).pl()
     con.close()
 
@@ -56,5 +56,5 @@ def stage_police() -> pl.LazyFrame:
         logger.warning(
             f"{row['force']} reported only {row['force_months']} months (last {row['last_month']})"
         )
-    logger.info(f"{df['n'].sum():,} crimes in {df['lsoa21cd'].n_unique():,} England LSOAs")
+    logger.info(f"{df['n'].sum():,} crimes in {df['lsoa21cd'].n_unique():,} LSOAs")
     return df.with_columns(pl.col("n").cast(pl.Int32), pl.col("force_months").cast(pl.Int16)).lazy()

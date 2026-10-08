@@ -14,7 +14,7 @@ from pathlib import Path
 import geopandas as gpd
 import pyogrio
 
-from lix_core.codes import ENGLAND_LSOA21
+from lix_core.codes import area_code_regex
 from lix_core.log import setup_logging
 from lix_core.paths import data_dir
 
@@ -58,13 +58,13 @@ def build_tiles(
     outputs = []
 
     lsoa = _read("lsoa_boundaries").rename(columns={"LSOA21CD": "lsoa21cd"})
-    lsoa = lsoa[lsoa["lsoa21cd"].str.match(ENGLAND_LSOA21)][["lsoa21cd", "geometry"]]
+    lsoa = lsoa[lsoa["lsoa21cd"].str.match(area_code_regex())][["lsoa21cd", "geometry"]]
     if lsoas is not None:
         lsoa = lsoa[lsoa["lsoa21cd"].isin(lsoas)]
     outputs.append(write_layer(lsoa, out_dir / "lsoa.pmtiles", "lsoa", 8, 14))
 
     msoa = _read("msoa_boundaries").rename(columns={"MSOA21CD": "msoa21cd"})
-    msoa = msoa[msoa["msoa21cd"].str.startswith("E02")][["msoa21cd", "geometry"]]
+    msoa = msoa[msoa["msoa21cd"].str.match(area_code_regex("mid"))][["msoa21cd", "geometry"]]
     if lsoas is not None:
         # MSOAs nest in local authorities, so keep those overlapping the chosen LSOAs
         msoa = msoa[msoa.intersects(lsoa.to_crs(msoa.crs).union_all().buffer(-1))]

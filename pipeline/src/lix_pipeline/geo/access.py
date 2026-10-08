@@ -85,7 +85,8 @@ def poi_access(
 
 
 def residential_postcodes() -> pl.DataFrame:
-    """Live England small-user postcodes (mostly homes) with BNG coordinates and LSOA."""
+    """Live small-user postcodes (mostly homes) in the active nations, with BNG coordinates."""
+    from lix_core.codes import active_nations, nation_of
     from lix_core.paths import data_dir
 
     path = data_dir("staged") / "nspl.parquet"
@@ -95,7 +96,7 @@ def residential_postcodes() -> pl.DataFrame:
         .filter(
             pl.col("live")
             & (pl.col("usrtypind") == "0")
-            & pl.col("ctry_cd").str.starts_with("E")
+            & nation_of("ctry_cd").is_in(list(active_nations()))
             & pl.col("lsoa21cd").is_not_null()
             & pl.col("east1m").is_not_null()
         )

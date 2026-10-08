@@ -2,7 +2,7 @@
 
 import polars as pl
 
-from lix_core.codes import ENGLAND_LSOA21
+from lix_core.codes import in_scope
 from lix_core.log import setup_logging
 from lix_core.paths import data_dir
 
@@ -15,7 +15,7 @@ def stage_claimant_count() -> pl.LazyFrame:
         pl.col("GEOGRAPHY_CODE").alias("lsoa21cd"),
         pl.col("DATE_NAME").alias("period"),
         pl.col("OBS_VALUE").cast(pl.Int32, strict=False).alias("claimants"),
-    ).filter(pl.col("lsoa21cd").str.contains(ENGLAND_LSOA21))
+    ).filter(in_scope("lsoa21cd"))
     logger.info(f"{df.height:,} LSOAs, {df['period'][0]}: {df['claimants'].sum():,} claimants")
     return df.lazy()
 
@@ -25,9 +25,9 @@ def stage_life_expectancy() -> pl.LazyFrame:
     raw = pl.read_csv(
         data_dir("raw") / "life_expectancy" / "life_expectancy.csv", infer_schema=False
     )
-    msoa = raw.filter(
-        pl.col("Area Code").str.starts_with("E02") & pl.col("Category").is_null()
-    ).with_columns(pl.col("Value").cast(pl.Float64, strict=False))
+    msoa = raw.filter(in_scope("Area Code", "mid") & pl.col("Category").is_null()).with_columns(
+        pl.col("Value").cast(pl.Float64, strict=False)
+    )
     df = (
         msoa.pivot(
             on="Sex", index=["Area Code", "Time period"], values="Value", aggregate_function="first"

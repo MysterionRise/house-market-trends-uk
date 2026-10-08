@@ -6,7 +6,7 @@ residents actually use, rather than of whichever practice happens to be nearest.
 
 import polars as pl
 
-from lix_core.codes import ENGLAND_LSOA21
+from lix_core.codes import in_scope
 from lix_core.log import setup_logging
 from lix_core.paths import data_dir
 from lix_pipeline.geo.nspl import load_nspl
@@ -45,15 +45,15 @@ def geocode_postcodes(df: pl.DataFrame, postcode_col: str = "postcode") -> pl.Da
 
 
 def stage_ods_gp() -> pl.LazyFrame:
-    """Active GP practices in England with their location."""
+    """Active GP practices with their location (ODS lists England and Wales)."""
     raw = pl.read_csv(
         data_dir("raw") / "ods_gp" / "ods_gp.csv", has_header=False, infer_schema=False
     )
     df = raw.select(
         pl.col(f"column_{i}").alias(name) for i, name in EPRACCUR_COLUMNS.items()
     ).filter((pl.col("status") == "ACTIVE") & (pl.col("role") == GP_PRACTICE_ROLE))
-    df = geocode_postcodes(df).filter(pl.col("lsoa21cd").str.contains(ENGLAND_LSOA21))
-    logger.info(f"{df.height:,} active GP practices in England")
+    df = geocode_postcodes(df).filter(in_scope("lsoa21cd"))
+    logger.info(f"{df.height:,} active GP practices")
     return df.drop("role", "status").lazy()
 
 
@@ -62,7 +62,7 @@ def stage_gp_registrations() -> pl.LazyFrame:
     path = data_dir("raw") / "gp_registrations" / "gp-reg-pat-prac-lsoa-all.csv"
     df = (
         pl.read_csv(path, infer_schema_length=0)
-        .filter((pl.col("SEX") == "ALL") & pl.col("LSOA_CODE").str.contains(ENGLAND_LSOA21))
+        .filter((pl.col("SEX") == "ALL") & in_scope("LSOA_CODE"))
         .select(
             pl.col("PRACTICE_CODE").alias("practice_code"),
             pl.col("LSOA_CODE").alias("lsoa21cd"),
@@ -109,15 +109,15 @@ EGDPPRAC_COLUMNS = {
 
 
 def stage_ods_dentists() -> pl.LazyFrame:
-    """Active dental practices with an NHS contract in England, with their location."""
+    """Active dental practices with an NHS contract, with their location."""
     raw = pl.read_csv(
         data_dir("raw") / "ods_dentists" / "ods_dentists.csv", has_header=False, infer_schema=False
     )
     df = raw.select(
         pl.col(f"column_{i}").alias(name) for i, name in EGDPPRAC_COLUMNS.items()
     ).filter(pl.col("status") == "ACTIVE")
-    df = geocode_postcodes(df).filter(pl.col("lsoa21cd").str.contains(ENGLAND_LSOA21))
-    logger.info(f"{df.height:,} active dental practices in England")
+    df = geocode_postcodes(df).filter(in_scope("lsoa21cd"))
+    logger.info(f"{df.height:,} active dental practices")
     return df.drop("status").lazy()
 
 
@@ -141,8 +141,8 @@ def stage_nhsbsa_pharmacies() -> pl.LazyFrame:
         pl.col("SUN_TOTAL").cast(pl.Float64, strict=False).alias("sunday_hours"),
         pl.col("CONTRACT_TYPE").alias("contract_type"),
     ).filter(pl.col("contract_type").is_in(PHARMACY_CONTRACTS))
-    df = geocode_postcodes(df).filter(pl.col("lsoa21cd").str.contains(ENGLAND_LSOA21))
-    logger.info(f"{df.height:,} community pharmacies in England")
+    df = geocode_postcodes(df).filter(in_scope("lsoa21cd"))
+    logger.info(f"{df.height:,} community pharmacies")
     return df.lazy()
 
 

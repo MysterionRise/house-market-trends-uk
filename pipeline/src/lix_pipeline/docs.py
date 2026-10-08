@@ -5,7 +5,7 @@ Run ``lix docs`` after editing config/datasets.yaml; CI can check the files are 
 
 from collections import defaultdict
 
-from lix_core.config import DatasetSpec, load_registry
+from lix_core.config import NATION_NAMES, DatasetSpec, load_registry
 from lix_core.paths import get_project_root
 
 THEME_TITLES = {
@@ -48,14 +48,15 @@ def data_sources_md(registry: dict[str, DatasetSpec]) -> str:
         if theme not in by_theme:
             continue
         lines.append(f"\n## {title}\n")
-        lines.append("| Slug | Dataset | What it gives us | Updated | Licence |")
-        lines.append("|---|---|---|---|---|")
+        lines.append("| Slug | Dataset | What it gives us | Covers | Updated | Licence |")
+        lines.append("|---|---|---|---|---|---|")
         for slug, spec in by_theme[theme]:
             licence = spec.licence + ("" if spec.licence_verified else " (unverified)")
             priority = "" if spec.priority == "P0" else f" ({spec.priority})"
+            covers = ", ".join(NATION_NAMES[n] for n in spec.coverage)
             lines.append(
                 f"| `{slug}`{priority} | {_link(spec)} | {_cell(spec.description)} "
-                f"| {spec.cadence} | {licence} |"
+                f"| {covers} | {spec.cadence} | {licence} |"
             )
     return "\n".join(lines) + "\n"
 

@@ -1,4 +1,4 @@
-"""HM Land Registry Price Paid → median prices and sales counts per England LSOA."""
+"""HM Land Registry Price Paid → median prices and sales counts per LSOA (England and Wales)."""
 
 from datetime import date
 from pathlib import Path
@@ -6,7 +6,7 @@ from pathlib import Path
 import duckdb
 import polars as pl
 
-from lix_core.codes import ENGLAND_LSOA21
+from lix_core.codes import area_code_regex
 from lix_core.log import setup_logging
 from lix_core.paths import data_dir
 from lix_pipeline.geo.nspl import default_nspl_path, load_nspl
@@ -46,7 +46,7 @@ def stage_price_paid(
     nspl: pl.LazyFrame | None = None,
     as_of: date | None = None,
 ) -> pl.LazyFrame:
-    """Aggregate Price Paid sales to England LSOA medians in a single DuckDB pass.
+    """Aggregate Price Paid sales to LSOA medians (active nations) in a single DuckDB pass.
 
     Only standard market sales (PPD category A) count. Postcodes are matched against
     the full NSPL including terminated postcodes, since older sales use retired ones.
@@ -146,7 +146,7 @@ def stage_price_paid(
         WHERE transaction_count_5y > 0
         ORDER BY lsoa21cd
         """,
-        [as_of, as_of, as_of, as_of, ENGLAND_LSOA21, as_of, as_of],
+        [as_of, as_of, as_of, as_of, area_code_regex(), as_of, as_of],
     ).fetch_arrow_table()
     con.close()
 
