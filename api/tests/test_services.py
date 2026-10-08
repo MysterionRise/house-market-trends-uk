@@ -201,6 +201,9 @@ def test_welsh_area_is_profiled_within_its_nation(store):
 
     p = area_profile(store, "CF10 1AA")
     assert (p.nation, p.nation_name, p.region) == ("W", "Wales", "Wales")
+    # An English area carries no Welsh caveat (council tax is council-wide everywhere)
+    english = area_profile(store, "E01000001")
+    assert "broadcast_lad" not in english.flag_codes and "not_available" not in english.flag_codes
     assert p.overall_percentile_nation in (0, 100)  # two Welsh areas: one of them is top
     crime = next(v for v in p.key_facts if v.id == "crime_violence")
     assert crime.benchmark == "nation"

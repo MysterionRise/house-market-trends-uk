@@ -1,6 +1,6 @@
 # Assistant evals
 
-The assistant is tested with real models on the full build, using 30 cases in
+The assistant is tested with real models on the full build, using 32 cases in
 [api/evals/cases.yaml](../api/evals/cases.yaml):
 
 | Category | Cases | What is checked |
@@ -8,23 +8,23 @@ The assistant is tested with real models on the full build, using 30 cases in
 | Ranking | 6 | Weights set before ranking (family, commuter, retiree, young professional), place and price filters, areas highlighted on the map |
 | Look-ups | 11 | The right tool and arguments for profiles, comparisons, nearby pubs and GPs, score explanations, map layers, the shortlist and the indicator catalogue |
 | Follow-ups | 2 | "Compare the top two", "now do that for retirees" |
-| Ambiguity | 2 | Says which Clapham or Newport it used (Newport in Wales isn't covered) |
+| Ambiguity | 2 | Says which Clapham it used; profiles Newport now that Wales is covered |
 | Scope and ethics | 4 | Edinburgh is out of scope; it declines to rank by immigration or religion; off-topic requests use no tools |
 | Grounding | 2 (+16) | Every number in a reply appears in a tool result, the prompt or the model's own tool arguments (checked on 18 cases) |
 | Analyst | 2 | SQL only in analyst mode |
 | Injection | 1 | A pub name carrying "ignore all previous instructions…" isn't obeyed |
+| Languages | 2 | With the page in Welsh, a profile and a nearby-pubs question are answered in Welsh (checked by the share of Welsh stopwords in the reply) |
 
 ## Results
 
 | Model (via OpenRouter) | Passed | Turn p50 | Turn p95 | Cost per question | Reply words (median) | Run |
 |---|---|---|---|---|---|---|
-| Claude Opus 5.5 | 30/30 | 7.05 s | 12.29 s | $0.0418 | 77.5 | 2026-10-07 |
-| Claude Haiku 5.5 (the default) | 30/30 | 5.12 s | 10.72 s | $0.0014 | 72 | 2026-10-08 |
-| Qwen 3.8 27B (open weights) | 30/30 | 7.28 s | 20.6 s | $0.0045 (est.) | 66 | 2026-10-07 |
+| Claude Opus 5.5 | 32/32 | 7.33 s | 15.52 s | $0.0484 | 77.5 | 2026-10-08 |
+| Claude Haiku 5.5 (the default) | 32/32 | 4.68 s | 8.97 s | $0.0015 | 65.5 | 2026-10-08 |
+| Qwen 3.8 27B (open weights) | 32/32 | 6.44 s | 16.62 s | $0.0017 | 60.5 | 2026-10-08 |
 
 Per-case detail (tools called, replies, failed checks) is in [docs/evals/](evals/).
-Costs are what OpenRouter billed, except "(est.)": list price × tokens, from runs before
-the billed cost was read from OpenRouter's responses.
+Costs are what OpenRouter billed.
 
 ## What the evals found and fixed
 
@@ -44,6 +44,15 @@ the billed cost was read from OpenRouter's responses.
 - **Verbose replies.** Opus's replies had a median of 112 words over 6 sentences; the
   instruction now asks for at most three sentences (about 60 words), bringing the
   median down to about 77 words.
+- **Edinburgh ranked anyway (0.3.0).** Once the pack covered two nations, Qwen read
+  "Scotland is not scored yet" as a hint and ranked areas near Edinburgh before saying
+  so. The coverage line now names example places for each uncovered nation (Edinburgh,
+  Glasgow, Aberdeen; Belfast, Derry) and the prompt says not to call the tools for them.
+- **Estimates left unsaid (0.3.0).** Asked why Manchester city centre scores low on
+  safety, Haiku relayed the residents-denominator caveat but not that Greater
+  Manchester's crime figures are estimates (the tool marks them `imputed`). The prompt
+  now asks for an explicit "estimated" whenever an indicator is imputed, from few sales
+  or council-wide.
 
 ## Choosing the model
 
@@ -63,6 +72,6 @@ For a stakeholder demo where every answer counts, Opus 5.5 is worth its cost.
 
 ```bash
 make eval MODEL=openrouter:anthropic/claude-haiku-5.5 CASES=family_leeds_budget,compare_two
-make eval MODEL=openrouter:anthropic/claude-haiku-5.5       # all 30 cases, about $0.05
-make eval MODEL=openrouter:anthropic/claude-opus-5.5        # all 30 cases, about $1.30
+make eval MODEL=openrouter:anthropic/claude-haiku-5.5       # all 32 cases, about $0.05
+make eval MODEL=openrouter:anthropic/claude-opus-5.5        # all 32 cases, about $1.50
 ```

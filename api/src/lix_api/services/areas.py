@@ -69,10 +69,20 @@ def area_profile(
     ]
     scored = [indicator_value(store, row, i.id) for i in store.scored]
     ranked = sorted((v for v in scored if v.score is not None), key=lambda v: v.score)
+    # Each caveat is tied to the indicator it is about: council tax is council-wide
+    # everywhere by nature and needs no caveat, Welsh school quality does
     flag_codes = sorted(
-        {v.quality for v in scored if v.quality in FLAG_TEXT}
+        (
+            {"imputed"}
+            if any(v.quality == "imputed" and v.id.startswith("crime_") for v in scored)
+            else set()
+        )
         | ({"low_n"} if row.get("q__house_price") == "low_n" else set())
-        | ({"broadcast_lad"} if any(v.quality == "broadcast_lad" for v in scored) else set())
+        | (
+            {"broadcast_lad"}
+            if row.get("q__secondary_school_quality") == "broadcast_lad"
+            else set()
+        )
         | ({"not_available"} if any(v.quality == "not_available" for v in scored) else set())
     )
     flags = [FLAG_TEXT[c] for c in flag_codes if c in FLAG_TEXT]

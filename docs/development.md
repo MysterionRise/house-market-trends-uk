@@ -63,16 +63,17 @@ spend per day (`api/src/lix_api/agent/limits.py`); a refusal, a failure or a mis
 explained in the chat while the map keeps working, and every turn is logged to
 `data/logs/agent.jsonl` (tools called, latency, tokens, what the provider billed).
 
-The assistant has an eval suite ([api/evals/cases.yaml](../api/evals/cases.yaml): about 30 cases
+The assistant has an eval suite ([api/evals/cases.yaml](../api/evals/cases.yaml): 32 cases
 covering ranking with constraints, look-ups, follow-ups, ambiguous places, out-of-scope and
-discriminatory requests, numbers grounded in tool results, analyst SQL and prompt injection):
+discriminatory requests, numbers grounded in tool results, analyst SQL, prompt injection and
+replies in Welsh):
 
 ```bash
 make eval MODEL=openrouter:anthropic/claude-haiku-5.5 CASES=family_leeds_budget,compare_two
 make eval MODEL=openrouter:anthropic/claude-haiku-5.5    # all cases, about $0.05
 ```
 
-Claude Opus 5.5, Claude Haiku 5.5 and Qwen 3.8 27B (open weights) all pass the 30 cases;
+Claude Opus 5.5, Claude Haiku 5.5 and Qwen 3.8 27B (open weights) all pass the 32 cases;
 results, costs and what the evals caught are in [docs/evals.md](evals.md).
 
 ## Stakeholder demo

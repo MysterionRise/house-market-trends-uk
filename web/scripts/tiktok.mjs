@@ -109,12 +109,27 @@ async function record() {
   /** Taps the map until a neighbourhood is selected (a tap on a wider area zooms in). */
   async function pickOnMap() {
     const canvas = page.locator("canvas.maplibregl-canvas");
-    for (let i = 0; i < 3; i++) {
-      await tap(canvas);
-      await page.waitForTimeout(900);
+    for (let i = 0; i < 4; i++) {
+      await tapMap(canvas);
+      await page.waitForTimeout(1200);
       if (decodeURIComponent(new URL(page.url()).hash).includes('"s":')) return;
     }
     throw new Error("No neighbourhood selected on the map");
+  }
+
+  /** Taps the map where no overlay (the legend, the zoom controls) covers it. */
+  async function tapMap(canvas) {
+    const spots = [[0.5, 0.4], [0.5, 0.3], [0.62, 0.35], [0.38, 0.3]];
+    const [fx, fy] = await canvas.evaluate((el, spots) => {
+      const r = el.getBoundingClientRect();
+      const clear = ([x, y]) => document.elementFromPoint(r.x + r.width * x, r.y + r.height * y) === el;
+      return spots.find(clear) ?? spots[0];
+    }, spots);
+    const box = await canvas.boundingBox();
+    await page.mouse.move(box.x + box.width * fx, box.y + box.height * fy);
+    await page.mouse.down();
+    await page.waitForTimeout(90);
+    await page.mouse.up();
   }
 
   try {

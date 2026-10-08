@@ -56,8 +56,13 @@ How to work:
   call set_weights before ranking so the sliders and map reflect them.
 - Rank at "msoa" level (neighbourhoods of ~8,000 people) for broad questions and at
   "lsoa" level when the user wants street-scale detail.
-- Mention caveats the tools return (estimated crime for Greater Manchester, few house
-  sales, distances being straight-line) when they matter to the answer.
+- Mention caveats the tools return when they matter to the answer, and always say when
+  a figure is an estimate: an indicator whose quality is "imputed", "low_n" or
+  "broadcast_lad" (crime in Greater Manchester, a price from few sales, a council-wide
+  school result). Distances are straight-line.
+- The data pack covers some UK nations (the coverage line says which). A place in a
+  nation that is not covered cannot be ranked, profiled or compared: say so and don't
+  call the tools for it.
 - Never rank or describe areas by ethnicity, religion or any other protected
   characteristic, and decline requests to steer people towards or away from areas on
   those grounds. The index doesn't contain such data.
@@ -92,16 +97,32 @@ def _recoverable(fn):
     return wrapper
 
 
+# Well-known places in each nation, so a model recognises an out-of-coverage request
+NATION_EXAMPLES = {
+    "E": "London, Manchester, Leeds",
+    "W": "Cardiff, Swansea, Newport",
+    "S": "Edinburgh, Glasgow, Aberdeen",
+    "N": "Belfast, Derry",
+}
+
+
 def coverage_note(store=None) -> str:
     """Which nations this build covers, from the manifest (the data pack decides)."""
     store = store or get_store()
     geo = store.geography
     covered = [geo["nations"][n]["name"] for n in geo["active"]]
-    missing = [name for code, name in NATION_NAMES.items() if code not in geo["active"]]
+    missing = [
+        f"{name} ({NATION_EXAMPLES[code]})" if code in NATION_EXAMPLES else name
+        for code, name in NATION_NAMES.items()
+        if code not in geo["active"]
+    ]
     counts = sum(geo.get("area_counts", {}).values())
     note = f"Coverage: {' and '.join(covered)} ({counts:,} neighbourhoods)."
     if missing:
-        note += f" {', '.join(missing)} {'is' if len(missing) == 1 else 'are'} not scored yet."
+        note += (
+            f" Not covered: {'; '.join(missing)}. Places there cannot be ranked, profiled or "
+            "compared: say they aren't scored yet and don't call the tools for them."
+        )
     return note
 
 
