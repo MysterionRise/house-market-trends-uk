@@ -13,8 +13,10 @@ import { useEffect, useRef, useState } from "react";
 
 import { useData, useLiveability, useScores } from "@/components/AppData";
 import { MapLegend } from "@/components/map/MapLegend";
+import { useTheme } from "@/components/ThemeProvider";
 import { fillColorExpression } from "@/lib/colors";
 import { absoluteDataUrl } from "@/lib/config";
+import { CHROME, FILL_OPACITY } from "@/lib/palette";
 import { bboxOf } from "@/lib/state";
 
 const LAYERS = [
@@ -27,33 +29,19 @@ const ENGLAND: [number, number, number, number] = [-6.4, 49.85, 1.8, 55.85];
 
 let protocolAdded = false;
 
-function useDarkMode(): boolean {
-  const [dark, setDark] = useState(false);
-  useEffect(() => {
-    const mq = window.matchMedia("(prefers-color-scheme: dark)");
-    const read = () => {
-      const forced = document.documentElement.dataset.theme;
-      setDark(forced ? forced === "dark" : mq.matches);
-    };
-    read();
-    mq.addEventListener("change", read);
-    const obs = new MutationObserver(read);
-    obs.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
-    return () => {
-      mq.removeEventListener("change", read);
-      obs.disconnect();
-    };
-  }, []);
-  return dark;
-}
-
 function basemap(dark: boolean): string {
   return `https://tiles.openfreemap.org/styles/${dark ? "dark" : "positron"}`;
 }
 
 function addOverlay(map: maplibregl.Map, dark: boolean): void {
   if (map.getSource("lsoa")) return;
-  const firstSymbol = map.getStyle().layers?.find((l: { type: string }) => l.type === "symbol")?.id;
+  const chrome = CHROME[dark ? "dark" : "light"];
+  // Fills go above the basemap's roads and boundaries but under its place labels: the
+  // first label after the last non-symbol layer. (The dark style has a water label before
+  // its roads, so "the first symbol layer" would put the fills under the road network.)
+  const layers = map.getStyle().layers ?? [];
+  const lastDrawn = layers.findLastIndex((l: { type: string }) => l.type !== "symbol");
+  const firstSymbol = layers[lastDrawn + 1]?.id;
   for (const layer of LAYERS) {
     map.addSource(layer.id, {
       type: "vector",
@@ -69,7 +57,7 @@ function addOverlay(map: maplibregl.Map, dark: boolean): void {
         "source-layer": layer.id,
         minzoom: layer.minzoom,
         maxzoom: layer.maxzoom,
-        paint: { "fill-color": fillColorExpression(dark) as never, "fill-opacity": 0.78 },
+        paint: { "fill-color": fillColorExpression(dark) as never, "fill-opacity": FILL_OPACITY[layer.id] },
       },
       firstSymbol,
     );
@@ -81,7 +69,7 @@ function addOverlay(map: maplibregl.Map, dark: boolean): void {
         "source-layer": layer.id,
         minzoom: layer.minzoom,
         maxzoom: layer.maxzoom,
-        paint: { "line-color": dark ? "#1a1a19" : "#fcfcfb", "line-width": 0.3, "line-opacity": 0.6 },
+        paint: { "line-color": chrome.surface, "line-width": 0.3, "line-opacity": 0.6 },
       },
       firstSymbol,
     );
@@ -94,7 +82,7 @@ function addOverlay(map: maplibregl.Map, dark: boolean): void {
       "source-layer": layer.id,
       minzoom: layer.minzoom,
       filter: ["in", ["get", layer.key], ["literal", []]],
-      paint: { "line-color": dark ? "#ffffff" : "#0b0b0b", "line-width": 2.5 },
+      paint: { "line-color": chrome.accent, "line-width": 2.5 },
     });
   }
   map.addSource("pois", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
@@ -104,9 +92,9 @@ function addOverlay(map: maplibregl.Map, dark: boolean): void {
     source: "pois",
     paint: {
       "circle-radius": 6,
-      "circle-color": dark ? "#ffffff" : "#0b0b0b",
+      "circle-color": chrome.accent,
       "circle-stroke-width": 2,
-      "circle-stroke-color": dark ? "#1a1a19" : "#fcfcfb",
+      "circle-stroke-color": chrome.surface,
     },
   });
 }
@@ -119,7 +107,7 @@ export function LiveabilityMap() {
   const [styleVersion, setStyleVersion] = useState(0);
   const ready = styleVersion > 0;
   const [hover, setHover] = useState<{ x: number; y: number; text: string } | null>(null);
-  const dark = useDarkMode();
+  const dark = useTheme().mode === "dark";
   const { scores } = useData();
   const { state, update } = useLiveability();
   const values = useScores(state);

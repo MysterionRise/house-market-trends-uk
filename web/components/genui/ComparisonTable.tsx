@@ -3,6 +3,7 @@
 import { useData } from "@/components/AppData";
 import { Card, Muted, formatValue } from "@/components/ui";
 import type { Comparison } from "@/lib/contracts.gen";
+import { themeVar } from "@/lib/palette";
 
 export function ComparisonTable({ comparison }: { comparison: Comparison }) {
   const { manifest } = useData();
@@ -42,7 +43,7 @@ export function ComparisonTable({ comparison }: { comparison: Comparison }) {
                       <span className="flex items-center gap-1.5">
                         <span className={`w-6 ${v === top ? "font-semibold" : ""}`}>{v?.toFixed(0) ?? "–"}</span>
                         <span className="h-1.5 w-12 rounded-r-[4px] bg-[var(--track)]">
-                          <span className="block h-1.5 rounded-r-[4px] bg-[var(--series-1)]" style={{ width: `${v ?? 0}%` }} />
+                          <span className="block h-1.5 rounded-r-[4px]" style={{ width: `${v ?? 0}%`, background: themeVar(theme) }} />
                         </span>
                       </span>
                     </td>

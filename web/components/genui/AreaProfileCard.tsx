@@ -88,6 +88,7 @@ export function AreaProfileCard({ profile }: { profile: AreaProfile }) {
             key={t.theme}
             label={t.label}
             score={t.score}
+            theme={t.theme}
             hint={t.percentile != null ? `Better than ${t.percentile}% of England` : undefined}
             marks={[
               { value: t.local_median, kind: "local", label: `${profile.local_authority} median` },

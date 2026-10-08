@@ -44,7 +44,8 @@ local authorities with the highest average gigabit broadband availability.*
 - [ ] Cold start after a reboot: `make demo` brings everything up and the map draws
 - [ ] Wi-Fi off: `make demo-offline`; every story prompt answers (recorded)
 - [ ] The welcome card appears in a fresh profile; "Skip" dismisses it for good
-- [ ] Dark mode (system setting): map, cards and heatmap are readable
+- [ ] Dark mode (system setting, and the header toggle): map, legend, cards, heatmap and the
+      chat panel are all dark and readable; switching back to light restores everything
 - [ ] A wrong postcode in search says "No matches in England"
 - [ ] An ambiguous place (*Tell me about Clapham*) says which Clapham it used
 - [ ] Model outage: unset the key or block the network with `make demo` running; the

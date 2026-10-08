@@ -1,5 +1,8 @@
-/** Small shared pieces: cards, single-hue score bars, bands and number formatting. */
+/** Small shared pieces: cards, score bars in their theme's colour, bands and number formatting. */
 import type { ReactNode } from "react";
+
+import { bandVar } from "@/lib/colors";
+import { themeVar } from "@/lib/palette";
 
 export { formatValue } from "@/lib/format";
 
@@ -33,11 +36,14 @@ export function ScoreBar({
   score,
   hint,
   marks = [],
+  theme,
 }: {
   label: string;
   score: number | null | undefined;
   hint?: string;
   marks?: BarMark[];
+  /** Theme id: the bar takes that theme's colour (ink when absent, e.g. an overall score) */
+  theme?: string;
 }) {
   const v = score == null || Number.isNaN(score) ? null : Math.max(0, Math.min(100, score));
   const shown = marks.filter((m) => m.value != null && !Number.isNaN(m.value));
@@ -48,7 +54,7 @@ export function ScoreBar({
     >
       <span className="truncate text-xs text-[var(--text-secondary)]">{label}</span>
       <span className="relative h-2 rounded-r-[4px] bg-[var(--track)]">
-        {v !== null && <span className="block h-2 rounded-r-[4px] bg-[var(--series-1)]" style={{ width: `${v}%` }} />}
+        {v !== null && <span className="block h-2 rounded-r-[4px]" style={{ width: `${v}%`, background: themeVar(theme) }} />}
         {shown.map((m) => (
           <span
             key={m.kind}
@@ -71,7 +77,11 @@ export function Band({ band, percentile }: { band?: number | null; percentile?: 
     <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--border)] px-2 py-0.5 text-xs text-[var(--text-secondary)]">
       <span className="flex gap-0.5" aria-hidden>
         {[1, 2, 3, 4, 5].map((b) => (
-          <span key={b} className={`h-2 w-1.5 rounded-[1px] ${b <= band ? "bg-[var(--series-1)]" : "bg-[var(--track)]"}`} />
+          <span
+            key={b}
+            className="h-2 w-1.5 rounded-[1px] border border-[var(--border)]"
+            style={{ background: b <= band ? bandVar(band) : "var(--track)" }}
+          />
         ))}
       </span>
       {BAND_TEXT[band]}

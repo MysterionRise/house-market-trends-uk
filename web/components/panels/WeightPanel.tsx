@@ -1,6 +1,7 @@
 "use client";
 
 import { useData, useLiveability } from "@/components/AppData";
+import { themeVar } from "@/lib/palette";
 import { effectiveWeights } from "@/lib/state";
 
 /** Preset picker and one slider per theme. Moving a slider recolours the map at once,
@@ -19,6 +20,7 @@ export function WeightPanel() {
         <select
           className="input w-full"
           value={state.preset}
+          data-testid="preset-select"
           onChange={(e) =>
             update((s) => ({ ...s, preset: e.target.value, theme_weights: {}, indicator_weights: {} }))
           }
@@ -41,9 +43,13 @@ export function WeightPanel() {
         </div>
         {Object.entries(manifest.themes).map(([theme, meta]) => (
           <label key={theme} className="grid grid-cols-[8.5rem_1fr_2rem] items-center gap-2 py-1">
-            <span className="truncate text-xs" title={meta.description}>{meta.label}</span>
+            <span className="flex min-w-0 items-center gap-1.5 text-xs" title={meta.description}>
+              <span className="inline-block h-2 w-2 shrink-0 rounded-full" style={{ background: themeVar(theme) }} aria-hidden />
+              <span className="truncate">{meta.label}</span>
+            </span>
             <input
               type="range"
+              style={{ accentColor: themeVar(theme) }}
               min={0}
               max={3}
               step={0.25}

@@ -125,6 +125,9 @@ directory (CI runs the browser tests on the demo data).
   urban/rural fairness, a shortlist, shareable URLs, light and dark mode, and an analyst mode with
   a distribution chart, read-only SQL and CSV export
 
+How it looks (tokens, the map ramp, theme colours, dark mode) is in [design.md](design.md);
+`web/lib/palette.ts` is the source and `npm run tokens` regenerates the CSS.
+
 ```bash
 make web-install   # npm ci (Node 24)
 make dev           # API (model from .env, else the scripted assistant) + front end on :3000

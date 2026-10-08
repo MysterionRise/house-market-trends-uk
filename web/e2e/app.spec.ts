@@ -52,7 +52,7 @@ test("the assistant's set_weights moves the sliders", async ({ page }) => {
   await ask(page, "Use family weights please");
   await expect(page.getByText("Weights set:")).toBeVisible({ timeout: 30_000 });
   await page.getByTestId("tab-weights").click();
-  await expect(page.locator("select").first()).toHaveValue("family");
+  await expect(page.getByTestId("preset-select")).toHaveValue("family");
   // Family preset weights education 2.5
   await expect(page.getByTestId("weight-education")).toHaveValue("2.5");
 });
@@ -117,7 +117,7 @@ test("the welcome card's personas set the weights", async ({ page }) => {
   await page.getByTestId("persona-retiree").click();
   await expect(page.getByTestId("onboarding")).toBeHidden();
   await page.getByTestId("tab-weights").click();
-  await expect(page.locator("select").first()).toHaveValue("retiree");
+  await expect(page.getByTestId("preset-select")).toHaveValue("retiree");
   // Dismissed for good in this browser
   await page.reload();
   await expect(page.getByTestId("legend")).toBeVisible({ timeout: 30_000 });

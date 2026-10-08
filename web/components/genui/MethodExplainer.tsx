@@ -4,6 +4,7 @@ import { useState } from "react";
 
 import { Card, Muted, formatValue, qualityNote } from "@/components/ui";
 import type { Explanation } from "@/lib/contracts.gen";
+import { themeVar } from "@/lib/palette";
 
 function formatDate(iso: string): string {
   const d = new Date(iso);
@@ -30,7 +31,10 @@ export function MethodExplainer({ explanation }: { explanation: Explanation }) {
             >
               <span className="truncate text-xs">{c.label}</span>
               <span className="h-2 rounded-r-[4px] bg-[var(--track)]">
-                <span className="block h-2 rounded-r-[4px] bg-[var(--series-1)]" style={{ width: `${((c.contribution ?? 0) / maxContribution) * 100}%` }} />
+                <span
+                  className="block h-2 rounded-r-[4px]"
+                  style={{ width: `${((c.contribution ?? 0) / maxContribution) * 100}%`, background: themeVar(c.theme) }}
+                />
               </span>
               <span className="text-right text-xs tabular-nums text-[var(--text-secondary)]">
                 {c.score?.toFixed(0) ?? "–"} × {(c.weight_share * 100).toFixed(0)}%

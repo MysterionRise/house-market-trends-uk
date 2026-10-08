@@ -4,6 +4,21 @@ All notable changes to this project. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Changed
+
+- A new look: colour now means data. The chrome is monochrome on warm neutrals; the map
+  uses a diverging ramp around the median (orange worse than typical, pale neutral
+  typical, teal better) instead of one blue; each theme has its own colour in score bars,
+  sliders and charts; bands take the ramp's colour for their fifth.
+- Dark mode now includes the assistant's chat, and a header toggle chooses auto, light or
+  dark. Small labels pass 4.5:1 contrast on both surfaces, and keyboard focus has a
+  visible ring.
+- Every colour comes from `web/lib/palette.ts`; `npm run tokens` generates the CSS
+  variables and CI checks the file is current. Tests cover contrast, the ramp and
+  theme-colour separation ([docs/design.md](docs/design.md)).
+
 ## [0.1.0] - 2026-10-08
 
 The first release: scores for every neighbourhood in England from open data, a map

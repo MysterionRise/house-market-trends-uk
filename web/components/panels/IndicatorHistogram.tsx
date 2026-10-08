@@ -2,8 +2,21 @@
 
 import { useMemo, useState } from "react";
 
-/** Distribution of a 0–100 score across England's LSOAs, with the selected area marked. */
-export function IndicatorHistogram({ values, label, marker }: { values: Float64Array; label: string; marker?: number | null }) {
+import { themeVar } from "@/lib/palette";
+
+/** Distribution of a 0–100 score across England's LSOAs, with the selected area marked. Bars take the theme's colour (secondary ink for the overall score, so the marker stays legible). */
+export function IndicatorHistogram({
+  values,
+  label,
+  marker,
+  theme,
+}: {
+  values: Float64Array;
+  label: string;
+  marker?: number | null;
+  /** Theme of the layer shown, for the bar colour (ink for the overall score) */
+  theme?: string | null;
+}) {
   const BINS = 20;
   const [hover, setHover] = useState<number | null>(null);
   const counts = useMemo(() => {
@@ -32,7 +45,7 @@ export function IndicatorHistogram({ values, label, marker }: { values: Float64A
                 width={bw - 2}
                 height={h}
                 rx={2}
-                fill="var(--series-1)"
+                fill={theme ? themeVar(theme) : "var(--text-secondary)"}
                 opacity={hover === null || hover === i ? 1 : 0.55}
               />
             </g>
@@ -41,7 +54,19 @@ export function IndicatorHistogram({ values, label, marker }: { values: Float64A
         {marker != null && !Number.isNaN(marker) && (
           <g>
             <line x1={PAD + (marker / 100) * (W - PAD)} x2={PAD + (marker / 100) * (W - PAD)} y1={4} y2={H} stroke="var(--text-primary)" strokeWidth={2} />
-            <text x={PAD + (marker / 100) * (W - PAD) + 3} y={12} fill="var(--text-primary)" fontSize={10}>selected {Math.round(marker)}</text>
+            {/* The label sits to the left of the line near the right edge, so it never overflows */}
+            <text
+              x={PAD + (marker / 100) * (W - PAD) + (marker > 80 ? -3 : 3)}
+              y={12}
+              textAnchor={marker > 80 ? "end" : "start"}
+              fill="var(--text-primary)"
+              stroke="var(--surface-1)"
+              strokeWidth={3}
+              paintOrder="stroke"
+              fontSize={10}
+            >
+              selected {Math.round(marker)}
+            </text>
           </g>
         )}
         {[0, 50, 100].map((t) => (

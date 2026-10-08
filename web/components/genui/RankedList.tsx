@@ -56,7 +56,7 @@ export function RankedList({ result }: { result: RankResult }) {
               <span className="text-right">
                 <span className="block text-base font-semibold tabular-nums">{r.overall?.toFixed(0) ?? "–"}</span>
                 <span className="block h-1.5 w-14 rounded-r-[4px] bg-[var(--track)]">
-                  <span className="block h-1.5 rounded-r-[4px] bg-[var(--series-1)]" style={{ width: `${r.overall ?? 0}%` }} />
+                  <span className="block h-1.5 rounded-r-[4px] bg-[var(--accent)]" style={{ width: `${r.overall ?? 0}%` }} />
                 </span>
               </span>
             </button>

@@ -1,5 +1,6 @@
 import { gradientCss } from "@/lib/colors";
 
+/** The diverging ramp as it appears on the map: worse than typical ← typical → better. */
 export function MapLegend({ label, dark }: { label: string; dark: boolean }) {
   return (
     <div
@@ -7,12 +8,17 @@ export function MapLegend({ label, dark }: { label: string; dark: boolean }) {
       data-testid="legend"
     >
       <div className="font-medium text-[var(--text-primary)]">{label}</div>
-      <div className="mb-2 text-[var(--text-muted)]">England percentile (higher is better)</div>
+      <div className="mb-2 text-[var(--text-muted)]">Against the rest of England</div>
       <div className="h-2.5 rounded-sm" style={{ background: gradientCss(dark) }} />
-      <div className="mt-1 flex justify-between tabular-nums text-[var(--text-secondary)]">
-        <span>0 · worst</span>
-        <span>50</span>
-        <span>best · 100</span>
+      <div className="mt-1 grid grid-cols-3 text-[var(--text-secondary)]">
+        <span>worse</span>
+        <span className="text-center">typical</span>
+        <span className="text-right">better</span>
+      </div>
+      <div className="grid grid-cols-3 tabular-nums text-[var(--text-muted)]">
+        <span>0</span>
+        <span className="text-center">50</span>
+        <span className="text-right">100</span>
       </div>
       <div className="mt-2 flex items-center gap-1.5 text-[var(--text-muted)]">
         <span className="inline-block h-2.5 w-2.5 rounded-sm bg-[var(--no-data)]" /> No data

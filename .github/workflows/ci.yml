@@ -58,6 +58,11 @@ jobs:
           npm run types
           git diff --exit-code lib/contracts.gen.ts
 
+      - name: Generated design tokens match lib/palette.ts
+        run: |
+          npm run tokens
+          git diff --exit-code app/tokens.gen.css
+
       - run: npm run typecheck
       - run: npm run lint
       - name: Unit tests (incl. scoring parity with Python)

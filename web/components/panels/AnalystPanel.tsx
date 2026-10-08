@@ -32,6 +32,7 @@ export function AnalystPanel() {
         <IndicatorHistogram
           values={values.lsoa}
           label={values.label}
+          theme={values.theme}
           marker={selectedIndex !== undefined ? values.lsoa[selectedIndex] : null}
         />
       )}

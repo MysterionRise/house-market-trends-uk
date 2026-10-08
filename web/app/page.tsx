@@ -8,6 +8,7 @@ import { Onboarding } from "@/components/Onboarding";
 import { PanelProvider } from "@/components/PanelContext";
 import { SearchBox } from "@/components/SearchBox";
 import { SidePanel } from "@/components/SidePanel";
+import { ThemeToggle } from "@/components/ThemeProvider";
 
 // MapLibre needs the browser
 const LiveabilityMap = dynamic(() => import("@/components/map/LiveabilityMap").then((m) => m.LiveabilityMap), {
@@ -39,13 +40,14 @@ export default function Home() {
           <div className="order-last w-full sm:order-none sm:ml-auto sm:w-auto">
             <SearchBox />
           </div>
-          <nav className="ml-auto flex flex-wrap gap-x-3 text-xs text-[var(--text-secondary)] sm:ml-0" aria-label="About">
+          <nav className="ml-auto flex flex-wrap items-center gap-x-3 text-xs text-[var(--text-secondary)] sm:ml-0" aria-label="About">
             <Link className="underline" href="/methodology">
               How scores work
             </Link>
             <Link className="underline" href="/about">
               Sources
             </Link>
+            <ThemeToggle />
           </nav>
         </header>
         <div className="grid min-h-0 grid-cols-[minmax(0,1fr)] grid-rows-[45dvh_1fr] md:grid-cols-[minmax(0,1fr)_minmax(360px,440px)] md:grid-rows-1">

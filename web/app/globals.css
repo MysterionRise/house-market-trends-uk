@@ -1,74 +1,19 @@
 @import "tailwindcss";
+@import "./tokens.gen.css";
 
-/* Design tokens: chart and UI roles from the dataviz reference palette, light and dark. */
-:root {
-  color-scheme: light;
-  --page: #f9f9f7;
-  --surface-1: #fcfcfb;
-  --text-primary: #0b0b0b;
-  --text-secondary: #52514e;
-  --text-muted: #898781;
-  --border: rgba(11, 11, 11, 0.1);
-  --hover: rgba(11, 11, 11, 0.04);
-  --track: #e1e0d9;
-  --baseline: #c3c2b7;
-  --series-1: #2a78d6;
-  --no-data: #e1e0d9;
-  --critical: #d03b3b;
-  /* Diverging (correlations): red < neutral grey < blue */
-  --div-neg: #e34948;
-  --div-mid: #f0efec;
-  --div-pos: #2a78d6;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    color-scheme: dark;
-    --page: #0d0d0d;
-    --surface-1: #1a1a19;
-    --text-primary: #ffffff;
-    --text-secondary: #c3c2b7;
-    --text-muted: #898781;
-    --border: rgba(255, 255, 255, 0.1);
-    --hover: rgba(255, 255, 255, 0.05);
-    --track: #2c2c2a;
-    --baseline: #383835;
-    --series-1: #3987e5;
-    --no-data: #383835;
-    --critical: #e66767;
-  --div-neg: #e66767;
-  --div-mid: #383835;
-  --div-pos: #3987e5;
-    --div-neg: #e66767;
-    --div-mid: #383835;
-    --div-pos: #3987e5;
-  }
-}
-
-:root[data-theme="dark"] {
-  color-scheme: dark;
-  --page: #0d0d0d;
-  --surface-1: #1a1a19;
-  --text-primary: #ffffff;
-  --text-secondary: #c3c2b7;
-  --text-muted: #898781;
-  --border: rgba(255, 255, 255, 0.1);
-  --hover: rgba(255, 255, 255, 0.05);
-  --track: #2c2c2a;
-  --baseline: #383835;
-  --series-1: #3987e5;
-  --no-data: #383835;
-  --critical: #e66767;
-  --div-neg: #e66767;
-  --div-mid: #383835;
-  --div-pos: #3987e5;
-}
+/* Design tokens live in lib/palette.ts (generated into tokens.gen.css). This file holds the
+   component CSS that uses them. */
 
 html,
 body {
   background: var(--page);
   color: var(--text-primary);
   font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
 }
 
 .btn {
@@ -94,8 +39,72 @@ body {
   color: var(--text-primary);
 }
 
-input[type="range"] {
-  accent-color: var(--series-1);
+input[type="range"],
+input[type="checkbox"] {
+  accent-color: var(--accent);
+}
+
+/* The assistant's chat is CopilotKit's own UI. It keys its dark theme on an html.dark
+   class (set by components/ThemeProvider.tsx) and its colours on these shadcn-style
+   variables, which we map onto our tokens so both modes share one set of warm greys. */
+:root [data-copilotkit] {
+  --cpk-default-font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --background: var(--surface-1);
+  --foreground: var(--text-primary);
+  --card: var(--surface-1);
+  --card-foreground: var(--text-primary);
+  --popover: var(--surface-1);
+  --popover-foreground: var(--text-primary);
+  --primary: var(--accent);
+  --primary-foreground: var(--surface-1);
+  --secondary: var(--page);
+  --secondary-foreground: var(--text-primary);
+  --muted: var(--page);
+  --muted-foreground: var(--text-secondary);
+  --accent: var(--hover);
+  --accent-foreground: var(--text-primary);
+  --destructive: var(--critical);
+  --destructive-foreground: var(--critical);
+  --border: var(--border);
+  --input: var(--border);
+  --ring: var(--focus);
+  --sidebar: var(--surface-1);
+  --sidebar-foreground: var(--text-primary);
+  --sidebar-primary: var(--accent);
+  --sidebar-primary-foreground: var(--surface-1);
+  --sidebar-accent: var(--hover);
+  --sidebar-accent-foreground: var(--text-primary);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--focus);
+}
+:root.dark [data-copilotkit] {
+  --background: var(--surface-1);
+  --foreground: var(--text-primary);
+  --card: var(--surface-1);
+  --card-foreground: var(--text-primary);
+  --popover: var(--surface-1);
+  --popover-foreground: var(--text-primary);
+  --primary: var(--accent);
+  --primary-foreground: var(--surface-1);
+  --secondary: var(--page);
+  --secondary-foreground: var(--text-primary);
+  --muted: var(--page);
+  --muted-foreground: var(--text-secondary);
+  --accent: var(--hover);
+  --accent-foreground: var(--text-primary);
+  --destructive: var(--critical);
+  --destructive-foreground: var(--critical);
+  --border: var(--border);
+  --input: var(--border);
+  --ring: var(--focus);
+  --sidebar: var(--surface-1);
+  --sidebar-foreground: var(--text-primary);
+  --sidebar-primary: var(--accent);
+  --sidebar-primary-foreground: var(--surface-1);
+  --sidebar-accent: var(--hover);
+  --sidebar-accent-foreground: var(--text-primary);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--focus);
 }
 
 /* Rendered markdown (methodology, sources) */
@@ -142,8 +151,13 @@ input[type="range"] {
   margin-top: 0.25rem;
 }
 .doc a {
-  color: var(--series-1);
+  color: var(--text-primary);
   text-decoration: underline;
+  text-decoration-color: var(--text-muted);
+  text-underline-offset: 2px;
+}
+.doc a:hover {
+  text-decoration-color: var(--text-primary);
 }
 .doc code {
   font-size: 0.85em;

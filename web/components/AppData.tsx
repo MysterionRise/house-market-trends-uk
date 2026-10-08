@@ -113,6 +113,8 @@ export interface LayerValues {
   lad: Map<string, number>;
   result: ScoreResult;
   label: string;
+  /** Theme of the active layer (a theme, or the indicator's theme); none for the overall score */
+  theme?: string;
 }
 
 /** Scores for the current weights and the values the map colours by. */
@@ -144,16 +146,20 @@ export function useScores(state: LiveabilityState): LayerValues | null {
     const layer = state.map.layer || "overall";
     let lsoa: Float64Array;
     let label: string;
+    let theme: string | undefined;
     // Colour by England percentile: scores bunch in the middle of 0–100, so percentiles
     // use the whole colour ramp and read as "better than X% of England"
     if (layer.startsWith("theme:") && result.themes[layer.slice(6)]) {
       const t = layer.slice(6);
       lsoa = result.themes[t].percentile;
       label = manifest.themes[t]?.label ?? t;
+      theme = t;
     } else if (layer.startsWith("indicator:") && scores.indicators[layer.slice(10)]) {
       const id = layer.slice(10);
       lsoa = percentileRank(scores.indicators[id]);
-      label = manifest.indicators.find((i) => i.id === id)?.label ?? id;
+      const info = manifest.indicators.find((i) => i.id === id);
+      label = info?.label ?? id;
+      theme = info?.theme;
     } else {
       lsoa = result.overallPercentile;
       label = "Overall";
@@ -168,6 +174,7 @@ export function useScores(state: LiveabilityState): LayerValues | null {
       lad: aggregate(lsoa, scores.lad, scores.population),
       result,
       label,
+      theme,
     };
   }, [manifest, scores, result, state.map.layer, state.compare_within_urban_rural]);
 }
