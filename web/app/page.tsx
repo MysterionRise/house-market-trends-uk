@@ -19,7 +19,8 @@ export default function Home() {
   const count = (manifest?.lsoa_count ?? 33755).toLocaleString("en-GB");
   return (
     <PanelProvider>
-      <main className="grid h-dvh grid-rows-[auto_1fr] bg-[var(--page)] text-[var(--text-primary)]">
+      {/* minmax(0, …) columns: content can't widen the page past a phone screen */}
+      <main className="grid h-dvh grid-cols-[minmax(0,1fr)] grid-rows-[auto_1fr] bg-[var(--page)] text-[var(--text-primary)]">
         <header className="flex flex-wrap items-center gap-x-3 gap-y-1.5 border-b border-[var(--border)] bg-[var(--surface-1)] px-4 py-2">
           <h1 className="text-base font-semibold">UK Liveability Index</h1>
           <span className="hidden text-xs text-[var(--text-secondary)] lg:inline">
@@ -38,7 +39,7 @@ export default function Home() {
           <div className="order-last w-full sm:order-none sm:ml-auto sm:w-auto">
             <SearchBox />
           </div>
-          <nav className="ml-auto flex gap-3 text-xs text-[var(--text-secondary)] sm:ml-0" aria-label="About">
+          <nav className="ml-auto flex flex-wrap gap-x-3 text-xs text-[var(--text-secondary)] sm:ml-0" aria-label="About">
             <Link className="underline" href="/methodology">
               How scores work
             </Link>
@@ -47,7 +48,7 @@ export default function Home() {
             </Link>
           </nav>
         </header>
-        <div className="grid min-h-0 grid-rows-[45dvh_1fr] md:grid-cols-[1fr_minmax(360px,440px)] md:grid-rows-1">
+        <div className="grid min-h-0 grid-cols-[minmax(0,1fr)] grid-rows-[45dvh_1fr] md:grid-cols-[minmax(0,1fr)_minmax(360px,440px)] md:grid-rows-1">
           <div className="relative min-h-0">
             {error ? (
               <div className="p-6 text-sm text-[var(--text-secondary)]" role="alert">
