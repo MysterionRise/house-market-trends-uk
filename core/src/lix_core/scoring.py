@@ -3,8 +3,10 @@
 Per indicator, raw values become a 0–100 score where higher is always better, by one
 of three methods (chosen per indicator in config/indicators.yaml):
 
-- ``rank``: England percentile. For relative measures with no natural "good enough"
-  level (crime rates, prices, deprivation scores).
+- ``rank``: percentile over the benchmark group: the whole country, or within
+  ``group`` (e.g. the nation) for measures that aren't comparable across nations. For
+  relative measures with no natural "good enough" level (crime rates, prices,
+  deprivation scores).
 - ``scale``: the value's own scale (an access index 0–1, a DfT score 0–100) mapped to
   0–100. Access indices already saturate, so a dense suburb and a city centre that both
   have plenty of cafés both score near 100.
@@ -28,14 +30,18 @@ import polars as pl
 MIN_THEME_COVERAGE = 0.5
 
 
-def percentile_rank(values: pl.Expr) -> pl.Expr:
+def percentile_rank(values: pl.Expr, group: pl.Expr | None = None) -> pl.Expr:
     """0–100 percentile with ties averaged; nulls stay null.
 
-    The lowest value gets 0 and the highest 100 (for n > 1).
+    The lowest value gets 0 and the highest 100 (for n > 1; a lone value gets 50).
+    With ``group``, ranks are computed within each group (nation, urban/rural class).
     """
     rank = values.rank(method="average")
     n = values.count()
-    return pl.when(n > 1).then((rank - 1) / (n - 1) * 100).otherwise(50.0)
+    if group is not None:
+        rank, n = rank.over(group), n.over(group)
+    pct = (rank - 1) / (n - 1) * 100
+    return pl.when(n > 1).then(pct).when(values.is_not_null()).then(50.0)
 
 
 def normalise(
@@ -46,13 +52,17 @@ def normalise(
     good: float | None = None,
     bad: float | None = None,
     scale_max: float = 1.0,
+    group: pl.Expr | None = None,
 ) -> pl.Expr:
-    """Raw indicator values → 0–100 where higher is always better."""
+    """Raw indicator values → 0–100 where higher is always better.
+
+    ``group`` only affects ``rank``: the percentile is then taken within each group.
+    """
     if direction not in ("higher_better", "lower_better"):
         raise ValueError(f"direction must be higher_better or lower_better, not {direction!r}")
     if method == "rank":
         v = values.log1p() if log1p else values
-        return percentile_rank(-v if direction == "lower_better" else v)
+        return percentile_rank(-v if direction == "lower_better" else v, group)
     if method == "scale":
         score = (values / scale_max * 100).clip(0, 100)
         # neg().add() rather than 100 - score, which would rename the column "literal"
@@ -97,9 +107,12 @@ def weighted_score(
     return out["score"], out["coverage"]
 
 
-def percentile_of(scores: pl.Series) -> pl.Series:
-    """England percentile (0–100) of a score column, keeping nulls."""
-    return pl.DataFrame({"s": scores}).select(percentile_rank(pl.col("s")))["s"]
+def percentile_of(scores: pl.Series, group: pl.Series | None = None) -> pl.Series:
+    """Percentile (0–100) of a score column, keeping nulls; within ``group`` if given."""
+    if group is None:
+        return pl.DataFrame({"s": scores}).select(percentile_rank(pl.col("s")))["s"]
+    df = pl.DataFrame({"s": scores, "g": group})
+    return df.select(percentile_rank(pl.col("s"), pl.col("g")))["s"]
 
 
 def band(percentile: pl.Expr) -> pl.Expr:
@@ -113,6 +126,7 @@ def score_lsoas(
     theme_weights: Mapping[str, float],
     indicator_multipliers: Mapping[str, float] | None = None,
     min_coverage: float = MIN_THEME_COVERAGE,
+    group: str | None = None,
 ) -> pl.DataFrame:
     """Theme and overall scores from per-indicator 0–100 scores.
 
@@ -120,8 +134,11 @@ def score_lsoas(
     indicator. ``indicators``: (id, theme, base weight) for the scored ones.
     Returns per theme ``theme__{t}`` (score), ``theme_pct__{t}`` (percentile) and
     ``theme_coverage__{t}``; then ``overall``, ``overall_pct`` and ``coverage``.
+    With ``group`` (a column of ``norms``, e.g. ``nation``), each percentile is also
+    taken within the group: ``theme_pct_{group}__{t}`` and ``overall_pct_{group}``.
     """
     mult = indicator_multipliers or {}
+    within = norms[group] if group else None
     columns: dict[str, pl.Series] = {}
     themes = sorted({theme for _, theme, _ in indicators})
     for theme in themes:
@@ -131,6 +148,8 @@ def score_lsoas(
         score, coverage = weighted_score(norms, weights, min_coverage)
         columns[f"theme__{theme}"] = score
         columns[f"theme_pct__{theme}"] = percentile_of(score)
+        if group:
+            columns[f"theme_pct_{group}__{theme}"] = percentile_of(score, within)
         columns[f"theme_coverage__{theme}"] = coverage
     themes_df = pl.DataFrame(columns)
     overall, coverage = weighted_score(
@@ -138,6 +157,7 @@ def score_lsoas(
         {f"theme__{t}": theme_weights.get(t, 0.0) for t in themes if f"theme__{t}" in columns},
         min_coverage,
     )
-    return themes_df.with_columns(
-        overall=overall, overall_pct=percentile_of(overall), coverage=coverage
-    )
+    out = themes_df.with_columns(overall=overall, overall_pct=percentile_of(overall))
+    if group:
+        out = out.with_columns(pl.Series(f"overall_pct_{group}", percentile_of(overall, within)))
+    return out.with_columns(coverage=coverage)

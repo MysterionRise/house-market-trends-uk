@@ -13,6 +13,7 @@ logger = setup_logging("stage")
 # Raw datasets each stager reads, when that isn't just its own slug
 STAGE_INPUTS: dict[str, list[str]] = {
     "price_paid": ["price_paid", "nspl"],
+    "population": ["pop_lsoa_mye"],
     "geo_lsoa": [
         "oa_lookup",
         "msoa_names",
@@ -20,7 +21,7 @@ STAGE_INPUTS: dict[str, list[str]] = {
         "lad_boundaries",
         "ruc_2021",
         "lsoa_centroids",
-        "iod_2025",
+        "pop_lsoa_mye",
         "lsoa_boundaries",
     ],
     "places": ["os_open_names", "lsoa_boundaries"],
@@ -77,6 +78,7 @@ def stagers() -> dict[str, Callable[[], pl.LazyFrame]]:
     from lix_pipeline.stage.osm import stage_osm
     from lix_pipeline.stage.pcm import stage_pcm
     from lix_pipeline.stage.police import stage_police
+    from lix_pipeline.stage.population import stage_population
     from lix_pipeline.stage.price_paid import stage_price_paid
 
     registry = load_registry()
@@ -86,9 +88,10 @@ def stagers() -> dict[str, Callable[[], pl.LazyFrame]]:
     return {
         "nspl": stage_nspl,
         "iod_2025": stage_iod,
+        "population": stage_population,
         "oa_lookup": geo.stage_oa_lookup,
         "lsoa11_lsoa21": geo.stage_lsoa11_lsoa21,
-        "geo_lsoa": geo.stage_geo_lsoa,  # needs staged nspl and iod_2025
+        "geo_lsoa": geo.stage_geo_lsoa,  # needs staged nspl and population
         "places": geo.stage_places,
         "price_paid": stage_price_paid,
         **census,

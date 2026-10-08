@@ -27,6 +27,16 @@ class TestPercentileRank:
         out = pl.DataFrame({"v": [1.0, 2.0, 2.0, 3.0, None]}).select(percentile_rank(pl.col("v")))
         assert out["v"].to_list() == [0.0, 50.0, 50.0, 100.0, None]
 
+    def test_lone_value_is_50_and_null_stays_null(self):
+        out = pl.DataFrame({"v": [7.0, None]}).select(percentile_rank(pl.col("v")))
+        assert out["v"].to_list() == [50.0, None]
+
+    def test_within_groups(self):
+        df = pl.DataFrame({"v": [1.0, 5.0, 10.0, None, 20.0, 3.0], "g": list("aabbbc")})
+        out = df.select(percentile_rank(pl.col("v"), pl.col("g")))["v"].to_list()
+        # a: 1 < 5 · b: 10 < 20 with a null · c: a lone value
+        assert out == [0.0, 100.0, 0.0, None, 100.0, 50.0]
+
     @given(st.lists(finite, min_size=2, max_size=50))
     def test_monotone_and_in_range(self, values):
         out = pl.DataFrame({"v": values}).select(percentile_rank(pl.col("v")))["v"].to_list()
@@ -147,3 +157,27 @@ class TestScoreLsoas:
 def test_band():
     out = pl.DataFrame({"p": [0.0, 19.9, 20.0, 99.9, 100.0]}).select(band(pl.col("p")))
     assert out["p"].to_list() == [1, 1, 2, 5, 5]
+
+
+class TestGroupedScores:
+    def test_score_lsoas_adds_within_group_percentiles(self):
+        norms = pl.DataFrame({"n__a": [10.0, 20.0, 30.0, 40.0], "nation": ["E", "E", "W", "W"]})
+        out = score_lsoas(norms, [("a", "t", 1.0)], {"t": 1.0}, group="nation")
+        assert out["theme_pct__t"].to_list() == pytest.approx([0, 100 / 3, 200 / 3, 100])
+        assert out["theme_pct_nation__t"].to_list() == [0.0, 100.0, 0.0, 100.0]
+        assert out["overall_pct_nation"].to_list() == [0.0, 100.0, 0.0, 100.0]
+        assert list(out.columns) == [
+            "theme__t", "theme_pct__t", "theme_pct_nation__t", "theme_coverage__t",
+            "overall", "overall_pct", "overall_pct_nation", "coverage",
+        ]  # fmt: skip
+
+    def test_without_group_columns_are_unchanged(self):
+        norms = pl.DataFrame({"n__a": [10.0, 20.0]})
+        out = score_lsoas(norms, [("a", "t", 1.0)], {"t": 1.0})
+        assert "overall_pct_nation" not in out.columns
+        assert not any(c.startswith("theme_pct_nation") for c in out.columns)
+
+    def test_rank_normalise_within_group(self):
+        df = pl.DataFrame({"v": [5.0, 5.0, 2.0, 30.0, None, 1.0], "n": list("EEWEWW")})
+        out = df.select(normalise(pl.col("v"), "lower_better", group=pl.col("n")))["v"].to_list()
+        assert out == [75.0, 75.0, 0.0, 0.0, None, 100.0]

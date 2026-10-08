@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 
-import { aggregate, percentileRank, percentileWithin, scoreLsoas } from "./scoring";
+import { MIN_THEME_COVERAGE, aggregate, percentileRank, percentileWithin, scoreLsoas } from "./scoring";
 
 // Shared with core/tests/test_golden.py: both implementations must match
 const golden = JSON.parse(
@@ -23,20 +23,32 @@ describe("golden cases match the Python scorer", () => {
     weight: i.weight,
   }));
 
+  // The Python side scores with group="nation", so every percentile also comes within nation
+  const groups: string[] = golden.groups.nation;
+
   for (const [name, c] of Object.entries(golden.cases) as [string, any][]) {
     it(name, () => {
-      const r = scoreLsoas(norms, indicators, c.themes, c.indicators);
+      const r = scoreLsoas(norms, indicators, c.themes, c.indicators, MIN_THEME_COVERAGE, groups);
       const expected = golden.expected[name];
       for (const [col, values] of Object.entries(expected) as [string, (number | null)[]][]) {
-        let got: Float64Array;
+        let got: Float64Array | undefined;
         if (col === "overall") got = r.overall;
         else if (col === "overall_pct") got = r.overallPercentile;
+        else if (col === "overall_pct_nation") got = r.overallPercentileWithin;
         else if (col === "coverage") got = r.coverage;
         else {
           const [kind, theme] = col.split("__");
           const t = r.themes[theme];
-          got = kind === "theme" ? t.score : kind === "theme_pct" ? t.percentile : t.coverage;
+          got =
+            kind === "theme"
+              ? t.score
+              : kind === "theme_pct"
+                ? t.percentile
+                : kind === "theme_pct_nation"
+                  ? t.percentileWithin
+                  : t.coverage;
         }
+        if (!got) throw new Error(`no column for ${col}`);
         values.forEach((v, i) => expect(close(got[i], v), `${name}.${col}[${i}]`).toBe(true));
       }
     });
@@ -46,6 +58,15 @@ describe("golden cases match the Python scorer", () => {
 describe("helpers", () => {
   it("percentileRank averages ties and keeps NaN", () => {
     expect([...percentileRank(toArray([1, 2, 2, 3, null]))]).toEqual([0, 50, 50, 100, NaN]);
+    expect([...percentileRank(toArray([7, null]))]).toEqual([50, NaN]);
+  });
+
+  it("scoreLsoas with groups adds within-group percentiles", () => {
+    const norms = { a: toArray([10, 20, 30, 40]) };
+    const r = scoreLsoas(norms, [{ id: "a", theme: "t", weight: 1 }], { t: 1 }, {}, 0.5, ["x", "x", "y", "y"]);
+    expect([...r.themes.t.percentileWithin!]).toEqual([0, 100, 0, 100]);
+    expect([...r.overallPercentileWithin!]).toEqual([0, 100, 0, 100]);
+    [...r.overallPercentile].forEach((v, i) => expect(v).toBeCloseTo([0, 100 / 3, 200 / 3, 100][i], 9));
   });
 
   it("percentileWithin ranks inside each group", () => {

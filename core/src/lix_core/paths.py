@@ -39,3 +39,8 @@ def ensure_dirs() -> None:
     """Create the data directories if they don't exist."""
     for kind in DATA_KINDS:
         data_dir(kind).mkdir(parents=True, exist_ok=True)
+
+
+def raw_file(slug: str, suffix: str) -> Path:
+    """The downloaded file of one registry entry: ``data/raw/{slug}/{slug}.{suffix}``."""
+    return data_dir("raw") / slug / f"{slug}.{suffix}"

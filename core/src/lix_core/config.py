@@ -1,5 +1,6 @@
 """Loading and validation of the YAML files in ``config/``."""
 
+from functools import lru_cache
 from typing import Annotated, Literal
 
 import yaml
@@ -312,3 +313,72 @@ def load_weights() -> WeightsConfig:
     if weights.default_preset not in weights.presets:
         raise ValueError(f"default_preset {weights.default_preset!r} is not a preset")
     return weights
+
+
+# ---------------------------------------------------------------------------------------
+# Nations (config/nations.yaml)
+# ---------------------------------------------------------------------------------------
+
+LevelName = Literal["oa", "low", "mid", "upper"]
+RucClass = Literal["urban", "town", "rural"]
+
+
+class LevelSpec(_Strict):
+    """One tier of a nation's statistical geography."""
+
+    regex: str  # anchored, starting with the nation letter, e.g. ^E01\d{6}$
+    official: str  # what the publisher calls it (LSOA, Data Zone, Super Data Zone...)
+    count: int | None = None  # expected number of areas, checked by ``lix validate geo``
+
+
+class NationSpec(_Strict):
+    """One nation: its codes, expected sizes and how its backbone is built."""
+
+    name: str
+    ctry_cd: str
+    input_crs: int = 27700  # CRS of the nation's coordinates in NSPL (Irish Grid for NI)
+    bbox: tuple[float, float, float, float]  # lon/lat
+    population: tuple[int, int]  # plausible total, checked by ``lix validate geo``
+    levels: dict[LevelName, LevelSpec]
+    geo_builder: str  # lix_pipeline.stage.<geo_builder> builds this nation's backbone
+    places_country: str  # OS Open Names COUNTRY value
+    ruc_map: dict[str, RucClass]  # the nation's urban/rural codes → urban | town | rural
+    pseudo_region: bool = False  # NSPL has no real regions here; the nation is its region
+    demo_upper: list[str] = Field(default_factory=list)  # upper-tier areas in the demo cut
+
+
+class CountrySpec(_Strict):
+    code: str
+    name: str
+    working_crs: int
+    currency: str
+    locale: str
+    postcode_regex: str
+    bbox: tuple[float, float, float, float]
+    area_key: str
+
+
+class NationsConfig(_Strict):
+    country: CountrySpec
+    nations: dict[str, NationSpec]
+
+
+@lru_cache(maxsize=1)
+def load_nations() -> NationsConfig:
+    """Load and validate config/nations.yaml (cached: it is static for a process)."""
+    cfg = NationsConfig.model_validate(get_config("nations"))
+    problems = []
+    for code, nation in cfg.nations.items():
+        if not (len(code) == 1 and code.isupper()):
+            problems.append(f"nation code {code!r} is not one capital letter")
+        if not nation.ctry_cd.startswith(code):
+            problems.append(f"{code}: ctry_cd {nation.ctry_cd} does not start with {code}")
+        missing = {"oa", "low", "mid", "upper"} - set(nation.levels)
+        if missing:
+            problems.append(f"{code}: levels missing {sorted(missing)}")
+        for level, spec in nation.levels.items():
+            if not (spec.regex.startswith(f"^{code}") and spec.regex.endswith("$")):
+                problems.append(f"{code}.{level}: regex {spec.regex!r} must be ^{code}...$")
+    if problems:
+        raise ValueError("Invalid config/nations.yaml: " + "; ".join(problems))
+    return cfg

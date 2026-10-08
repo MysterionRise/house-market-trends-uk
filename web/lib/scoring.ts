@@ -17,6 +17,8 @@ export interface ScoredIndicator {
 export interface ThemeResult {
   score: Float64Array;
   percentile: Float64Array;
+  /** Percentile within the group passed to scoreLsoas (the nation), when given. */
+  percentileWithin?: Float64Array;
   coverage: Float64Array;
 }
 
@@ -24,6 +26,7 @@ export interface ScoreResult {
   themes: Record<string, ThemeResult>;
   overall: Float64Array;
   overallPercentile: Float64Array;
+  overallPercentileWithin?: Float64Array;
   coverage: Float64Array;
 }
 
@@ -81,12 +84,18 @@ export function weightedScore(
   return { score, coverage };
 }
 
+/**
+ * Theme and overall scores for every LSOA. With `groups` (one label per row, e.g. the
+ * nation) each percentile is also taken within the group, as lix_core.scoring does with
+ * `group=`.
+ */
 export function scoreLsoas(
   norms: Record<string, Float64Array>,
   indicators: ScoredIndicator[],
   themeWeights: Record<string, number>,
   multipliers: Record<string, number> = {},
   minCoverage = MIN_THEME_COVERAGE,
+  groups?: string[],
 ): ScoreResult {
   const themeNames = [...new Set(indicators.map((i) => i.theme))].sort();
   const themes: Record<string, ThemeResult> = {};
@@ -100,6 +109,7 @@ export function scoreLsoas(
       minCoverage,
     );
     themes[theme] = { score, percentile: percentileRank(score), coverage };
+    if (groups) themes[theme].percentileWithin = percentileWithin(score, groups);
   }
   const present = Object.keys(themes);
   const { score: overall, coverage } = weightedScore(
@@ -107,7 +117,9 @@ export function scoreLsoas(
     present.map((t) => themeWeights[t] ?? 0),
     minCoverage,
   );
-  return { themes, overall, overallPercentile: percentileRank(overall), coverage };
+  const result: ScoreResult = { themes, overall, overallPercentile: percentileRank(overall), coverage };
+  if (groups) result.overallPercentileWithin = percentileWithin(overall, groups);
+  return result;
 }
 
 /** Percentile within groups (e.g. urban/rural class), for like-for-like comparison. */

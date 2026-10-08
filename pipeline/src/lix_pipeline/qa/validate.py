@@ -9,25 +9,30 @@ from pathlib import Path
 
 import polars as pl
 
-from lix_core.codes import ENGLAND_LSOA21
-from lix_core.config import load_indicators
+from lix_core.codes import ENGLAND_LSOA21, active_nations, area_code_regex, in_scope
+from lix_core.config import load_indicators, load_nations
 from lix_core.paths import data_dir
 
-# England LSOAs (December 2021)
+# England LSOAs (December 2021); validate_serve still assumes England until the serve
+# format carries nations (v0.3.0 step 6)
 ENGLAND_LSOA_COUNT = 33_755
 
 
 def validate_geo() -> list[str]:
+    """The backbone has every area of every active nation, once, with its columns filled."""
     problems = []
     staged = data_dir("staged")
     geo = pl.read_parquet(staged / "geo_lsoa.parquet")
+    nations = active_nations()
+    cfg = load_nations().nations
 
-    if geo.height != ENGLAND_LSOA_COUNT:
-        problems.append(f"geo_lsoa has {geo.height:,} rows, expected {ENGLAND_LSOA_COUNT:,}")
+    expected = sum(cfg[n].levels["low"].count or 0 for n in nations)
+    if geo.height != expected:
+        problems.append(f"geo_lsoa has {geo.height:,} rows, expected {expected:,}")
     if geo["lsoa21cd"].n_unique() != geo.height:
         problems.append("geo_lsoa has duplicate lsoa21cd")
-    if not geo["lsoa21cd"].str.contains(ENGLAND_LSOA21).all():
-        problems.append("geo_lsoa has non-England LSOA codes")
+    if not geo["lsoa21cd"].str.contains(area_code_regex()).all():
+        problems.append(f"geo_lsoa has codes outside the active nations {list(nations)}")
 
     required = [
         "lsoa21nm",
@@ -38,7 +43,11 @@ def validate_geo() -> list[str]:
         "lad_nm",
         "rgn_cd",
         "rgn_nm",
+        "nation",
+        "ctry_cd",
+        "area_type",
         "ruc21cd",
+        "ruc_class",
         "urban",
         "pwc_x",
         "pwc_y",
@@ -51,13 +60,30 @@ def validate_geo() -> list[str]:
         "bbox_e",
         "bbox_n",
     ]
+    missing_columns = [c for c in required if c not in geo.columns]
+    problems += [f"geo_lsoa is missing column {c}" for c in missing_columns]
     for col in required:
-        if col not in geo.columns:
-            problems.append(f"geo_lsoa is missing column {col}")
-        elif (n := geo[col].null_count()) > 0:
+        if col in geo.columns and (n := geo[col].null_count()) > 0:
             problems.append(f"geo_lsoa.{col} has {n:,} nulls")
+    if missing_columns:
+        return problems  # the per-nation checks below assume the columns exist
 
-    # Centroids must sit inside England's bounding box, and inside their own LSOA's bbox
+    for code in nations:
+        spec = cfg[code]
+        rows = geo.filter(in_scope("lsoa21cd", nations=(code,)))
+        if (count := spec.levels["low"].count) and rows.height != count:
+            problems.append(f"{spec.name}: {rows.height:,} LSOAs, expected {count:,}")
+        if (count := spec.levels["mid"].count) and rows["msoa21cd"].n_unique() != count:
+            found = rows["msoa21cd"].n_unique()
+            problems.append(f"{spec.name}: {found:,} MSOAs, expected {count:,}")
+        if not (rows["nation"] == code).all() or not (rows["ctry_cd"] == spec.ctry_cd).all():
+            problems.append(f"{spec.name}: nation/ctry_cd columns disagree with the codes")
+        low, high = spec.population
+        pop = rows["population"].sum()
+        if not low < pop < high:
+            problems.append(f"{spec.name} population {pop:,} is outside {low:,}–{high:,}")
+
+    # Centroids must sit inside their own LSOA's bbox
     outside = geo.filter(
         (pl.col("pwc_lon") < pl.col("bbox_w"))
         | (pl.col("pwc_lon") > pl.col("bbox_e"))
@@ -69,7 +95,7 @@ def validate_geo() -> list[str]:
 
     nspl = pl.scan_parquet(staged / "nspl.parquet")
     nspl_lsoas = set(
-        nspl.filter(pl.col("live") & pl.col("lsoa21cd").str.contains(ENGLAND_LSOA21))
+        nspl.filter(pl.col("live") & in_scope("lsoa21cd"))
         .select("lsoa21cd")
         .unique()
         .collect()["lsoa21cd"]
@@ -79,10 +105,6 @@ def validate_geo() -> list[str]:
         problems.append(
             f"{len(missing)} NSPL LSOAs missing from geo_lsoa, e.g. {sorted(missing)[:3]}"
         )
-
-    pop = geo["population"].sum()
-    if not 55_000_000 < pop < 60_000_000:
-        problems.append(f"England population {pop:,} is implausible")
     return problems
 
 

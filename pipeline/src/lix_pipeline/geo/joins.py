@@ -11,15 +11,16 @@ from typing import Literal
 import geopandas as gpd
 import polars as pl
 
-from lix_core.codes import ENGLAND_LSOA21
+from lix_core.codes import area_code_regex
 from lix_core.paths import data_dir
 from lix_pipeline.geo.boundaries import load_lsoa_boundaries
 
 
-@lru_cache(maxsize=1)
-def _england_lsoa_polygons() -> gpd.GeoDataFrame:
+@lru_cache(maxsize=2)
+def _lsoa_polygons(code_regex: str) -> gpd.GeoDataFrame:
+    """LSOA polygons whose code matches ``code_regex`` (the active nations')."""
     gdf = load_lsoa_boundaries("lsoa_boundaries")
-    gdf = gdf[gdf.index.str.match(ENGLAND_LSOA21)]
+    gdf = gdf[gdf.index.str.match(code_regex)]
     return gdf[["geometry"]].reset_index()
 
 
@@ -30,12 +31,12 @@ def points_to_lsoa(
     crs: int = 27700,
     polygons: gpd.GeoDataFrame | None = None,
 ) -> pl.DataFrame:
-    """Add ``lsoa21cd`` to point records (null outside England).
+    """Add ``lsoa21cd`` to point records (null outside the active nations).
 
     Coordinates are eastings/northings by default (``crs=27700``); pass ``crs=4326``
     with lon/lat columns. ``polygons`` (columns lsoa21cd, geometry) is for tests.
     """
-    polys = polygons if polygons is not None else _england_lsoa_polygons()
+    polys = polygons if polygons is not None else _lsoa_polygons(area_code_regex())
     valid = df[x].is_not_null() & df[y].is_not_null()
     pts = gpd.GeoDataFrame(
         {"_row": range(df.height)},

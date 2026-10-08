@@ -2,7 +2,7 @@
 
 # Data sources
 
-55 datasets, all under open licences. Each is pinned to a concrete file in `config/datasets.lock.json` by `lix resolve`.
+56 datasets, all under open licences. Each is pinned to a concrete file in `config/datasets.lock.json` by `lix resolve`.
 
 
 ## Geography
@@ -18,6 +18,7 @@
 | `oa_lookup` | Output Area 2021 to LSOA to MSOA to LAD exact-fit lookup | Census geography hierarchy; maps OA-level data (e.g. Ofcom broadband) to LSOAs. | static | OGL-3.0 |
 | `lsoa11_lsoa21` | LSOA 2011 to LSOA 2021 exact-fit lookup | Converts data published on 2011 LSOAs (U unchanged, S split, M merged, X irregular). | static | OGL-3.0 |
 | `ruc_2021` | Rural Urban Classification (2021) of LSOAs | Urban/rural class per LSOA; lets scores compare like with like. | static | OGL-3.0 |
+| `pop_lsoa_mye` | [ONS mid-year population estimates for LSOAs (England and Wales)](https://www.ons.gov.uk/peoplepopulationandcommunity/populationandmigration/populationestimates/datasets/lowersuperoutputareamidyearpopulationestimatesnationalstatistics) | Usual resident population of every 2021 LSOA in England and Wales at 30 June, by broad age group and sex. The latest year is the backbone population and the denominator of per-head indicators in both nations. | annual | OGL-3.0 |
 | `msoa_names` | [House of Commons Library MSOA names](https://houseofcommonslibrary.github.io/msoanames/) | Human-friendly neighbourhood names for each MSOA (e.g. "Hillside" for Adur 001). | adhoc | OGL-3.0 |
 | `os_open_names` | [OS Open Names](https://www.ordnancesurvey.co.uk/products/os-open-names) | Gazetteer of places, roads and postcodes; powers place search ("near Leeds"). | quarterly | OGL-3.0 |
 

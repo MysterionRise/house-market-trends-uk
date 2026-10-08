@@ -182,6 +182,22 @@ ruc_2021:
   cadence: static
   size_hint: 2MB
 
+
+pop_lsoa_mye:
+  title: ONS mid-year population estimates for LSOAs (England and Wales)
+  theme: geography
+  access:
+    type: html_link
+    page: https://www.ons.gov.uk/peoplepopulationandcommunity/populationandmigration/populationestimates/datasets/lowersuperoutputareamidyearpopulationestimatesnationalstatistics
+    steps: [{pattern: 'href="(/file\?uri=[^"]*/mid\d{4}[^"]*/sapelsoabroadage[^"]*\.xlsx)"', order: desc}]
+  format: xlsx
+  description: Usual resident population of every 2021 LSOA in England and Wales at 30 June, by broad age group and sex. The latest year is the backbone population and the denominator of per-head indicators in both nations.
+  licence: OGL-3.0
+  attribution: *ons
+  cadence: annual
+  size_hint: 13MB
+
+
 msoa_names:
   title: House of Commons Library MSOA names
   theme: geography

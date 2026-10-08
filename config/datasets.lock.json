@@ -3184,6 +3184,20 @@
       "version": "Wed, 30 Sep 2026 14:06:14 GMT"
     }
   },
+  "pop_lsoa_mye": {
+    "fetched": {
+      "bytes": 13063018,
+      "etag": "\"b3cb5fd9f15c71bf81cd33e77909e0f6bf531e90--gzip\"",
+      "fetched_at": "2026-10-08T17:03:20.050406+00:00",
+      "sha256": "b77a07033dca67a204ff7d306819bb90241234ea0ce4e3c259ebf98d7c7e6f28"
+    },
+    "resolved": {
+      "release": null,
+      "resolved_at": "2026-10-08T17:03:17+00:00",
+      "url": "https://www.ons.gov.uk/file?uri=/peoplepopulationandcommunity/populationandmigration/populationestimates/datasets/lowersuperoutputareamidyearpopulationestimatesnationalstatistics/mid2022revisednov2025tomid2024/sapelsoabroadage20222024.xlsx",
+      "version": "https://www.ons.gov.uk/file?uri=/peoplepopulationandcommunity/populationandmigration/populationestimates/datasets/lowersuperoutputareamidyearpopulationestimatesnationalstatistics/mid2022revisednov2025tomid2024/sapelsoabroadage20222024.xlsx"
+    }
+  },
   "price_paid": {
     "fetched": {
       "bytes": 5525539417,

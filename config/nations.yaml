@@ -1,0 +1,48 @@
+# Which nations the index covers and what their geography looks like. Nation is data:
+# stagers filter with lix_core.codes.in_scope(), validation reads the expected counts
+# here, and LIX_NATIONS=E,W narrows the active set (tests, CI and demo builds use a
+# subset). Nation codes are the first letter of ONS GSS codes (E01…, W01…).
+
+country:
+  code: UK
+  name: United Kingdom
+  working_crs: 27700  # British National Grid; every stager works in metres on this grid
+  currency: GBP
+  locale: en-GB
+  postcode_regex: '^[A-Z]{1,2}\d[A-Z\d]? ?\d[A-Z]{2}$'
+  bbox: [-8.7, 49.8, 1.8, 60.9]  # lon/lat
+  area_key: lsoa21cd  # the key column of every table, whatever a nation calls its areas
+
+nations:
+  E:
+    name: England
+    ctry_cd: E92000001
+    input_crs: 27700
+    bbox: [-6.5, 49.8, 1.8, 55.9]
+    population: [55000000, 60000000]
+    levels:
+      oa: {regex: '^E00\d{6}$', official: Output Area}
+      low: {regex: '^E01\d{6}$', official: LSOA, count: 33755}
+      mid: {regex: '^E02\d{6}$', official: MSOA, count: 6856}
+      upper: {regex: '^E0[6-9]\d{6}$', official: Local authority}
+    geo_builder: geo_ew
+    places_country: England  # OS Open Names COUNTRY value
+    # Rural Urban Classification 2021: urban · larger rural (towns) · smaller rural
+    ruc_map: {UN1: urban, UF1: urban, RLN1: town, RLF1: town, RSN1: rural, RSF1: rural}
+    demo_upper: [E08000035, E06000043]  # Leeds; Brighton and Hove
+  W:
+    name: Wales
+    ctry_cd: W92000004
+    input_crs: 27700
+    bbox: [-5.4, 51.3, -2.6, 53.5]
+    population: [3000000, 3300000]
+    levels:
+      oa: {regex: '^W00\d{6}$', official: Output Area}
+      low: {regex: '^W01\d{6}$', official: LSOA, count: 1917}
+      mid: {regex: '^W02\d{6}$', official: MSOA, count: 408}
+      upper: {regex: '^W06\d{6}$', official: Local authority}
+    geo_builder: geo_ew
+    places_country: Wales
+    ruc_map: {UN1: urban, UF1: urban, RLN1: town, RLF1: town, RSN1: rural, RSF1: rural}
+    pseudo_region: true  # NSPL gives Wales one pseudo region (W99999999): the nation is its region
+    demo_upper: [W06000015]  # Cardiff

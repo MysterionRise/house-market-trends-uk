@@ -36,6 +36,14 @@ NSPL_VINTAGED_STEMS = {
 ENGLAND = ("E",)
 
 
+def nspl_document(pattern: str) -> Path:
+    """One of the code→name lookups shipped in the NSPL zip's Documents/ folder."""
+    matches = sorted((data_dir("raw") / "nspl" / "Documents").glob(pattern))
+    if not matches:
+        raise FileNotFoundError(f"No NSPL document matching {pattern!r}")
+    return matches[-1]
+
+
 def find_nspl_csv(nspl_dir: Path) -> Path:
     """Locate the NSPL CSV inside the extracted directory (version-agnostic)."""
     for csv in sorted(nspl_dir.rglob("NSPL*_UK.csv")):

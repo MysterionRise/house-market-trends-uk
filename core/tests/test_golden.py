@@ -19,7 +19,7 @@ INDICATORS = [
     {"id": "crime", "theme": "safety", "weight": 1.5, "direction": "lower_better",
      "normalise": "rank", "log1p": True},
     {"id": "theft", "theme": "safety", "weight": 1.0, "direction": "lower_better",
-     "normalise": "rank", "log1p": True},
+     "normalise": "rank", "log1p": True, "benchmark": "nation"},
     {"id": "no2", "theme": "environment", "weight": 1.0, "direction": "lower_better",
      "normalise": "threshold", "good": 10, "bad": 30},
     {"id": "parks", "theme": "environment", "weight": 0.5, "direction": "higher_better",
@@ -34,6 +34,9 @@ RAW = {
     "parks": [0.9, 0.2, None, 1.0, 0.0, 0.55],
     "gp_m": [400.0, 1500.0, 9000.0, 650.0, None, 3000.0],
 }
+# One label per row; rank-normalised indicators with benchmark "nation" and the
+# *_pct_nation columns are computed within these groups
+GROUPS = {"nation": ["E", "E", "W", "E", "W", "W"]}
 CASES = {
     "balanced": {"themes": {"safety": 1, "environment": 1, "health": 1}, "indicators": {}},
     "family": {"themes": {"safety": 2, "environment": 1.5, "health": 0.5},
@@ -43,22 +46,30 @@ CASES = {
 
 
 def compute() -> dict:
-    df = pl.DataFrame(RAW)
+    df = pl.DataFrame({**RAW, **GROUPS})
     norms = df.select(
         normalise(
             pl.col(i["id"]), i["direction"], method=i["normalise"], log1p=i.get("log1p", False),
             good=i.get("good"), bad=i.get("bad"), scale_max=i.get("scale_max", 1.0),
+            group=pl.col("nation") if i.get("benchmark") == "nation" else None,
         ).alias(f"n__{i['id']}")
         for i in INDICATORS
     )  # fmt: skip
     ind = [(i["id"], i["theme"], i["weight"]) for i in INDICATORS]
     expected = {}
     for name, case in CASES.items():
-        out = score_lsoas(norms, ind, case["themes"], case["indicators"])
+        out = score_lsoas(
+            norms.with_columns(df["nation"]),
+            ind,
+            case["themes"],
+            case["indicators"],
+            group="nation",
+        )
         expected[name] = {c: out[c].to_list() for c in out.columns}
     return {
         "indicators": INDICATORS,
         "raw": RAW,
+        "groups": GROUPS,
         "normalised": {c: norms[c].to_list() for c in norms.columns},
         "cases": CASES,
         "expected": expected,
