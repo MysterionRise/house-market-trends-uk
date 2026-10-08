@@ -1,9 +1,11 @@
 # Front end (Next.js standalone output). NEXT_PUBLIC_* values are baked in at build time:
-# they are what the *browser* uses to reach the API and the static data server.
+# they are what the *browser* uses to reach the API and the data files. The defaults (an
+# empty API URL and /data) mean the page's own origin, through the proxy (docker/Caddyfile),
+# so one image works on any host and port.
 FROM node:24-alpine AS build
 WORKDIR /app
-ARG NEXT_PUBLIC_API_URL=http://localhost:8000
-ARG NEXT_PUBLIC_DATA_URL=http://localhost:8080
+ARG NEXT_PUBLIC_API_URL=
+ARG NEXT_PUBLIC_DATA_URL=/data
 # 1 exposes the map as window.__map for browser tests against this image
 ARG NEXT_PUBLIC_EXPOSE_MAP=0
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL NEXT_PUBLIC_DATA_URL=$NEXT_PUBLIC_DATA_URL \

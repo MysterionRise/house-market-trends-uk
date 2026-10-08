@@ -2,7 +2,7 @@ import { type Page, expect, test } from "@playwright/test";
 
 /**
  * The demo storyline (docs/demo.md), for rehearsals against `make demo` or
- * `make demo-offline`: LIX_DEMO=1 npx playwright test demo-storyline
+ * `make demo-offline`: LIX_DEMO=1 LIX_E2E_STACK=docker npx playwright test demo-storyline
  * Saves a screenshot per step to test-results/demo/.
  */
 test.skip(!process.env.LIX_DEMO, "rehearsal only: set LIX_DEMO=1 with make demo running");

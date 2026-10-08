@@ -14,7 +14,7 @@ import { useEffect, useRef, useState } from "react";
 import { useData, useLiveability, useScores } from "@/components/AppData";
 import { MapLegend } from "@/components/map/MapLegend";
 import { fillColorExpression } from "@/lib/colors";
-import { DATA_URL } from "@/lib/config";
+import { absoluteDataUrl } from "@/lib/config";
 import { bboxOf } from "@/lib/state";
 
 const LAYERS = [
@@ -57,7 +57,7 @@ function addOverlay(map: maplibregl.Map, dark: boolean): void {
   for (const layer of LAYERS) {
     map.addSource(layer.id, {
       type: "vector",
-      url: `pmtiles://${DATA_URL}/tiles/${layer.id}.pmtiles`,
+      url: `pmtiles://${absoluteDataUrl()}/tiles/${layer.id}.pmtiles`,
       promoteId: { [layer.id]: layer.key },
       attribution: "Contains OS data © Crown copyright and database right; ONS",
     });

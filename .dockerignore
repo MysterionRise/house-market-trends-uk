@@ -13,3 +13,6 @@ web/test-results/
 web/playwright-report/
 web/public/maplibre-gl-worker.mjs
 .env
+web/recordings/
+dist/
+docs/media/

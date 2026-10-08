@@ -1,6 +1,7 @@
 .PHONY: up down up-demo gif data-pack data-unpack eval demo demo-offline demo-check demo-record install resolve fetch stage indicators score tiles build-data validate demo-data docs schemas api web-install web web-test e2e dev test lint format
 
 PY_DIRS := core pipeline api
+APP_URL := http://localhost:$(or $(LIX_PORT),3000)
 # Local runs read model keys from .env when it exists (see .env.example)
 ENV_FILE := $(if $(wildcard .env),--env-file $(CURDIR)/.env,)
 
@@ -86,13 +87,17 @@ format:
 	uv run ruff format $(PY_DIRS)
 	uv run ruff check --fix $(PY_DIRS)
 
-# Docker: everything at http://localhost:3000 (data from ./data/serve)
+# Docker: everything at http://localhost:3000 (LIX_PORT), data from ./data/serve. Uses the
+# release's images from GitHub's registry, building any that aren't published; BUILD=1
+# builds from this checkout instead
 up:
-	docker compose up -d --build --wait
+	$(if $(BUILD),,docker compose pull --quiet --ignore-pull-failures api web proxy)
+	docker compose up -d $(if $(BUILD),--build,) --remove-orphans --wait
+	@echo "Running at $(APP_URL); stop with make down"
 
 # The same on the small committed demo dataset (Leeds + Brighton)
 up-demo:
-	LIX_SERVE_DIR=./fixtures/demo/serve docker compose up -d --build --wait
+	LIX_SERVE_DIR=./fixtures/demo/serve $(MAKE) up
 
 down:
 	docker compose down
@@ -121,17 +126,15 @@ eval:
 	cd api && uv run $(ENV_FILE) python -m evals.run --model $(MODEL) $(if $(CASES),--cases $(CASES),)
 
 # --- Stakeholder demo (docs/demo.md) ---------------------------------------------------
-# make demo          real model from .env (Docker: api, static data, web)
+# make demo          real model from .env (Docker, built from this checkout)
 # make demo-offline  recorded conversations (config/demo_cassettes.json): no network needed
 # make demo-record   re-record those conversations with a real model
 # NO_OPEN=1 skips opening the browser (rehearsal scripts)
-DEMO_URL := http://localhost:3000
-
 demo: demo-check
-	docker compose up -d --build --wait
-	@curl -sf "http://localhost:8000/api/v1/areas/LS6%203AA" >/dev/null && echo "API warmed up"
-	@echo "Demo running at $(DEMO_URL) (assistant: $${LIX_MODEL:-from .env}); stop with make down"
-	@$(if $(NO_OPEN),true,(open $(DEMO_URL) || xdg-open $(DEMO_URL)) >/dev/null 2>&1 || true)
+	docker compose up -d --build --remove-orphans --wait
+	@curl -sf "$(APP_URL)/api/v1/areas/LS6%203AA" >/dev/null && echo "API warmed up"
+	@echo "Demo running at $(APP_URL) (assistant: $${LIX_MODEL:-from .env}); stop with make down"
+	@$(if $(NO_OPEN),true,(open $(APP_URL) || xdg-open $(APP_URL)) >/dev/null 2>&1 || true)
 
 demo-offline:
 	LIX_MODEL=replay $(MAKE) demo
@@ -151,5 +154,5 @@ demo-record:
 # dist/walkthrough.mp4): the Docker stack with the recorded assistant answers. Needs ffmpeg
 gif: demo-check
 	LIX_MODEL=replay LIX_REPLAY_DELAY=0.025 docker compose up -d --build --wait
-	cd web && LIX_RECORD=1 npx playwright test record
+	cd web && LIX_RECORD=1 LIX_E2E_STACK=docker npx playwright test record
 	./scripts/make-gif.sh

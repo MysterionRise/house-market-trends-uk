@@ -1,18 +1,37 @@
-# Static files for the browser: map tiles (PMTiles), scores.parquet and manifest.json.
-# PMTiles is read with HTTP range requests, which file_server supports. Only JSON is
-# compressed: PMTiles and Parquet are compressed internally, and compressing a byte
-# range breaks the client's offsets.
+# The one address the app is served on (docker compose publishes it as LIX_PORT, 3000 by
+# default): the web app, the API and the data files share an origin, so the same images
+# work on localhost, a LAN box or a server without rebuilding.
+#   /data/*                  map tiles (PMTiles), scores.parquet, manifest.json
+#   /api/v1/*, /health, /mcp the Python API (REST, MCP)
+#   everything else          the Next.js front end (its /api/copilotkit relays to the assistant)
+# Plain HTTP: put a TLS-terminating proxy in front when hosting it publicly.
+{
+	admin off
+	auto_https off
+}
+
 :8080 {
-	root * /srv
-	@json path *.json
-	encode @json zstd gzip
-	header {
-		Access-Control-Allow-Origin *
-		Access-Control-Allow-Headers Range
-		Access-Control-Expose-Headers "Content-Length, Content-Range, ETag"
-		# Revalidate (ETag) every time: PMTiles and Parquet are read in byte ranges, and a
-		# stale range from a previous build would corrupt the read
-		Cache-Control "no-cache"
+	handle_path /data/* {
+		root * /srv
+		# PMTiles and Parquet are read in byte ranges and are compressed internally;
+		# compressing a range breaks the client's offsets, so only JSON is encoded
+		@json path *.json
+		encode @json zstd gzip
+		# Revalidate (ETag) every time: a stale range from a previous build would
+		# corrupt the read
+		header Cache-Control "no-cache"
+		file_server
 	}
-	file_server
+
+	@api path /api/v1/* /health /mcp /mcp/*
+	handle @api {
+		reverse_proxy api:8000
+	}
+
+	handle {
+		# The assistant's replies stream (server-sent events): pass them on as they come
+		reverse_proxy web:3000 {
+			flush_interval -1
+		}
+	}
 }
