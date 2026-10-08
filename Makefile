@@ -1,7 +1,11 @@
-.PHONY: up down up-demo gif data-pack data-unpack eval demo demo-offline demo-check demo-record install resolve fetch stage indicators score tiles build-data validate demo-data docs schemas api web-install web web-test e2e dev test lint format
+.PHONY: up down up-demo gif quickstart data-download data-pack data-unpack eval demo demo-offline demo-check demo-record install resolve fetch stage indicators score tiles build-data validate demo-data docs schemas api web-install web web-test e2e dev test lint format
 
 PY_DIRS := core pipeline api
 APP_URL := http://localhost:$(or $(LIX_PORT),3000)
+# The release version (pyproject.toml); docker compose pulls the images of this version
+VERSION ?= $(shell sed -n 's/^version = "\(.*\)"/\1/p' pyproject.toml)
+export LIX_VERSION ?= $(VERSION)
+SHA256 := $(shell command -v sha256sum >/dev/null && echo sha256sum || echo "shasum -a 256")
 # Local runs read model keys from .env when it exists (see .env.example)
 ENV_FILE := $(if $(wildcard .env),--env-file $(CURDIR)/.env,)
 
@@ -102,23 +106,42 @@ up-demo:
 down:
 	docker compose down
 
-# Snapshot of a built data/serve (about 120 MB) so another machine can skip the 14 GB
-# raw download: `make data-pack`, copy dist/lix-serve-*.tar.gz, then
-# `make data-unpack PACK=dist/lix-serve-YYYYMMDD.tar.gz`
-PACK_NAME := lix-serve-$(shell date +%Y%m%d)
+# The data pack: a built data/serve (about 120 MB) with its licence notices, so another
+# machine can skip the 14 GB raw download. Releases carry it as an asset:
+#   make data-pack                       write dist/lix-serve.tar.gz (+ .sha256)
+#   make data-download [VERSION=x.y.z]   fetch this release's pack and unpack it
+#   make data-unpack [PACK=...]          unpack a pack you have
+PACK ?= dist/lix-serve.tar.gz
+RELEASES := https://github.com/MysterionRise/uk-liveability-index/releases/download
 data-pack:
 	uv run lix validate serve
 	mkdir -p dist
-	tar -C data -czf dist/$(PACK_NAME).tar.gz serve
-	cd dist && shasum -a 256 $(PACK_NAME).tar.gz > $(PACK_NAME).tar.gz.sha256
-	@echo "Wrote dist/$(PACK_NAME).tar.gz"
+	tar -czf $(PACK) -C data serve -C $(CURDIR) ATTRIBUTION.md DATA-LICENCE.md
+	cd $(dir $(PACK)) && $(SHA256) $(notdir $(PACK)) > $(notdir $(PACK)).sha256
+	@echo "Wrote $(PACK) ($$(du -h $(PACK) | cut -f1))"
+
+data-download:
+	mkdir -p $(dir $(PACK))
+	curl -fL --progress-bar -o $(PACK) $(RELEASES)/v$(VERSION)/$(notdir $(PACK))
+	curl -fsSL -o $(PACK).sha256 $(RELEASES)/v$(VERSION)/$(notdir $(PACK)).sha256
+	$(MAKE) data-unpack
 
 data-unpack:
-	@test -n "$(PACK)" || (echo "Usage: make data-unpack PACK=dist/lix-serve-YYYYMMDD.tar.gz" && exit 1)
-	cd $(dir $(PACK)) && shasum -a 256 -c $(notdir $(PACK)).sha256
+	@test -f $(PACK) || (echo "No $(PACK): make data-download, or make data-unpack PACK=path/to/lix-serve.tar.gz" && exit 1)
+	cd $(dir $(PACK)) && $(SHA256) -c $(notdir $(PACK)).sha256
+	rm -rf data/serve
 	mkdir -p data
 	tar -C data -xzf $(PACK)
-	uv run lix validate serve
+	@# The full checks need the Python workspace (uv sync); a quickstart has only Docker
+	@if command -v uv >/dev/null && [ -d .venv ]; then uv run lix validate serve; fi
+	@echo "Data ready in data/serve (built $$(sed -n 's/.*"generated_at": *"\([^"]*\)".*/\1/p' data/serve/manifest.json | head -1))"
+
+# From a fresh clone to the app in the browser: Docker, make and curl are all it needs
+quickstart:
+	@test -f data/serve/manifest.json || $(MAKE) data-download
+	@test -f .env || (cp .env.example .env && echo "Created .env from .env.example: add a model key there to use the assistant")
+	$(MAKE) up
+	@(open $(APP_URL) || xdg-open $(APP_URL)) >/dev/null 2>&1 || true
 
 # Assistant eval on the full build (api/evals/cases.yaml). Real models cost money:
 #   make eval MODEL=openrouter:anthropic/claude-opus-5.5 CASES=family_leeds_budget,compare_two
