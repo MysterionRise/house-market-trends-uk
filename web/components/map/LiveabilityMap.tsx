@@ -17,6 +17,7 @@ import { useTheme } from "@/components/ThemeProvider";
 import { fillColorExpression } from "@/lib/colors";
 import { absoluteDataUrl } from "@/lib/config";
 import { CHROME, FILL_OPACITY } from "@/lib/palette";
+import { activeBbox, coverageName } from "@/lib/data";
 import { bboxOf } from "@/lib/state";
 
 const LAYERS = [
@@ -25,7 +26,8 @@ const LAYERS = [
   { id: "lsoa", key: "lsoa21cd", minzoom: 9.5, maxzoom: 24 },
 ] as const;
 
-const ENGLAND: [number, number, number, number] = [-6.4, 49.85, 1.8, 55.85];
+// Until the manifest arrives: the UK
+const UK: [number, number, number, number] = [-8.7, 49.8, 1.8, 60.9];
 
 let protocolAdded = false;
 
@@ -108,8 +110,14 @@ export function LiveabilityMap() {
   const ready = styleVersion > 0;
   const [hover, setHover] = useState<{ x: number; y: number; text: string } | null>(null);
   const dark = useTheme().mode === "dark";
-  const { scores } = useData();
+  const { manifest, scores } = useData();
   const { state, update } = useLiveability();
+  const against =
+    state.compare_within === "nation"
+      ? "Against areas in the same nation"
+      : state.compare_within === "urban_rural"
+        ? "Against areas of the same urban/rural type"
+        : `Against every area in ${coverageName(manifest)}`;
   const values = useScores(state);
   const appliedBbox = useRef<string>("");
   const styleDark = useRef<boolean | null>(null);
@@ -118,6 +126,17 @@ export function LiveabilityMap() {
   useEffect(() => {
     darkRef.current = dark;
   }, [dark]);
+  const manifestRef = useRef(manifest);
+  // The build's nations decide the opening view; fit once the manifest is in, unless a
+  // shared link or the assistant already set a view
+  useEffect(() => {
+    manifestRef.current = manifest;
+    const map = mapRef.current;
+    if (map && manifest && !state.map.bbox && !appliedBbox.current) {
+      map.fitBounds(activeBbox(manifest), { animate: false });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [manifest]);
 
   // Create the map; every time a basemap style loads, (re)add our sources and layers
   useEffect(() => {
@@ -131,7 +150,7 @@ export function LiveabilityMap() {
     const map = new maplibregl.Map({
       container: container.current,
       style: basemap(darkRef.current),
-      bounds: ENGLAND,
+      bounds: manifestRef.current ? activeBbox(manifestRef.current) : UK,
       attributionControl: { compact: true },
     });
     styleDark.current = darkRef.current;
@@ -265,7 +284,7 @@ export function LiveabilityMap() {
           {hover.text}
         </div>
       )}
-      {values && <MapLegend label={values.label} dark={dark} />}
+      {values && <MapLegend label={values.label} against={against} dark={dark} />}
     </div>
   );
 }

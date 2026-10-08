@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 
 import { themeVar } from "@/lib/palette";
 
-/** Distribution of a 0–100 score across England's LSOAs, with the selected area marked. Bars take the theme's colour (secondary ink for the overall score, so the marker stays legible). */
+/** Distribution of a 0–100 score across every scored LSOA, with the selected area marked. Bars take the theme's colour (secondary ink for the overall score, so the marker stays legible). */
 export function IndicatorHistogram({
   values,
   label,

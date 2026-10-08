@@ -35,7 +35,7 @@ export function CorrelationHeatmap() {
   return (
     <figure data-testid="correlations">
       <figcaption className="mb-1 text-xs font-medium text-[var(--text-secondary)]">
-        How much scored indicators overlap (Spearman ρ across England&apos;s LSOAs)
+        How much scored indicators overlap (Spearman ρ across every scored neighbourhood)
       </figcaption>
       <svg
         width={LABEL_W + size}

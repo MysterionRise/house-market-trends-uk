@@ -3,8 +3,9 @@
 import { CopilotChat, useConfigureSuggestions } from "@copilotkit/react-core/v2";
 import { useEffect, useRef } from "react";
 
-import { useLiveability } from "@/components/AppData";
+import { useData, useLiveability } from "@/components/AppData";
 import { type Tab, usePanel } from "@/components/PanelContext";
+import { coverageName } from "@/lib/data";
 import { AnalystPanel } from "@/components/panels/AnalystPanel";
 import { AreaPanel } from "@/components/panels/AreaPanel";
 import { ShortlistPanel } from "@/components/panels/ShortlistPanel";
@@ -18,6 +19,7 @@ const SUGGESTIONS = [
 ];
 
 export function SidePanel() {
+  const { manifest } = useData();
   const { state, update } = useLiveability();
   const { tab, setTab } = usePanel();
 
@@ -101,7 +103,7 @@ export function SidePanel() {
         <div className={tab === "assistant" ? "h-full" : "hidden"} data-testid="chat" id="panel-assistant" role="tabpanel">
           <CopilotChat
             className="h-full"
-            labels={{ chatInputPlaceholder: "Ask about places in England…" }}
+            labels={{ chatInputPlaceholder: `Ask about places in ${coverageName(manifest)}…` }}
             // CopilotKit's icon buttons have no accessible names of their own
             input={{ sendButton: { "aria-label": "Send" }, addMenuButton: { "aria-label": "More options" } }}
           />

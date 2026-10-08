@@ -24,10 +24,13 @@ async function ask(page: Page, text: string) {
   await expect(chat).toHaveAttribute("data-copilot-running", "false", { timeout: 60_000 });
 }
 
-test("the API and the full England data are up", async ({ request }) => {
+test("the API and the data pack agree on the build", async ({ request }) => {
   const health = await (await request.get("/health")).json();
   expect(health.status).toBe("ok");
-  expect(health.lsoas).toBe(33755);
+  const manifest = await (await request.get("/data/manifest.json")).json();
+  expect(manifest.schema_version).toBe(2);
+  expect(health.lsoas).toBe(manifest.lsoa_count);
+  expect(health.geography.active).toEqual(manifest.geography.active);
   expect(health.version).toMatch(/^\d+\.\d+\.\d+/);
 });
 

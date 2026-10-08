@@ -1,15 +1,19 @@
 "use client";
 
-import { useLiveability } from "@/components/AppData";
+import { useData, useLiveability } from "@/components/AppData";
 import { Card, Muted, formatValue } from "@/components/ui";
 import type { RankResult } from "@/lib/contracts.gen";
+import { coverageName } from "@/lib/data";
 
 // Below this share of plausible weightings keeping it in the list, a result is a close call
 const CLOSE_CALL = 0.6;
 
 export function RankedList({ result }: { result: RankResult }) {
   const { update } = useLiveability();
-  const where = result.within ? ` ${result.within.startsWith("within") ? "" : "in "}${result.within}` : " in England";
+  const { manifest } = useData();
+  const where = result.within
+    ? ` ${result.within.startsWith("within") ? "" : "in "}${result.within}`
+    : ` in ${coverageName(manifest)}`;
   const level = result.level === "msoa" ? "neighbourhoods" : "small areas";
 
   return (

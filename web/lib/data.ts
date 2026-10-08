@@ -154,6 +154,29 @@ export async function loadScores(manifest: Manifest): Promise<ScoreData> {
   };
 }
 
+/** The nations in this build for copy: "England and Wales"; all four read as "the UK". */
+export function coverageName(manifest: Manifest | null | undefined): string {
+  const geo = manifest?.geography;
+  if (!geo) return "the UK";
+  const names = geo.active.map((c) => geo.nations[c]?.name ?? c);
+  if (names.length === 0 || names.length >= 4) return "the UK";
+  if (names.length === 1) return names[0];
+  return `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
+}
+
+/** West, south, east, north around every nation in this build. */
+export function activeBbox(manifest: Manifest): [number, number, number, number] {
+  const geo = manifest.geography;
+  const boxes = geo.active.map((c) => geo.nations[c]?.bbox).filter((b): b is NationMeta["bbox"] => !!b);
+  if (boxes.length === 0) return geo.country.bbox;
+  return [
+    Math.min(...boxes.map((b) => b[0])),
+    Math.min(...boxes.map((b) => b[1])),
+    Math.max(...boxes.map((b) => b[2])),
+    Math.max(...boxes.map((b) => b[3])),
+  ];
+}
+
 export function scoredIndicators(manifest: Manifest): ScoredIndicator[] {
   const byId = new Map(manifest.indicators.map((i) => [i.id, i]));
   return manifest.scored_indicators.map((id) => {

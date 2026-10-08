@@ -5,7 +5,7 @@ import { Providers } from "./providers";
 
 export const metadata: Metadata = {
   title: "UK Liveability Index",
-  description: "Explore England's neighbourhoods with open data and an AI assistant.",
+  description: "Explore the UK's neighbourhoods with open data and an AI assistant.",
 };
 
 export const viewport: Viewport = { width: "device-width", initialScale: 1 };

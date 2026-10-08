@@ -1,14 +1,14 @@
 import { gradientCss } from "@/lib/colors";
 
 /** The diverging ramp as it appears on the map: worse than typical ← typical → better. */
-export function MapLegend({ label, dark }: { label: string; dark: boolean }) {
+export function MapLegend({ label, against, dark }: { label: string; against: string; dark: boolean }) {
   return (
     <div
       className="absolute bottom-6 left-3 z-10 w-60 rounded-lg border border-[var(--border)] bg-[var(--surface-1)] p-3 text-xs shadow-sm"
       data-testid="legend"
     >
       <div className="font-medium text-[var(--text-primary)]">{label}</div>
-      <div className="mb-2 text-[var(--text-muted)]">Against the rest of England</div>
+      <div className="mb-2 text-[var(--text-muted)]">{against}</div>
       <div className="h-2.5 rounded-sm" style={{ background: gradientCss(dark) }} />
       <div className="mt-1 grid grid-cols-3 text-[var(--text-secondary)]">
         <span>worse</span>

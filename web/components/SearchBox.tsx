@@ -2,9 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 
-import { useLiveability } from "@/components/AppData";
+import { useData, useLiveability } from "@/components/AppData";
 import { usePanel } from "@/components/PanelContext";
 import { searchPlaces } from "@/lib/api";
+import { coverageName } from "@/lib/data";
 import type { Place } from "@/lib/contracts.gen";
 
 const KIND_LABEL: Record<string, string> = {
@@ -18,6 +19,7 @@ const KIND_LABEL: Record<string, string> = {
 
 /** Postcode or place search: opens an area's profile without going through the chat. */
 export function SearchBox() {
+  const { manifest } = useData();
   const { update } = useLiveability();
   const { setTab } = usePanel();
   const [query, setQuery] = useState("");
@@ -108,7 +110,7 @@ export function SearchBox() {
         >
           {results.length === 0 && (
             <li className="px-3 py-2 text-[var(--text-muted)]">
-              {found.query === query.trim() ? "No matches in England" : "Searching…"}
+              {found.query === query.trim() ? `No matches in ${coverageName(manifest)}` : "Searching…"}
             </li>
           )}
           {results.map((p, i) => (

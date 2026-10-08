@@ -74,7 +74,7 @@ validate:
 
 # Small dataset (Leeds + Brighton) cut from a full build, for CI end-to-end tests
 demo-data:
-	uv run lix demo-data --lad E08000035 E06000043 --out fixtures/demo
+	uv run lix demo-data --lad E08000035 E06000043 W06000015 --out fixtures/demo
 
 # Regenerate docs/data-sources.md and ATTRIBUTION.md from config/datasets.yaml
 docs:

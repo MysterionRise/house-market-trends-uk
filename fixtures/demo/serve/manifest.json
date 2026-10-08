@@ -1,8 +1,100 @@
 {
-  "generated_at": "2026-10-07T23:21:48+00:00",
-  "lsoas": "England LSOA 2021",
-  "lsoa_count": 653,
+  "schema_version": 2,
+  "generated_at": "2026-10-08T17:29:24+00:00",
+  "geography": {
+    "country": {
+      "code": "UK",
+      "name": "United Kingdom",
+      "working_crs": 27700,
+      "currency": "GBP",
+      "locale": "en-GB",
+      "postcode_regex": "^[A-Z]{1,2}\\d[A-Z\\d]? ?\\d[A-Z]{2}$",
+      "bbox": [
+        -8.7,
+        49.8,
+        1.8,
+        60.9
+      ],
+      "area_key": "lsoa21cd"
+    },
+    "nations": {
+      "E": {
+        "name": "England",
+        "ctry_cd": "E92000001",
+        "bbox": [
+          -6.5,
+          49.8,
+          1.8,
+          55.9
+        ],
+        "levels": {
+          "oa": {
+            "official": "Output Area",
+            "count": null
+          },
+          "low": {
+            "official": "LSOA",
+            "count": 33755
+          },
+          "mid": {
+            "official": "MSOA",
+            "count": 6856
+          },
+          "upper": {
+            "official": "Local authority",
+            "count": null
+          }
+        }
+      },
+      "W": {
+        "name": "Wales",
+        "ctry_cd": "W92000004",
+        "bbox": [
+          -5.4,
+          51.3,
+          -2.6,
+          53.5
+        ],
+        "levels": {
+          "oa": {
+            "official": "Output Area",
+            "count": null
+          },
+          "low": {
+            "official": "LSOA",
+            "count": 1917
+          },
+          "mid": {
+            "official": "MSOA",
+            "count": 408
+          },
+          "upper": {
+            "official": "Local authority",
+            "count": null
+          }
+        }
+      }
+    },
+    "active": [
+      "E",
+      "W"
+    ],
+    "area_counts": {
+      "E": 653,
+      "W": 218
+    }
+  },
+  "lsoa_count": 871,
   "demo": true,
+  "quality_levels": [
+    "ok",
+    "imputed",
+    "low_n",
+    "broadcast_msoa",
+    "broadcast_lad",
+    "missing",
+    "not_available"
+  ],
   "scored_indicators": [
     "crime_violence",
     "crime_burglary",
@@ -44,6 +136,11 @@
       "description": "Recorded violence and sexual offences per 1,000 residents a year (36-month average).",
       "unit": "per 1,000 residents a year",
       "direction": "lower_better",
+      "benchmark": "nation",
+      "coverage": [
+        "E",
+        "W"
+      ],
       "sources": [
         "police_crime",
         "iod_2025"
@@ -71,6 +168,11 @@
       "description": "Recorded burglaries per 1,000 residents a year.",
       "unit": "per 1,000 residents a year",
       "direction": "lower_better",
+      "benchmark": "nation",
+      "coverage": [
+        "E",
+        "W"
+      ],
       "sources": [
         "police_crime",
         "iod_2025"
@@ -98,6 +200,11 @@
       "description": "Reported anti-social behaviour incidents per 1,000 residents a year.",
       "unit": "per 1,000 residents a year",
       "direction": "lower_better",
+      "benchmark": "nation",
+      "coverage": [
+        "E",
+        "W"
+      ],
       "sources": [
         "police_crime",
         "iod_2025"
@@ -125,6 +232,11 @@
       "description": "Robbery, theft from the person, vehicle crime and bicycle theft per 1,000 residents a year.",
       "unit": "per 1,000 residents a year",
       "direction": "lower_better",
+      "benchmark": "nation",
+      "coverage": [
+        "E",
+        "W"
+      ],
       "sources": [
         "police_crime",
         "iod_2025"
@@ -155,6 +267,11 @@
       "description": "Criminal damage, arson and public order offences per 1,000 residents a year.",
       "unit": "per 1,000 residents a year",
       "direction": "lower_better",
+      "benchmark": "nation",
+      "coverage": [
+        "E",
+        "W"
+      ],
       "sources": [
         "police_crime",
         "iod_2025"
@@ -183,6 +300,12 @@
       "description": "Road collisions in which someone was killed or seriously injured within 500m of homes, per year (5-year average).",
       "unit": "collisions a year within 500m",
       "direction": "lower_better",
+      "benchmark": "uk",
+      "coverage": [
+        "E",
+        "W",
+        "S"
+      ],
       "sources": [
         "stats19",
         "nspl"
@@ -215,6 +338,10 @@
       "description": "Modelled risk of personal and material victimisation (2021\u20132023 data).",
       "unit": "score",
       "direction": "lower_better",
+      "benchmark": "nation",
+      "coverage": [
+        "E"
+      ],
       "sources": [
         "iod_2025"
       ],
@@ -239,6 +366,13 @@
       "description": "Annual mean background NO\u2082 where residents live (Defra 1km model).",
       "unit": "\u00b5g/m\u00b3",
       "direction": "lower_better",
+      "benchmark": "uk",
+      "coverage": [
+        "E",
+        "W",
+        "S",
+        "N"
+      ],
       "sources": [
         "defra_pcm_no2",
         "nspl"
@@ -264,6 +398,13 @@
       "description": "Annual mean background PM2.5 where residents live (Defra 1km model).",
       "unit": "\u00b5g/m\u00b3",
       "direction": "lower_better",
+      "benchmark": "uk",
+      "coverage": [
+        "E",
+        "W",
+        "S",
+        "N"
+      ],
       "sources": [
         "defra_pcm_pm25",
         "nspl"
@@ -289,6 +430,12 @@
       "description": "Entrances to public parks, gardens and playing fields within a 1km walk, weighted by distance.",
       "unit": "index 0\u20131",
       "direction": "higher_better",
+      "benchmark": "uk",
+      "coverage": [
+        "E",
+        "W",
+        "S"
+      ],
       "sources": [
         "os_greenspace",
         "nspl"
@@ -321,6 +468,12 @@
       "description": "Entrances to public play spaces within 800m of homes, weighted by distance.",
       "unit": "index 0\u20131",
       "direction": "higher_better",
+      "benchmark": "uk",
+      "coverage": [
+        "E",
+        "W",
+        "S"
+      ],
       "sources": [
         "os_greenspace",
         "nspl"
@@ -352,6 +505,10 @@
       "description": "Share of homes at high or medium risk of flooding from rivers or the sea (at least a 1% chance a year).",
       "unit": "% of homes",
       "direction": "lower_better",
+      "benchmark": "uk",
+      "coverage": [
+        "E"
+      ],
       "sources": [
         "ea_flood_postcodes",
         "voa_ctsop",
@@ -381,6 +538,10 @@
       "description": "Air quality and road traffic accidents (IoD 2025 sub-domain).",
       "unit": "score",
       "direction": "lower_better",
+      "benchmark": "nation",
+      "coverage": [
+        "E"
+      ],
       "sources": [
         "iod_2025"
       ],
@@ -405,6 +566,11 @@
       "description": "Average straight-line distance from homes to the nearest GP practice.",
       "unit": "metres",
       "direction": "lower_better",
+      "benchmark": "uk",
+      "coverage": [
+        "E",
+        "W"
+      ],
       "sources": [
         "ods_gp",
         "nspl"
@@ -428,6 +594,10 @@
       "description": "Registered patients per full-time-equivalent qualified GP at the practices residents actually use.",
       "unit": "patients per FTE GP",
       "direction": "lower_better",
+      "benchmark": "nation",
+      "coverage": [
+        "E"
+      ],
       "sources": [
         "gp_registrations",
         "gp_workforce"
@@ -451,6 +621,10 @@
       "description": "CQC ratings of the GP practices residents are registered with, weighted by how many use each.",
       "unit": "rating 0\u20131 (Good = 0.75)",
       "direction": "higher_better",
+      "benchmark": "nation",
+      "coverage": [
+        "E"
+      ],
       "sources": [
         "cqc_locations",
         "gp_registrations"
@@ -474,6 +648,10 @@
       "description": "Beds in care homes rated Good or Outstanding by CQC within 5km, weighted by distance.",
       "unit": "index 0\u20131",
       "direction": "higher_better",
+      "benchmark": "uk",
+      "coverage": [
+        "E"
+      ],
       "sources": [
         "cqc_locations",
         "nspl"
@@ -500,6 +678,10 @@
       "description": "Average straight-line distance from homes to the nearest NHS community pharmacy.",
       "unit": "metres",
       "direction": "lower_better",
+      "benchmark": "uk",
+      "coverage": [
+        "E"
+      ],
       "sources": [
         "nhsbsa_pharmacies",
         "nspl"
@@ -525,6 +707,11 @@
       "description": "Average straight-line distance from homes to the nearest dental practice with an NHS contract.",
       "unit": "metres",
       "direction": "lower_better",
+      "benchmark": "uk",
+      "coverage": [
+        "E",
+        "W"
+      ],
       "sources": [
         "ods_dentists",
         "nspl"
@@ -550,6 +737,10 @@
       "description": "Quality of the three nearest state primary schools (Ofsted and results), nearer ones counting more.",
       "unit": "quality 0\u20131",
       "direction": "higher_better",
+      "benchmark": "nation",
+      "coverage": [
+        "E"
+      ],
       "sources": [
         "gias",
         "ofsted_schools",
@@ -586,6 +777,10 @@
       "description": "Quality of the three nearest state secondary schools (Ofsted and results), nearer ones counting more.",
       "unit": "quality 0\u20131",
       "direction": "higher_better",
+      "benchmark": "nation",
+      "coverage": [
+        "E"
+      ],
       "sources": [
         "gias",
         "ofsted_schools",
@@ -622,6 +817,10 @@
       "description": "Good state primaries within 2km and secondaries within 5km, weighted by quality and distance.",
       "unit": "index 0\u20131",
       "direction": "higher_better",
+      "benchmark": "nation",
+      "coverage": [
+        "E"
+      ],
       "sources": [
         "gias",
         "ofsted_schools",
@@ -648,6 +847,10 @@
       "description": "Share of pupils meeting the expected standard in reading, writing and maths at state primaries within 2km (3-year average), weighted by distance.",
       "unit": "% of pupils",
       "direction": "higher_better",
+      "benchmark": "nation",
+      "coverage": [
+        "E"
+      ],
       "sources": [
         "ks2_results",
         "gias",
@@ -681,6 +884,10 @@
       "description": "Average Attainment 8 score at state secondaries within 5km, weighted by distance.",
       "unit": "Attainment 8",
       "direction": "higher_better",
+      "benchmark": "nation",
+      "coverage": [
+        "E"
+      ],
       "sources": [
         "ks4_results",
         "gias",
@@ -714,6 +921,10 @@
       "description": "Nurseries, pre-schools and school nursery classes within 1km, each weighted by its Ofsted grade and distance.",
       "unit": "index 0\u20131",
       "direction": "higher_better",
+      "benchmark": "uk",
+      "coverage": [
+        "E"
+      ],
       "sources": [
         "ofsted_childcare",
         "gias",
@@ -741,6 +952,11 @@
       "description": "DfT connectivity score across all modes and destinations.",
       "unit": "score 0\u2013100",
       "direction": "higher_better",
+      "benchmark": "uk",
+      "coverage": [
+        "E",
+        "W"
+      ],
       "sources": [
         "dft_connectivity"
       ],
@@ -766,6 +982,11 @@
       "description": "DfT connectivity score for public transport to all destinations.",
       "unit": "score 0\u2013100",
       "direction": "higher_better",
+      "benchmark": "uk",
+      "coverage": [
+        "E",
+        "W"
+      ],
       "sources": [
         "dft_connectivity"
       ],
@@ -791,6 +1012,11 @@
       "description": "DfT connectivity score for walking to all destinations.",
       "unit": "score 0\u2013100",
       "direction": "higher_better",
+      "benchmark": "uk",
+      "coverage": [
+        "E",
+        "W"
+      ],
       "sources": [
         "dft_connectivity"
       ],
@@ -816,6 +1042,11 @@
       "description": "DfT connectivity score for cycling to all destinations.",
       "unit": "score 0\u2013100",
       "direction": "higher_better",
+      "benchmark": "uk",
+      "coverage": [
+        "E",
+        "W"
+      ],
       "sources": [
         "dft_connectivity"
       ],
@@ -841,6 +1072,12 @@
       "description": "Average straight-line distance from homes to the nearest railway, metro or tram stop.",
       "unit": "metres",
       "direction": "lower_better",
+      "benchmark": "uk",
+      "coverage": [
+        "E",
+        "W",
+        "S"
+      ],
       "sources": [
         "naptan",
         "nspl"
@@ -871,6 +1108,10 @@
       "description": "Buses an hour (weekdays, 07:00\u201319:00) at the busiest stop within 400m of homes.",
       "unit": "buses an hour",
       "direction": "higher_better",
+      "benchmark": "uk",
+      "coverage": [
+        "E"
+      ],
       "sources": [
         "bods_gtfs",
         "nspl"
@@ -898,6 +1139,13 @@
       "description": "Share of homes that can get gigabit-capable broadband (full fibre or cable).",
       "unit": "% of homes",
       "direction": "higher_better",
+      "benchmark": "uk",
+      "coverage": [
+        "E",
+        "W",
+        "S",
+        "N"
+      ],
       "sources": [
         "ofcom_broadband"
       ],
@@ -923,6 +1171,13 @@
       "description": "Share of homes that can't get 10 Mbit/s broadband from a fixed line or fixed wireless.",
       "unit": "% of homes",
       "direction": "lower_better",
+      "benchmark": "uk",
+      "coverage": [
+        "E",
+        "W",
+        "S",
+        "N"
+      ],
       "sources": [
         "ofcom_broadband"
       ],
@@ -948,6 +1203,10 @@
       "description": "Pubs within a 15-minute walk that hold a food hygiene rating of 4 or 5 from the last three years, weighted by distance, with a small bonus for real ale, food or outdoor seating.",
       "unit": "index 0\u20131",
       "direction": "higher_better",
+      "benchmark": "uk",
+      "coverage": [
+        "E"
+      ],
       "sources": [
         "osm_england",
         "fsa_fhrs",
@@ -975,6 +1234,10 @@
       "description": "Caf\u00e9s and restaurants within 800m, weighted by distance.",
       "unit": "index 0\u20131",
       "direction": "higher_better",
+      "benchmark": "uk",
+      "coverage": [
+        "E"
+      ],
       "sources": [
         "osm_england",
         "nspl"
@@ -1005,6 +1268,10 @@
       "description": "Average straight-line distance from homes to the nearest supermarket.",
       "unit": "metres",
       "direction": "lower_better",
+      "benchmark": "uk",
+      "coverage": [
+        "E"
+      ],
       "sources": [
         "osm_england",
         "nspl"
@@ -1032,6 +1299,10 @@
       "description": "Shops of every kind within 800m, weighted by distance.",
       "unit": "index 0\u20131",
       "direction": "higher_better",
+      "benchmark": "uk",
+      "coverage": [
+        "E"
+      ],
       "sources": [
         "osm_england",
         "nspl"
@@ -1059,6 +1330,10 @@
       "description": "Sports halls, gyms, pools, studios, courts and pitches open to the public within 2km, weighted by distance.",
       "unit": "index 0\u20131",
       "direction": "higher_better",
+      "benchmark": "uk",
+      "coverage": [
+        "E"
+      ],
       "sources": [
         "active_places",
         "nspl"
@@ -1086,6 +1361,10 @@
       "description": "Average straight-line distance from homes to the nearest swimming pool open to the public.",
       "unit": "metres",
       "direction": "lower_better",
+      "benchmark": "uk",
+      "coverage": [
+        "E"
+      ],
       "sources": [
         "active_places",
         "nspl"
@@ -1115,6 +1394,10 @@
       "description": "Libraries, cinemas, theatres, arts centres, museums and galleries within 2km.",
       "unit": "index 0\u20131",
       "direction": "higher_better",
+      "benchmark": "uk",
+      "coverage": [
+        "E"
+      ],
       "sources": [
         "osm_england",
         "nspl"
@@ -1149,6 +1432,10 @@
       "description": "Fast-food outlets within 800m.",
       "unit": "index 0\u20131",
       "direction": "lower_better",
+      "benchmark": "uk",
+      "coverage": [
+        "E"
+      ],
       "sources": [
         "osm_england",
         "nspl"
@@ -1178,6 +1465,10 @@
       "description": "Betting shops, gambling venues and casinos within 800m.",
       "unit": "index 0\u20131",
       "direction": "lower_better",
+      "benchmark": "uk",
+      "coverage": [
+        "E"
+      ],
       "sources": [
         "osm_england",
         "nspl"
@@ -1210,6 +1501,11 @@
       "description": "Median sale price over the last 12 months, steadied towards the surrounding area where sales are few.",
       "unit": "\u00a3",
       "direction": "lower_better",
+      "benchmark": "nation",
+      "coverage": [
+        "E",
+        "W"
+      ],
       "sources": [
         "price_paid",
         "nspl"
@@ -1233,6 +1529,10 @@
       "description": "IoD 2025 indoors sub-domain (homes in poor condition or without central heating).",
       "unit": "score",
       "direction": "lower_better",
+      "benchmark": "nation",
+      "coverage": [
+        "E"
+      ],
       "sources": [
         "iod_2025"
       ],
@@ -1257,6 +1557,11 @@
       "description": "Change in the median sale price, last 12 months against the 12 months before.",
       "unit": "%",
       "direction": "higher_better",
+      "benchmark": "nation",
+      "coverage": [
+        "E",
+        "W"
+      ],
       "sources": [
         "price_paid"
       ],
@@ -1282,6 +1587,10 @@
       "description": "Annual council tax on a Band D home, including county, police, fire and average parish charges.",
       "unit": "\u00a3 a year",
       "direction": "lower_better",
+      "benchmark": "nation",
+      "coverage": [
+        "E"
+      ],
       "sources": [
         "council_tax"
       ],
@@ -1306,6 +1615,11 @@
       "description": "Typical house price divided by the area's mean net household income.",
       "unit": "years of income",
       "direction": "lower_better",
+      "benchmark": "nation",
+      "coverage": [
+        "E",
+        "W"
+      ],
       "sources": [
         "price_paid",
         "msoa_income"
@@ -1329,6 +1643,11 @@
       "description": "Share of homes built in 2000 or later.",
       "unit": "% of homes",
       "direction": "higher_better",
+      "benchmark": "uk",
+      "coverage": [
+        "E",
+        "W"
+      ],
       "sources": [
         "voa_ctsop"
       ],
@@ -1357,6 +1676,11 @@
       "description": "Share of homes built before 1919.",
       "unit": "% of homes",
       "direction": "higher_better",
+      "benchmark": "uk",
+      "coverage": [
+        "E",
+        "W"
+      ],
       "sources": [
         "voa_ctsop"
       ],
@@ -1385,6 +1709,11 @@
       "description": "Share of homes in the two lowest council tax bands (the cheapest homes in 1991 values).",
       "unit": "% of homes",
       "direction": "higher_better",
+      "benchmark": "uk",
+      "coverage": [
+        "E",
+        "W"
+      ],
       "sources": [
         "voa_ctsop"
       ],
@@ -1414,6 +1743,10 @@
       "description": "Share of residents on low incomes (IoD 2025 income domain).",
       "unit": "rate",
       "direction": "lower_better",
+      "benchmark": "nation",
+      "coverage": [
+        "E"
+      ],
       "sources": [
         "iod_2025"
       ],
@@ -1438,6 +1771,10 @@
       "description": "Share of working-age residents involuntarily out of work (IoD 2025 employment domain).",
       "unit": "rate",
       "direction": "lower_better",
+      "benchmark": "nation",
+      "coverage": [
+        "E"
+      ],
       "sources": [
         "iod_2025"
       ],
@@ -1462,6 +1799,11 @@
       "description": "Residents claiming unemployment-related benefits, as a share of those aged 16\u201364 (latest month).",
       "unit": "% of 16\u201364s",
       "direction": "lower_better",
+      "benchmark": "uk",
+      "coverage": [
+        "E",
+        "W"
+      ],
       "sources": [
         "claimant_count",
         "census_ts007a"
@@ -1485,6 +1827,11 @@
       "description": "Mean net household income in the wider area (MSOA), before housing costs.",
       "unit": "\u00a3 a year",
       "direction": "higher_better",
+      "benchmark": "uk",
+      "coverage": [
+        "E",
+        "W"
+      ],
       "sources": [
         "msoa_income"
       ],
@@ -1509,6 +1856,10 @@
       "description": "Premature death, illness and disability (IoD 2025 health deprivation and disability domain).",
       "unit": "score",
       "direction": "lower_better",
+      "benchmark": "nation",
+      "coverage": [
+        "E"
+      ],
       "sources": [
         "iod_2025"
       ],
@@ -1533,6 +1884,10 @@
       "description": "Life expectancy at birth in the wider area (MSOA), the mean of men and women, 2019\u201323.",
       "unit": "years",
       "direction": "higher_better",
+      "benchmark": "uk",
+      "coverage": [
+        "E"
+      ],
       "sources": [
         "life_expectancy"
       ],
@@ -1558,6 +1913,11 @@
       "description": "Residents describing their health as good or very good (Census 2021).",
       "unit": "%",
       "direction": "higher_better",
+      "benchmark": "uk",
+      "coverage": [
+        "E",
+        "W"
+      ],
       "sources": [
         "census_ts037"
       ],
@@ -1586,6 +1946,10 @@
       "description": "Overall deprivation score; not scored because its domains overlap other indicators.",
       "unit": "score",
       "direction": "lower_better",
+      "benchmark": "nation",
+      "coverage": [
+        "E"
+      ],
       "sources": [
         "iod_2025"
       ],
@@ -1610,6 +1974,11 @@
       "description": "Residents per square kilometre (Census 2021).",
       "unit": "people per km\u00b2",
       "direction": "lower_better",
+      "benchmark": "uk",
+      "coverage": [
+        "E",
+        "W"
+      ],
       "sources": [
         "census_ts006"
       ],
@@ -1635,6 +2004,11 @@
       "description": "Share of households with dependent children (Census 2021).",
       "unit": "%",
       "direction": "higher_better",
+      "benchmark": "uk",
+      "coverage": [
+        "E",
+        "W"
+      ],
       "sources": [
         "census_ts003"
       ],
@@ -1665,6 +2039,11 @@
       "description": "Share of residents aged 65 or over (Census 2021).",
       "unit": "%",
       "direction": "higher_better",
+      "benchmark": "uk",
+      "coverage": [
+        "E",
+        "W"
+      ],
       "sources": [
         "census_ts007a"
       ],
@@ -1696,6 +2075,11 @@
       "description": "Share of households that own their home outright or with a mortgage (Census 2021).",
       "unit": "%",
       "direction": "higher_better",
+      "benchmark": "uk",
+      "coverage": [
+        "E",
+        "W"
+      ],
       "sources": [
         "census_ts054"
       ],
@@ -1723,6 +2107,11 @@
       "description": "Share of households with no car or van (Census 2021).",
       "unit": "%",
       "direction": "higher_better",
+      "benchmark": "uk",
+      "coverage": [
+        "E",
+        "W"
+      ],
       "sources": [
         "census_ts045"
       ],
@@ -1750,6 +2139,11 @@
       "description": "Share of workers commuting on foot, by bike or by public transport (Census 2021, during COVID-19 restrictions).",
       "unit": "%",
       "direction": "higher_better",
+      "benchmark": "uk",
+      "coverage": [
+        "E",
+        "W"
+      ],
       "sources": [
         "census_ts061"
       ],
@@ -2261,28 +2655,28 @@
   },
   "files": {
     "lsoa_features.parquet": {
-      "sha256": "b49c1e3facdb23a22496caf78071592ee058c2250555a5db487bad9ba2d6ab8a",
-      "bytes": 809673
+      "sha256": "94751cb72e93c70b869ab1688cc8822856ab4bb30d2a65f34db2b3d0e35d866f",
+      "bytes": 1012489
     },
     "scores.parquet": {
-      "sha256": "106eae5cfedf34bf4e28299c0c650318307aed7b61886f771089d6f0ca4337ae",
-      "bytes": 82508
+      "sha256": "c6d98a33c12383b60f815573c46f68ebf85ae1f5165a60dc81be943a196bc2ea",
+      "bytes": 112130
     },
     "postcodes.parquet": {
-      "sha256": "9c0d4a5f973dc1ac323d641209e479a90e9a8125bac70fe392b621185630daa6",
-      "bytes": 663479
+      "sha256": "922d9a2c240e69b8d00736fa7d72fa4e4b8f97923ade2908e3a235647b10fa50",
+      "bytes": 859739
     },
     "places.parquet": {
-      "sha256": "7c07df87a95ec4486bad82ededc23800f936885953e47b3dd5e73c64a9f8987b",
-      "bytes": 15492
+      "sha256": "550f464b15b666cb4f17ca9f1fe51f7617631a50b713755eb4330d6e639ed20a",
+      "bytes": 18852
     },
     "areas.parquet": {
-      "sha256": "1d94849882736eee3d167ab3af7842c039260d456b78154e14e7b47d05261ccc",
-      "bytes": 11634
+      "sha256": "3bbc1da282664d9383b1b83cca8af9439ee4eaca0ef9db9dbcd727d35218745c",
+      "bytes": 14797
     },
     "pois.parquet": {
-      "sha256": "f37431b929bf6f4d2def895c8b60175c860ffb36739ea7f195d82231f778400b",
-      "bytes": 738253
+      "sha256": "828a28ac5c4858568e09122ff88f416e95c2c75525e4d9d9dc6df8bbac6ce512",
+      "bytes": 761080
     }
   },
   "correlations": {
@@ -2446,7 +2840,7 @@
         -0.29,
         -0.23,
         -0.47,
-        -0.28,
+        -0.29,
         -0.62,
         0.78,
         0.35,
@@ -2509,8 +2903,8 @@
         0.11,
         0.02,
         -0.21,
-        -0.3,
-        -0.22,
+        -0.31,
+        -0.23,
         -0.33,
         -0.18,
         -0.48,
@@ -2543,7 +2937,7 @@
         -0.7,
         0.13,
         0.45,
-        0.31,
+        0.3,
         0.32,
         0.72,
         0.36,
@@ -2577,7 +2971,7 @@
         0.13,
         0.51,
         0.34,
-        0.45,
+        0.44,
         0.73,
         0.45,
         -0.42,
@@ -2643,8 +3037,8 @@
         0.02,
         0.03,
         -0.03,
-        -0.1,
-        0.24,
+        -0.11,
+        0.25,
         -0.09,
         0.15,
         -0.05,
@@ -2763,10 +3157,10 @@
         0.05,
         0.25,
         1.0,
-        -0.36,
-        -0.31,
+        -0.37,
+        -0.32,
+        0.51,
         0.5,
-        0.49,
         -0.07,
         -0.25,
         0.52,
@@ -2774,12 +3168,12 @@
         0.16,
         -0.0,
         -0.35,
-        -0.19,
+        -0.2,
         -0.39,
         -0.33,
         -0.52,
-        0.61,
-        0.3,
+        0.62,
+        0.31,
         0.39
       ],
       [
@@ -2795,9 +3189,9 @@
         -0.76,
         -0.24,
         -0.21,
-        -0.36,
+        -0.37,
         1.0,
-        0.77,
+        0.76,
         -0.35,
         -0.42,
         0.16,
@@ -2806,14 +3200,14 @@
         -0.37,
         0.17,
         0.21,
-        0.29,
-        0.39,
-        0.63,
-        0.2,
-        0.62,
+        0.28,
+        0.38,
+        0.61,
+        0.19,
+        0.61,
         -0.71,
-        -0.14,
-        -0.5
+        -0.15,
+        -0.49
       ],
       [
         -0.36,
@@ -2828,25 +3222,25 @@
         -0.66,
         -0.25,
         -0.23,
-        -0.31,
-        0.77,
-        1.0,
         -0.32,
+        0.76,
+        1.0,
+        -0.33,
         -0.37,
         0.23,
         0.45,
         -0.33,
         -0.48,
-        0.28,
+        0.25,
         0.02,
-        0.23,
-        0.33,
-        0.59,
-        0.12,
-        0.52,
-        -0.58,
-        -0.17,
-        -0.41
+        0.21,
+        0.3,
+        0.55,
+        0.11,
+        0.54,
+        -0.59,
+        -0.18,
+        -0.38
       ],
       [
         0.53,
@@ -2861,9 +3255,9 @@
         0.56,
         0.09,
         0.28,
-        0.5,
+        0.51,
         -0.35,
-        -0.32,
+        -0.33,
         1.0,
         0.58,
         -0.07,
@@ -2873,12 +3267,12 @@
         0.12,
         0.13,
         -0.26,
-        -0.14,
+        -0.15,
         -0.35,
         -0.26,
         -0.5,
-        0.61,
-        0.34,
+        0.62,
+        0.35,
         0.44
       ],
       [
@@ -2894,7 +3288,7 @@
         0.58,
         0.09,
         0.24,
-        0.49,
+        0.5,
         -0.42,
         -0.37,
         0.58,
@@ -2903,14 +3297,14 @@
         -0.2,
         0.66,
         0.17,
-        0.12,
+        0.13,
         -0.06,
-        -0.29,
-        -0.21,
+        -0.3,
+        -0.22,
         -0.41,
         -0.29,
         -0.55,
-        0.65,
+        0.66,
         0.27,
         0.44
       ],
@@ -2972,9 +3366,9 @@
         0.04,
         0.0,
         0.23,
-        0.16,
-        0.34,
         0.15,
+        0.34,
+        0.14,
         0.34,
         -0.33,
         -0.13,
@@ -3007,7 +3401,7 @@
         -0.29,
         -0.16,
         -0.36,
-        -0.29,
+        -0.3,
         -0.52,
         0.61,
         0.35,
@@ -3061,23 +3455,23 @@
         0.06,
         0.16,
         0.17,
-        0.28,
+        0.25,
         0.12,
-        0.12,
+        0.13,
         0.08,
         0.04,
         0.18,
         -0.18,
         1.0,
         -0.08,
-        -0.18,
+        -0.2,
         -0.11,
-        -0.01,
+        -0.02,
         -0.51,
-        -0.08,
-        0.04,
-        0.27,
-        -0.08
+        -0.09,
+        0.05,
+        0.25,
+        -0.07
       ],
       [
         -0.22,
@@ -3104,7 +3498,7 @@
         -0.08,
         1.0,
         0.13,
-        0.29,
+        0.3,
         0.25,
         0.13,
         0.25,
@@ -3117,7 +3511,7 @@
         -0.38,
         -0.29,
         -0.31,
-        -0.3,
+        -0.31,
         0.45,
         0.51,
         -0.38,
@@ -3126,22 +3520,22 @@
         -0.02,
         -0.07,
         -0.35,
-        0.29,
-        0.23,
+        0.28,
+        0.21,
         -0.26,
-        -0.29,
+        -0.3,
         0.07,
         0.23,
         -0.29,
         -0.1,
-        -0.18,
+        -0.2,
         0.13,
         1.0,
         0.51,
-        0.6,
+        0.59,
         0.62,
-        0.47,
-        -0.43,
+        0.46,
+        -0.42,
         0.01,
         -0.31
       ],
@@ -3150,31 +3544,31 @@
         -0.31,
         -0.23,
         -0.19,
-        -0.22,
-        0.31,
+        -0.23,
+        0.3,
         0.34,
         -0.3,
         -0.03,
         -0.36,
         -0.07,
         -0.03,
-        -0.19,
-        0.39,
-        0.33,
-        -0.14,
-        -0.21,
+        -0.2,
+        0.38,
+        0.3,
+        -0.15,
+        -0.22,
         0.03,
-        0.16,
+        0.15,
         -0.16,
         -0.22,
         -0.11,
-        0.29,
+        0.3,
         0.51,
         1.0,
-        0.7,
+        0.69,
         0.49,
-        0.42,
-        -0.41,
+        0.41,
+        -0.4,
         0.03,
         -0.26
       ],
@@ -3185,64 +3579,64 @@
         -0.38,
         -0.33,
         0.32,
-        0.45,
+        0.44,
         -0.57,
-        -0.1,
+        -0.11,
         -0.64,
         -0.14,
         -0.15,
         -0.39,
-        0.63,
-        0.59,
+        0.61,
+        0.55,
         -0.35,
         -0.41,
         0.15,
         0.34,
         -0.36,
         -0.32,
-        -0.01,
+        -0.02,
         0.25,
-        0.6,
-        0.7,
+        0.59,
+        0.69,
         1.0,
-        0.53,
-        0.65,
-        -0.68,
-        -0.08,
-        -0.46
+        0.52,
+        0.63,
+        -0.67,
+        -0.1,
+        -0.45
       ],
       [
         -0.27,
         -0.23,
-        -0.28,
+        -0.29,
         -0.31,
         -0.18,
         0.72,
         0.73,
         -0.3,
-        0.24,
+        0.25,
         -0.29,
         0.19,
         -0.08,
         -0.33,
-        0.2,
-        0.12,
+        0.19,
+        0.11,
         -0.26,
         -0.29,
         0.05,
-        0.15,
-        -0.29,
+        0.14,
+        -0.3,
         -0.06,
         -0.51,
         0.13,
         0.62,
         0.49,
-        0.53,
+        0.52,
         1.0,
-        0.42,
-        -0.37,
+        0.41,
+        -0.36,
         -0.11,
-        -0.19
+        -0.2
       ],
       [
         -0.64,
@@ -3258,24 +3652,24 @@
         -0.14,
         -0.22,
         -0.52,
-        0.62,
-        0.52,
+        0.61,
+        0.54,
         -0.5,
         -0.55,
         0.13,
         0.34,
         -0.52,
         -0.27,
-        -0.08,
+        -0.09,
         0.25,
-        0.47,
-        0.42,
-        0.65,
-        0.42,
+        0.46,
+        0.41,
+        0.63,
+        0.41,
         1.0,
         -0.81,
-        -0.19,
-        -0.55
+        -0.2,
+        -0.54
       ],
       [
         0.74,
@@ -3290,25 +3684,25 @@
         0.89,
         0.22,
         0.29,
-        0.61,
+        0.62,
         -0.71,
-        -0.58,
-        0.61,
-        0.65,
+        -0.59,
+        0.62,
+        0.66,
         -0.12,
         -0.33,
         0.61,
         0.27,
-        0.04,
+        0.05,
         -0.25,
-        -0.43,
-        -0.41,
-        -0.68,
-        -0.37,
+        -0.42,
+        -0.4,
+        -0.67,
+        -0.36,
         -0.81,
         1.0,
-        0.28,
-        0.65
+        0.29,
+        0.64
       ],
       [
         0.11,
@@ -3323,25 +3717,25 @@
         0.35,
         -0.09,
         0.27,
-        0.3,
-        -0.14,
-        -0.17,
-        0.34,
+        0.31,
+        -0.15,
+        -0.18,
+        0.35,
         0.27,
         -0.04,
         -0.13,
         0.35,
         0.08,
-        0.27,
+        0.25,
         0.16,
         0.01,
         0.03,
-        -0.08,
+        -0.1,
         -0.11,
-        -0.19,
-        0.28,
+        -0.2,
+        0.29,
         1.0,
-        0.1
+        0.12
       ],
       [
         0.54,
@@ -3357,32 +3751,33 @@
         0.19,
         0.15,
         0.39,
-        -0.5,
-        -0.41,
+        -0.49,
+        -0.38,
         0.44,
         0.44,
         -0.09,
         -0.22,
         0.42,
         0.2,
-        -0.08,
+        -0.07,
         -0.14,
         -0.31,
         -0.26,
-        -0.46,
-        -0.19,
-        -0.55,
-        0.65,
-        0.1,
+        -0.45,
+        -0.2,
+        -0.54,
+        0.64,
+        0.12,
         1.0
       ]
     ]
   },
   "encoding": {
-    "scores.parquet": "percentiles \u00d7 100 as uint16; 65535 = missing; quality_flags bit i set when scored_indicators[i] is imputed, low-sample, broadcast or missing"
+    "scores.parquet": "percentiles \u00d7 100 as uint16; 65535 = missing; q__<indicator> is the uint8 index into quality_levels"
   },
   "demo_local_authorities": [
     "E08000035",
-    "E06000043"
+    "E06000043",
+    "W06000015"
   ]
 }

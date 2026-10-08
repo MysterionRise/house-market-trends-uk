@@ -1,6 +1,8 @@
 "use client";
 
 import dynamic from "next/dynamic";
+
+import { coverageName } from "@/lib/data";
 import Link from "next/link";
 
 import { useData } from "@/components/AppData";
@@ -17,7 +19,7 @@ const LiveabilityMap = dynamic(() => import("@/components/map/LiveabilityMap").t
 
 export default function Home() {
   const { error, manifest, scores } = useData();
-  const count = (manifest?.lsoa_count ?? 33755).toLocaleString("en-GB");
+  const count = (manifest?.lsoa_count ?? 0).toLocaleString("en-GB");
   return (
     <PanelProvider>
       {/* minmax(0, …) columns: content can't widen the page past a phone screen */}
@@ -25,8 +27,10 @@ export default function Home() {
         <header className="flex flex-wrap items-center gap-x-3 gap-y-1.5 border-b border-[var(--border)] bg-[var(--surface-1)] px-4 py-2">
           <h1 className="text-base font-semibold">UK Liveability Index</h1>
           <span className="hidden text-xs text-[var(--text-secondary)] lg:inline">
-            {manifest?.demo ? `Demo dataset: ${count} neighbourhoods` : `England's ${count} neighbourhoods`}, scored
-            from open data
+            {manifest?.demo
+              ? `Demo dataset: ${count} neighbourhoods`
+              : `${count} neighbourhoods in ${coverageName(manifest)}`}
+            , scored from open data
           </span>
           {manifest?.demo && (
             <span
@@ -66,7 +70,7 @@ export default function Home() {
                     role="status"
                     data-testid="map-loading"
                   >
-                    Loading England&apos;s neighbourhoods…
+                    Loading the neighbourhoods…
                   </div>
                 )}
                 <Onboarding />

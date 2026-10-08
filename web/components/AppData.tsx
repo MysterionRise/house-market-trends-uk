@@ -107,7 +107,7 @@ export function LiveabilityStateProvider({ children }: { children: React.ReactNo
 export const useLiveability = () => useContext(StateCtx);
 
 export interface LayerValues {
-  /** England percentile (0–100) per LSOA for the active layer (NaN = no value) */
+  /** Percentile (0–100) per LSOA for the active layer (NaN = no value) */
   lsoa: Float64Array;
   msoa: Map<string, number>;
   lad: Map<string, number>;

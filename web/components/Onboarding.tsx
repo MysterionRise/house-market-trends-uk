@@ -3,6 +3,7 @@
 import { useSyncExternalStore } from "react";
 
 import { useData, useLiveability } from "@/components/AppData";
+import { coverageName } from "@/lib/data";
 
 const KEY = "lix.welcomed";
 const listeners = new Set<() => void>();
@@ -60,8 +61,8 @@ export function Onboarding() {
         Find a neighbourhood that suits you
       </h2>
       <p className="mt-1 text-xs text-[var(--text-secondary)]">
-        Every neighbourhood in England, scored from open data. Teal areas do better than typical for England,
-        orange ones worse. Zoom in and click an area to see why, or ask the assistant.
+        Every neighbourhood in {coverageName(manifest)}, scored from open data. Teal areas do better than
+        typical, orange ones worse. Zoom in and click an area to see why, or ask the assistant.
       </p>
       <p className="mt-3 text-xs font-medium text-[var(--text-secondary)]">Who&apos;s looking?</p>
       <div className="mt-1.5 flex flex-wrap gap-1.5">
