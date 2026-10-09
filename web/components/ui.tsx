@@ -3,6 +3,7 @@ import { useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 
 import { bandVar } from "@/lib/colors";
+import { pctRank } from "@/lib/format";
 import { themeVar } from "@/lib/palette";
 
 export { formatValue } from "@/lib/format";
@@ -85,7 +86,7 @@ export function Band({ band, percentile }: { band?: number | null; percentile?: 
         ))}
       </span>
       {t(String(Math.min(5, Math.max(1, band))) as "1" | "2" | "3" | "4" | "5")}
-      {percentile != null && ` · ${t("betterThan", { pct: Math.round(percentile) })}`}
+      {percentile != null && ` · ${t("betterThan", { pct: pctRank(percentile) })}`}
     </span>
   );
 }

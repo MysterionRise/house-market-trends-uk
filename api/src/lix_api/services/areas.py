@@ -27,6 +27,11 @@ def _round(v: float | None, digits: int = 1) -> float | None:
     return None if v is None else round(v, digits)
 
 
+def _pct(v: float | None) -> float | None:
+    """A percentile for "better than N% of…": whole, and the top area is 99, never 100."""
+    return None if v is None else min(99.0, round(v))
+
+
 def indicator_value(store: Store, row: dict, indicator_id: str) -> IndicatorValue:
     spec = store.indicators[indicator_id]
     return IndicatorValue(
@@ -59,8 +64,8 @@ def area_profile(
             theme=t,
             label=spec.label,
             score=_round(scores.get(f"theme__{t}")),
-            percentile=_round(scores.get(f"theme_pct__{t}"), 0),
-            percentile_nation=_round(scores.get(f"theme_pct_nation__{t}"), 0),
+            percentile=_pct(scores.get(f"theme_pct__{t}")),
+            percentile_nation=_pct(scores.get(f"theme_pct_nation__{t}")),
             country_median=median(every, f"theme__{t}"),
             nation_median=median(nation, f"theme__{t}"),
             local_median=median(local, f"theme__{t}"),
@@ -102,10 +107,10 @@ def area_profile(
         urban_rural=row["ruc21nm"],
         population=row["population"],
         overall=_round(scores.get("overall")),
-        overall_percentile=_round(pct, 0),
-        overall_percentile_nation=_round(scores.get("overall_pct_nation"), 0),
+        overall_percentile=_pct(pct),
+        overall_percentile_nation=_pct(scores.get("overall_pct_nation")),
         band=None if pct is None else min(int(pct // 20) + 1, 5),
-        overall_percentile_range=None if lo is None or hi is None else [round(lo), round(hi)],
+        overall_percentile_range=None if lo is None or hi is None else [_pct(lo), _pct(hi)],
         coverage=_round(scores.get("coverage"), 2),
         preset=name,
         themes=theme_scores,

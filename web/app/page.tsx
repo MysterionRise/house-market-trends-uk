@@ -51,7 +51,7 @@ export default function Home() {
             <Link className="underline" href="/about">
               {t("sources")}
             </Link>
-            <LocaleToggle label={t("language")} draftLabel={t("draft")} />
+            <LocaleToggle label={t("language")} />
             <ThemeToggle label={t("theme")} />
           </nav>
         </header>

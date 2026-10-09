@@ -9,7 +9,9 @@
     "E": "Lloegr",
     "W": "Cymru",
     "S": "yr Alban",
-    "N": "Gogledd Iwerddon"
+    "N": "Gogledd Iwerddon",
+    "and": "a",
+    "E_W": "Lloegr a Chymru"
   },
   "Header": {
     "title": "Mynegai Byw yn y DU",
@@ -23,7 +25,6 @@
     "loading": "Yn llwytho'r cymdogaethau…",
     "loadError": "Methwyd llwytho'r sgoriau ({error}). A yw'r API yn rhedeg (<code>make api</code>) ac a yw <code>make score tiles</code> wedi'i redeg?",
     "language": "Iaith",
-    "draft": "drafft",
     "theme": "Thema"
   },
   "Theme": {
@@ -43,6 +44,8 @@
     "panels": "Paneli",
     "analystTitle": "Modd dadansoddwr: dosraniadau, gorgyffwrdd dangosyddion a SQL",
     "chatPlaceholder": "Gofynnwch am lefydd yn {coverage}…",
+    "chatWelcome": "Sut alla i helpu heddiw?",
+    "chatDisclaimer": "Gall AI wneud camgymeriadau. Gwiriwch wybodaeth bwysig.",
     "send": "Anfon",
     "moreOptions": "Mwy o opsiynau",
     "suggestions": {

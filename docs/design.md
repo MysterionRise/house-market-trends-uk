@@ -10,6 +10,11 @@ The chrome (page, cards, buttons, links, sliders, the "working" pulse) is monoch
 warm neutrals, in light and dark. Colour is reserved for data, so a coloured thing on screen
 is always a value or an identity:
 
+- **Place names on the map are chrome, not data.** The basemap's labels are hidden and
+  the app draws its own from the same tiles (`web/components/map/placeLabels.ts`): Noto
+  Sans, the tile server's font, bold for cities and regular below, in `--text-primary`
+  down to `--text-muted` with a soft `--page` halo so they read over any fill, and in the
+  interface language.
 - **The map ramp is diverging around the median.** Scores are percentiles, so 50 is
   "typical". Warm terracotta means worse than typical, pale sand means typical, teal-green
   means better. Nine stops, equal steps each side, orange–teal because that pair stays

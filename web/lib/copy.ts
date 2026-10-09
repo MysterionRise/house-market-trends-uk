@@ -10,10 +10,13 @@ import { coverageName } from "@/lib/data";
 export function useCoverageName(): string {
   const { manifest } = useData();
   const t = useTranslations("Nations");
-  const format = useFormatter();
+  // A named pair first ("Lloegr a Chymru" mutates), else the catalogue's own "and":
+  // browsers have no list patterns for Welsh, Gaelic or Irish
+  const active = manifest?.geography?.active ?? [];
+  if (active.length === 2 && active.join("_") === "E_W") return t("E_W");
   return coverageName(
     manifest,
     (code) => t(code as "uk" | "E" | "W" | "S" | "N"),
-    (names) => format.list(names, { type: "conjunction" }),
+    (names) => `${names.slice(0, -1).join(", ")} ${t("and")} ${names[names.length - 1]}`,
   );
 }

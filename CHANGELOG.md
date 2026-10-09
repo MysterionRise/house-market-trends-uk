@@ -4,6 +4,23 @@ All notable changes to this project. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Changed
+
+- **Place names on the map** are drawn by the app, not the basemap: one type scale from
+  city to hamlet in the interface's ink and surface colours, legible on both themes over
+  the choropleth, and in the interface language (Caerdydd when the page is in Welsh).
+
+### Fixed
+
+- Switching the theme no longer blanks the map while the other basemap loads.
+- "Better than 100% of the UK" can no longer appear: the top area reads 99%.
+- On phones the legend sits clear of the map attribution.
+- Three English strings in the Welsh interface: the "and" in "Lloegr a Chymru" (browsers
+  have no Welsh list patterns, so the catalogue supplies it), the assistant's greeting and
+  disclaimer, and the switcher's "(drafft)".
+
 ## [0.3.0] - 2026-10-08
 
 ### Added
@@ -112,6 +129,7 @@ Run it with `make quickstart` (Docker, make and curl; see the README).
 - Each source has its own date (shown in the app); the data pack was built on
   7 October 2026.
 
+[Unreleased]: https://github.com/MysterionRise/uk-liveability-index/compare/v0.3.0...HEAD
 [0.3.0]: https://github.com/MysterionRise/uk-liveability-index/releases/tag/v0.3.0
 [0.2.0]: https://github.com/MysterionRise/uk-liveability-index/releases/tag/v0.2.0
 [0.1.0]: https://github.com/MysterionRise/uk-liveability-index/releases/tag/v0.1.0

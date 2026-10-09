@@ -16,6 +16,8 @@ export const LOCALE_KEY = "lix.locale";
 
 /** The language's own name, as the switcher shows it */
 export const AUTONYMS: Record<Locale, string> = { en: "English", cy: "Cymraeg", gd: "Gàidhlig", ga: "Gaeilge" };
+/** "draft" in each language, for the switcher: the option is in that language already. */
+export const DRAFT_WORD: Record<Locale, string> = { en: "draft", cy: "drafft", gd: "dreachd", ga: "dréacht" };
 /** BCP 47 tags for <html lang> and Intl formatting */
 export const BCP47: Record<Locale, string> = { en: "en-GB", cy: "cy-GB", gd: "gd-GB", ga: "ga-IE" };
 

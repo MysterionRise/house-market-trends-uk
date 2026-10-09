@@ -11,6 +11,7 @@ import { createContext, useCallback, useContext, useEffect, useSyncExternalStore
 import {
   AUTONYMS,
   BCP47,
+  DRAFT_WORD,
   DEFAULT_LOCALE,
   LOCALE_KEY,
   MESSAGES,
@@ -91,7 +92,7 @@ export function useLocaleChoice(): LocaleContext {
 }
 
 /** English · Cymraeg · … as a compact select; a draft catalogue says so. */
-export function LocaleToggle({ draftLabel, label }: { draftLabel: string; label: string }) {
+export function LocaleToggle({ label }: { label: string }) {
   const { locale, setLocale } = useLocaleChoice();
   return (
     <select
@@ -104,7 +105,7 @@ export function LocaleToggle({ draftLabel, label }: { draftLabel: string; label:
       {availableLocales().map((l) => (
         <option key={l} value={l}>
           {AUTONYMS[l]}
-          {catalogueMeta(l).status === "draft" ? ` (${draftLabel})` : ""}
+          {catalogueMeta(l).status === "draft" ? ` (${DRAFT_WORD[l]})` : ""}
         </option>
       ))}
     </select>

@@ -7,7 +7,7 @@ export function MapLegend({ label, against, dark }: { label: string; against: st
   const t = useTranslations("Legend");
   return (
     <div
-      className="absolute bottom-6 left-3 z-10 w-60 rounded-lg border border-[var(--border)] bg-[var(--surface-1)] p-3 text-xs shadow-sm"
+      className="absolute bottom-14 left-3 z-10 w-56 rounded-lg border sm:bottom-6 sm:w-[17rem] border-[var(--border)] bg-[var(--surface-1)] p-3 text-xs shadow-sm"
       data-testid="legend"
     >
       <div className="font-medium text-[var(--text-primary)]">{label}</div>

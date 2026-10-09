@@ -27,3 +27,8 @@ export function unitCode(unit: string): string {
   if (/^(index|quality|rating) 0–1/.test(unit)) return unit.split(" ")[0];
   return unit;
 }
+
+/** A percentile as "better than N%": whole numbers, and the top area is 99, never 100. */
+export function pctRank(percentile: number): number {
+  return Math.min(99, Math.round(percentile));
+}

@@ -111,7 +111,11 @@ export function SidePanel() {
         <div className={tab === "assistant" ? "h-full" : "hidden"} data-testid="chat" id="panel-assistant" role="tabpanel">
           <CopilotChat
             className="h-full"
-            labels={{ chatInputPlaceholder: t("chatPlaceholder", { coverage }) }}
+            labels={{
+              chatInputPlaceholder: t("chatPlaceholder", { coverage }),
+              welcomeMessageText: t("chatWelcome"),
+              chatDisclaimerText: t("chatDisclaimer"),
+            }}
             // CopilotKit's icon buttons have no accessible names of their own
             input={{ sendButton: { "aria-label": t("send") }, addMenuButton: { "aria-label": t("moreOptions") } }}
           />

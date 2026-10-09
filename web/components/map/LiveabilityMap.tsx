@@ -13,11 +13,13 @@ import { useEffect, useRef, useState } from "react";
 
 import { useData, useLiveability, useScores } from "@/components/AppData";
 import { MapLegend } from "@/components/map/MapLegend";
+import { LABEL_PREFIX, placeLabels, setLabelLanguage } from "@/components/map/placeLabels";
 import { useTheme } from "@/components/ThemeProvider";
 import { fillColorExpression } from "@/lib/colors";
 import { absoluteDataUrl } from "@/lib/config";
+import { pctRank } from "@/lib/format";
 import { CHROME, FILL_OPACITY } from "@/lib/palette";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 
 import { useCoverageName } from "@/lib/copy";
 import { activeBbox } from "@/lib/data";
@@ -38,15 +40,50 @@ function basemap(dark: boolean): string {
   return `https://tiles.openfreemap.org/styles/${dark ? "dark" : "positron"}`;
 }
 
+const OVERLAY_SOURCES = new Set<string>([...LAYERS.map((l) => l.id), "pois"]);
+
+function ours(layerId: string): boolean {
+  return layerId === "pois" || layerId.startsWith(LABEL_PREFIX) || LAYERS.some((l) => layerId.startsWith(`${l.id}-`));
+}
+
+/** Where fills and borders go: above the basemap's roads and boundaries, under its labels. */
+function fillSlot(layers: { id: string; type: string }[]): number {
+  // The first label after the last non-symbol layer. (The dark style has a water label
+  // before its roads, so "the first symbol layer" would put the fills under the roads.)
+  return layers.findLastIndex((l) => l.type !== "symbol") + 1;
+}
+
+/** Keeps our sources and layers through a basemap swap, so the choropleth never blanks. */
+function carryOverlay(
+  previous: maplibregl.StyleSpecification | undefined,
+  next: maplibregl.StyleSpecification,
+): maplibregl.StyleSpecification {
+  if (!previous) return next;
+  const sources = { ...next.sources };
+  for (const [id, source] of Object.entries(previous.sources)) if (OVERLAY_SOURCES.has(id)) sources[id] = source;
+  const carried = previous.layers.filter((l) => ours(l.id));
+  const under = carried.filter((l) => l.type === "fill" || (l.type === "line" && !l.id.endsWith("-highlight")));
+  const over = carried.filter((l) => !under.includes(l));
+  const slot = fillSlot(next.layers);
+  return { ...next, sources, layers: [...next.layers.slice(0, slot), ...under, ...next.layers.slice(slot), ...over] };
+}
+
+/** Adds our sources and layers once per style, and (re)applies the theme's colours. */
 function addOverlay(map: maplibregl.Map, dark: boolean): void {
-  if (map.getSource("lsoa")) return;
   const chrome = CHROME[dark ? "dark" : "light"];
-  // Fills go above the basemap's roads and boundaries but under its place labels: the
-  // first label after the last non-symbol layer. (The dark style has a water label before
-  // its roads, so "the first symbol layer" would put the fills under the road network.)
+  if (!map.getSource("lsoa")) addOverlayLayers(map, chrome);
+  for (const layer of LAYERS) {
+    map.setPaintProperty(`${layer.id}-fill`, "fill-color", fillColorExpression(dark) as never);
+    map.setPaintProperty(`${layer.id}-line`, "line-color", chrome.surface);
+    map.setPaintProperty(`${layer.id}-highlight`, "line-color", chrome.accent);
+  }
+  map.setPaintProperty("pois", "circle-color", chrome.accent);
+  map.setPaintProperty("pois", "circle-stroke-color", chrome.surface);
+}
+
+function addOverlayLayers(map: maplibregl.Map, chrome: (typeof CHROME)["light"]): void {
   const layers = map.getStyle().layers ?? [];
-  const lastDrawn = layers.findLastIndex((l: { type: string }) => l.type !== "symbol");
-  const firstSymbol = layers[lastDrawn + 1]?.id;
+  const firstSymbol = layers[fillSlot(layers)]?.id;
   for (const layer of LAYERS) {
     map.addSource(layer.id, {
       type: "vector",
@@ -62,7 +99,7 @@ function addOverlay(map: maplibregl.Map, dark: boolean): void {
         "source-layer": layer.id,
         minzoom: layer.minzoom,
         maxzoom: layer.maxzoom,
-        paint: { "fill-color": fillColorExpression(dark) as never, "fill-opacity": FILL_OPACITY[layer.id] },
+        paint: { "fill-opacity": FILL_OPACITY[layer.id] },
       },
       firstSymbol,
     );
@@ -113,6 +150,7 @@ export function LiveabilityMap() {
   const ready = styleVersion > 0;
   const [hover, setHover] = useState<{ x: number; y: number; text: string } | null>(null);
   const dark = useTheme().mode === "dark";
+  const locale = useLocale();
   const { manifest, scores } = useData();
   const { state, update } = useLiveability();
   const t = useTranslations("Map");
@@ -127,6 +165,7 @@ export function LiveabilityMap() {
   useEffect(() => {
     darkRef.current = dark;
   }, [dark]);
+  const localeRef = useRef(locale);
   const manifestRef = useRef(manifest);
   // The build's nations decide the opening view; fit once the manifest is in, unless a
   // shared link or the assistant already set a view
@@ -158,6 +197,7 @@ export function LiveabilityMap() {
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
     map.on("style.load", () => {
       addOverlay(map, darkRef.current);
+      placeLabels(map, darkRef.current ? "dark" : "light", localeRef.current);
       setStyleVersion((v) => v + 1);
     });
     mapRef.current = map;
@@ -177,8 +217,15 @@ export function LiveabilityMap() {
     const map = mapRef.current;
     if (!map || styleDark.current === dark) return;
     styleDark.current = dark;
-    map.setStyle(basemap(dark));
+    map.setStyle(basemap(dark), { transformStyle: carryOverlay });
   }, [dark]);
+
+  // Place names follow the interface language
+  useEffect(() => {
+    localeRef.current = locale;
+    const map = mapRef.current;
+    if (map && ready) setLabelLanguage(map, locale);
+  }, [locale, ready]);
 
   // Colour every area for the current weights and layer
   useEffect(() => {
@@ -261,7 +308,7 @@ export function LiveabilityMap() {
       const name = f?.properties?.name;
       setHover(
         f && typeof v === "number"
-          ? { x: e.point.x, y: e.point.y, text: name ? t("hover", { name, pct: Math.round(v) }) : t("hoverNoName", { pct: Math.round(v) }) }
+          ? { x: e.point.x, y: e.point.y, text: name ? t("hover", { name, pct: pctRank(v) }) : t("hoverNoName", { pct: pctRank(v) }) }
           : null,
       );
     };

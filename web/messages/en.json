@@ -9,7 +9,9 @@
     "E": "England",
     "W": "Wales",
     "S": "Scotland",
-    "N": "Northern Ireland"
+    "N": "Northern Ireland",
+    "and": "and",
+    "E_W": "England and Wales"
   },
   "Header": {
     "title": "UK Liveability Index",
@@ -23,7 +25,6 @@
     "loading": "Loading the neighbourhoods…",
     "loadError": "Couldn't load the scores ({error}). Is the API running (<code>make api</code>) and has <code>make score tiles</code> been run?",
     "language": "Language",
-    "draft": "draft",
     "theme": "Theme"
   },
   "Theme": {
@@ -43,6 +44,8 @@
     "panels": "Panels",
     "analystTitle": "Analyst mode: distributions, indicator overlap and SQL",
     "chatPlaceholder": "Ask about places in {coverage}…",
+    "chatWelcome": "How can I help you today?",
+    "chatDisclaimer": "AI can make mistakes. Please verify important information.",
     "send": "Send",
     "moreOptions": "More options",
     "suggestions": {
