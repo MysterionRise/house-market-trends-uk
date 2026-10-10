@@ -42,12 +42,13 @@ def _selected(args: argparse.Namespace) -> list[str]:
 
 def _resolve(args: argparse.Namespace) -> int:
     registry, session = load_registry(), make_session()
-    failures = 0
+    failures = warnings = 0
     for slug in _selected(args):
         if args.check:
-            ok, note = check_link(slug, registry[slug], session)
-            print(f"{'ok  ' if ok else 'FAIL'} {slug:24} {note}")
-            failures += not ok
+            status, note = check_link(slug, registry[slug], session)
+            print(f"{'FAIL' if status == 'fail' else status:4} {slug:24} {note}")
+            failures += status == "fail"
+            warnings += status == "warn"
         else:
             try:
                 resolved = resolve_and_lock(slug, registry[slug], session)
@@ -56,6 +57,8 @@ def _resolve(args: argparse.Namespace) -> int:
                 failures += 1
                 continue
             print(f"{slug:24} {resolved.get('title') or ''} {resolved.get('version') or ''}")
+    if args.check:
+        print(f"{failures} failed, {warnings} not verified from this network")
     return 1 if failures else 0
 
 

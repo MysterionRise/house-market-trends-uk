@@ -13,7 +13,8 @@ import requests
 
 from lix_core.config import OvertureAccess
 
-BUCKET_HTTPS = "https://overturemaps-us-west-2.s3.amazonaws.com"
+S3_HTTPS = "https://{bucket}.s3.amazonaws.com"
+BUCKET_HTTPS = S3_HTTPS.format(bucket="overturemaps-us-west-2")
 BUCKET_S3 = "s3://overturemaps-us-west-2"
 
 
@@ -32,6 +33,23 @@ def resolve_query(access: OvertureAccess, session: requests.Session) -> dict:
     release = access.release or latest_release(session)
     url = f"{BUCKET_S3}/release/{release}/theme={access.theme}/type={access.kind}/*"
     return {"url": url, "version": release}
+
+
+def probe(url: str, session: requests.Session) -> int:
+    """An HTTP status for an ``s3://bucket/prefix/*`` glob, which no HTTP client can open:
+    200 when the public bucket lists an object under the prefix, 404 when it lists none."""
+    m = re.fullmatch(r"s3://([^/]+)/(.*?)\*?", url)
+    if not m:
+        raise ValueError(f"Not an s3:// URL: {url}")
+    bucket, prefix = m.groups()
+    resp = session.get(
+        S3_HTTPS.format(bucket=bucket),
+        params={"list-type": "2", "prefix": prefix, "max-keys": "1"},
+        timeout=60,
+    )
+    if not resp.ok:
+        return resp.status_code
+    return 200 if "<Contents>" in resp.text else 404
 
 
 def build_sql(access: OvertureAccess, url: str) -> str:

@@ -20,6 +20,9 @@ All notable changes to this project. The format follows
 - Three English strings in the Welsh interface: the "and" in "Lloegr a Chymru" (browsers
   have no Welsh list patterns, so the catalogue supplies it), the assistant's greeting and
   disclaimer, and the switcher's "(drafft)".
+- The nightly source check no longer fails on the Overture Maps glob (it is probed
+  through the bucket listing) and reports a 403 as "not verified" rather than a failure,
+  since NHS Digital, Ofcom and NaPTAN block cloud addresses such as the CI runners'.
 
 ## [0.3.0] - 2026-10-08
 

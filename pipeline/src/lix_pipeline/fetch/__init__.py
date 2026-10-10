@@ -9,6 +9,7 @@ import hashlib
 import json
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
+from typing import Literal
 
 import requests
 
@@ -261,22 +262,44 @@ def select(
     return chosen
 
 
-def check_link(slug: str, spec: DatasetSpec, session: requests.Session) -> tuple[bool, str]:
-    """Re-resolve a dataset and confirm its file is reachable; used by the nightly check."""
+LinkStatus = Literal["ok", "warn", "fail"]
+
+
+def _reachable(url: str, session: requests.Session) -> int:
+    """The HTTP status of the lightest request that proves the file is there."""
+    if url.startswith("s3://"):
+        return overture.probe(url, session)
+    resp = session.get(url, headers={"Range": "bytes=0-0"}, stream=True, timeout=60)
+    resp.close()
+    return resp.status_code
+
+
+def check_link(slug: str, spec: DatasetSpec, session: requests.Session) -> tuple[LinkStatus, str]:
+    """Re-resolve a dataset and confirm its file is reachable; used by the nightly check.
+
+    A 403 is a warning, not a failure: NHS Digital, Ofcom and NaPTAN refuse cloud addresses
+    such as GitHub's runners while serving everyone else, and the check is after files that
+    moved or vanished, not firewalls. A fetch from a blocked network still fails loudly.
+    """
     try:
         resolved = resolve(slug, spec, session)
+    except requests.HTTPError as e:
+        if e.response is not None and e.response.status_code == 403:
+            return "warn", f"not verified: 403 from {e.response.url}"
+        return "fail", f"resolve failed: {e}"
     except Exception as e:  # report every failure, keep checking the rest
-        return False, f"resolve failed: {e}"
+        return "fail", f"resolve failed: {e}"
     if resolved["url"] is None:
-        return True, "manual download"
+        return "ok", "manual download"
     locked = read_lock().get(slug, {}).get("resolved", {})
     changed = locked and locked.get("version") != resolved["version"]
     try:
-        resp = session.get(resolved["url"], headers={"Range": "bytes=0-0"}, stream=True, timeout=60)
-        resp.close()
+        status = _reachable(resolved["url"], session)
     except requests.RequestException as e:
-        return False, f"unreachable: {e}"
-    if resp.status_code >= 400:
-        return False, f"HTTP {resp.status_code}"
+        return "fail", f"unreachable: {e}"
+    if status == 403:
+        return "warn", f"not verified: 403 from {resolved['url']}"
+    if status >= 400:
+        return "fail", f"HTTP {status}"
     note = "new upstream version" if changed else "ok"
-    return True, f"{note} ({json.dumps(resolved.get('version'))})"
+    return "ok", f"{note} ({json.dumps(resolved.get('version'))})"

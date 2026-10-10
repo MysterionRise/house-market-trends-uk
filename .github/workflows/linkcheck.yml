@@ -2,7 +2,8 @@ name: Source link check
 
 # Upstream publishers move and delete files without notice (ONS deletes Open Geography
 # items on every version bump). Re-resolve every source nightly so breakage shows up
-# here rather than in the middle of a data build.
+# here rather than in the middle of a data build. A 403 is reported as "not verified",
+# not a failure: NHS Digital, Ofcom and NaPTAN block cloud addresses such as the runners'.
 on:
   schedule:
     - cron: "17 4 * * *"

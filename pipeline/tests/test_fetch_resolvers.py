@@ -536,3 +536,56 @@ class TestOverture:
         assert "release/2026-08-19.0/" in sql
         assert "bbox.xmin BETWEEN -6.5 AND 1.9" in sql and "(basic_category = 'bar')" in sql
         assert sql.startswith("SELECT id, names.primary AS name FROM read_parquet(")
+
+
+class TestCheckLink:
+    """The nightly link check: fail on a vanished file, warn on a firewall, read s3 globs."""
+
+    def test_ok_and_new_version(self, httpserver):
+        httpserver.expect_request("/f.csv").respond_with_data("x", headers={"ETag": '"v2"'})
+        spec = _spec({"type": "http", "url": httpserver.url_for("/f.csv")})
+        status, note = fetch_mod.check_link("zz_check_test", spec, make_session())
+        assert status == "ok"
+        assert note.startswith("ok (")
+
+    def test_missing_file_fails(self, httpserver):
+        httpserver.expect_request("/gone.csv").respond_with_data("", status=404)
+        spec = _spec({"type": "http", "url": httpserver.url_for("/gone.csv")})
+        status, note = fetch_mod.check_link("zz_check_test", spec, make_session())
+        assert status == "fail"
+        assert "404" in note
+
+    def test_forbidden_is_a_warning_not_a_failure(self, httpserver):
+        httpserver.expect_request("/blocked.csv").respond_with_data("", status=403)
+        spec = _spec({"type": "http", "url": httpserver.url_for("/blocked.csv")})
+        status, note = fetch_mod.check_link("zz_check_test", spec, make_session())
+        assert status == "warn"
+        assert note.startswith("not verified: 403")
+
+    def test_overture_glob_is_probed_through_the_bucket_listing(self, httpserver, monkeypatch):
+        from lix_pipeline.fetch import overture
+
+        monkeypatch.setattr(overture, "S3_HTTPS", httpserver.url_for("/{bucket}"))
+        httpserver.expect_request(
+            "/b",
+            query_string={
+                "list-type": "2",
+                "prefix": "release/2026-09-23.1/theme=places/type=place/",
+                "max-keys": "1",
+            },
+        ).respond_with_data(
+            "<ListBucketResult><Contents><Key>k</Key></Contents></ListBucketResult>"
+        )
+        httpserver.expect_request(
+            "/b",
+            query_string={"list-type": "2", "prefix": "release/2099-01-01.0/x/", "max-keys": "1"},
+        ).respond_with_data("<ListBucketResult><KeyCount>0</KeyCount></ListBucketResult>")
+        session = make_session()
+        assert (
+            overture.probe("s3://b/release/2026-09-23.1/theme=places/type=place/*", session) == 200
+        )
+        assert overture.probe("s3://b/release/2099-01-01.0/x/*", session) == 404
+        assert (
+            fetch_mod._reachable("s3://b/release/2026-09-23.1/theme=places/type=place/*", session)
+            == 200
+        )
